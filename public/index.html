@@ -249,6 +249,45 @@
 
   <section class="stats" id="statsRow"></section>
 
+  <section class="panel" id="importPanel">
+    <div class="panel-head" data-toggle="importPanel">
+      <h2>Importa partite incollate</h2>
+      <span class="chev">▾</span>
+    </div>
+    <div class="panel-body">
+      <div class="import-grid">
+        <div class="field">
+          <label for="pasteBox">Incolla qui l'elenco partite (data, ora, campionato, squadre)</label>
+          <textarea id="pasteBox" placeholder="[United States: Major League Soccer]&#10;14/09/2026 00:30&#9;Vancouver Whitecaps - Austin&#9;-"></textarea>
+          <div class="btn-row" style="margin-top:4px;">
+            <button class="btn primary" id="btnParse">Analizza elenco</button>
+            <button class="btn ghost" id="btnClearPaste">Svuota</button>
+          </div>
+          <div id="previewArea"></div>
+        </div>
+        <div class="defaults">
+          <div class="row-inline">
+            <div class="field">
+              <label for="defTipo">Tipo predefinito</label>
+              <select id="defTipo">
+                <option value="lay">Lay (banca)</option>
+                <option value="back">Back</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="defComm">Commissione % predefinita</label>
+              <input id="defComm" type="number" step="0.1" min="0" max="20" class="num-in">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btnAddManual">+ Aggiungi riga manuale</button>
+          </div>
+          <div class="empty-note">Le righe importate o aggiunte manualmente restano "Aperta" finché non inserisci quota, importo ed esito.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="panel" id="chartsPanel">
     <div class="panel-head" data-toggle="chartsPanel">
       <h2>Andamento vincite e perdite</h2>
@@ -293,45 +332,6 @@
             <svg id="tipoSvg" class="chart-svg" viewBox="0 0 320 100" preserveAspectRatio="none"></svg>
             <div class="chart-tooltip" id="tipoTip"></div>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" id="importPanel">
-    <div class="panel-head" data-toggle="importPanel">
-      <h2>Importa partite incollate</h2>
-      <span class="chev">▾</span>
-    </div>
-    <div class="panel-body">
-      <div class="import-grid">
-        <div class="field">
-          <label for="pasteBox">Incolla qui l'elenco partite (data, ora, campionato, squadre)</label>
-          <textarea id="pasteBox" placeholder="[United States: Major League Soccer]&#10;14/09/2026 00:30&#9;Vancouver Whitecaps - Austin&#9;-"></textarea>
-          <div class="btn-row" style="margin-top:4px;">
-            <button class="btn primary" id="btnParse">Analizza elenco</button>
-            <button class="btn ghost" id="btnClearPaste">Svuota</button>
-          </div>
-          <div id="previewArea"></div>
-        </div>
-        <div class="defaults">
-          <div class="row-inline">
-            <div class="field">
-              <label for="defTipo">Tipo predefinito</label>
-              <select id="defTipo">
-                <option value="lay">Lay (banca)</option>
-                <option value="back">Back</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="defComm">Commissione % predefinita</label>
-              <input id="defComm" type="number" step="0.1" min="0" max="20" class="num-in">
-            </div>
-          </div>
-          <div class="btn-row">
-            <button class="btn" id="btnAddManual">+ Aggiungi riga manuale</button>
-          </div>
-          <div class="empty-note">Le righe importate o aggiunte manualmente restano "Aperta" finché non inserisci quota, importo ed esito.</div>
         </div>
       </div>
     </div>
