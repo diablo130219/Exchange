@@ -155,8 +155,7 @@
 
   .league-tag{font-size:.68rem;color:var(--text-faint);}
 
-  .charts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-  @media (max-width:1080px){.charts-grid{grid-template-columns:1fr 1fr;}}
+  .charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
   @media (max-width:640px){.charts-grid{grid-template-columns:1fr;}}
   .chart-card{display:flex;flex-direction:column;gap:8px;}
   .chart-card + .charts-grid{margin-top:2px;}
@@ -295,19 +294,6 @@
             <div class="chart-tooltip" id="tipoTip"></div>
           </div>
         </div>
-
-        <div class="chart-card">
-          <div class="chart-title-row">
-            <div>
-              <div class="chart-title">P/L per strategia</div>
-              <div class="chart-sub">Giocate chiuse, ordinate per risultato netto</div>
-            </div>
-          </div>
-          <div class="chart-wrap" id="stratWrap">
-            <svg id="stratSvg" class="chart-svg" viewBox="0 0 320 200" preserveAspectRatio="none"></svg>
-            <div class="chart-tooltip" id="stratTip"></div>
-          </div>
-        </div>
       </div>
     </div>
   </section>
@@ -329,10 +315,6 @@
           <div id="previewArea"></div>
         </div>
         <div class="defaults">
-          <div class="field">
-            <label for="defStrategia">Strategia da applicare (facoltativa)</label>
-            <input id="defStrategia" type="text" placeholder="es. Over 0.5 HT">
-          </div>
           <div class="row-inline">
             <div class="field">
               <label for="defTipo">Tipo predefinito</label>
@@ -357,14 +339,14 @@
 
   <section class="toolbar">
     <div class="pills" id="filterPills"></div>
-    <input class="search" id="searchBox" type="text" placeholder="Cerca campionato, squadra, strategia…">
+    <input class="search" id="searchBox" type="text" placeholder="Cerca campionato, squadra…">
   </section>
 
   <div class="ledger-wrap">
     <table>
       <thead>
         <tr>
-          <th>Data</th><th>Ora</th><th>Campionato</th><th>Match</th><th>Cassa</th><th>Strategia</th><th>Tipo</th>
+          <th>Data</th><th>Ora</th><th>Campionato</th><th>Match</th><th>Cassa</th><th>Tipo</th>
           <th>Quota</th><th>Stake/Resp.</th><th>Comm. %</th><th>HT</th><th>FT</th><th>Esito</th><th>P/L</th><th></th>
         </tr>
       </thead>
@@ -380,7 +362,7 @@
   var bets = [];
   var casse = [];
   var activeCassaId = null; // null = "Tutte"
-  var settings = {strategia:'', tipo:'lay', commissione:4.5};
+  var settings = {tipo:'lay', commissione:4.5};
 
   // ---------- API layer (talks to server.js / Postgres, replaces the Claude Artifacts db capability) ----------
   var API_BASE = '/api';
@@ -517,7 +499,6 @@
 
   function confirmImport(){
     if (!betsCol) return;
-    var defStrategia = document.getElementById('defStrategia').value.trim();
     var defTipo = document.getElementById('defTipo').value;
     var defComm = parseFloat(document.getElementById('defComm').value) || 0;
     var batch = pendingParsed.slice();
@@ -526,7 +507,7 @@
       betsCol.add({
         data:m.data, ora:m.ora, campionato:m.campionato||'', casa:m.casa, trasferta:m.trasferta,
         cassaId: cid,
-        strategia:defStrategia, tipo:defTipo, quota:'', importo:'', commissione:defComm,
+        tipo:defTipo, quota:'', importo:'', commissione:defComm,
         ht:'', ft:'', esito:'aperta', createdAt: Date.now()+idx
       });
     });
@@ -733,7 +714,8 @@
       var px = xAt(idx);
       cross.setAttribute('x1',px); cross.setAttribute('x2',px); cross.style.opacity=1;
       var saldoClass = p.saldo>=cassa ? 'win' : 'loss';
-      fillTip(tip, (p.bet.data||'')+' · '+(p.bet.strategia||'—'), euro.format(p.saldo), saldoClass, 'Giocata: '+euro.format(p.pl)+' · Cumulato: '+euro.format(p.cum));
+      var ttLabel = (p.bet.data||'') + (p.bet.campionato ? ' · '+p.bet.campionato : '');
+      fillTip(tip, ttLabel, euro.format(p.saldo), saldoClass, 'Giocata: '+euro.format(p.pl)+' · Cumulato: '+euro.format(p.cum));
       tip.style.left = (px/W*rect.width)+'px';
       tip.style.top = Math.max(10, yAt(p.saldo)/H*rect.height)+'px';
       tip.classList.add('show');
@@ -803,82 +785,6 @@
     });
   }
 
-  function renderStratChart(){
-    var svg = document.getElementById('stratSvg');
-    var wrap = document.getElementById('stratWrap');
-    var tip = document.getElementById('stratTip');
-    svg.innerHTML='';
-    var map = {};
-    visibleBets().forEach(function(b){
-      if (b.esito!=='vinta' && b.esito!=='persa' && b.esito!=='void') return;
-      var pl = calcPL(b); if (pl===null) return;
-      var key = (b.strategia||'').trim() || '(senza strategia)';
-      if (!map[key]) map[key] = {label:key, pl:0, n:0};
-      map[key].pl += pl; map[key].n += 1;
-    });
-    var allKeys = Object.keys(map);
-    var rows = allKeys.map(function(k){ return map[k]; });
-    rows.sort(function(a,b){ return b.pl - a.pl; });
-    var truncated = rows.length>10;
-    if (truncated) rows = rows.slice(0,10);
-
-    if (!rows.length){
-      showEmpty(wrap, svg, 'Nessuna giocata chiusa con una strategia assegnata.');
-      tip.classList.remove('show');
-      return;
-    }
-    clearEmpty(wrap, svg);
-
-    var W = Math.max(220, Math.round(wrap.getBoundingClientRect().width)) || 320;
-    var rowH=26, padT=10, padB = truncated?20:8, padL=8, padR=8;
-    var H = padT+rows.length*rowH+padB;
-    svg.setAttribute('viewBox','0 0 '+W+' '+H);
-    var labelW = Math.min(110, Math.max(70, W*0.32));
-    var plotL = padL+labelW, plotR = W-padR;
-    var plotW = plotR-plotL;
-    var maxAbs = Math.max.apply(null, rows.map(function(r){return Math.abs(r.pl);}));
-    maxAbs = maxAbs<=0 ? 1 : maxAbs*1.15;
-    var x0 = plotL + plotW/2;
-    function xFor(v){ return x0 + (v/maxAbs)*(plotW/2); }
-
-    svg.appendChild(se('line',{x1:x0,x2:x0,y1:padT-2,y2:H-padB+2,'class':'baseline'}));
-
-    rows.forEach(function(r, i){
-      var cy = padT + i*rowH + rowH/2;
-      var barH = Math.min(18, rowH*0.62);
-      var x1 = xFor(0), x2 = xFor(r.pl);
-      var isWin = r.pl>=0;
-      var bx = Math.min(x1,x2), bw = Math.max(1, Math.abs(x2-x1));
-      var path = isWin ? roundedRightRectPath(bx, cy-barH/2, bw, barH, 4) : roundedLeftRectPath(bx, cy-barH/2, bw, barH, 4);
-      var bar = se('path',{d:path, 'class':'div-bar'}); bar.setAttribute('style','fill:'+(isWin?'var(--win)':'var(--loss)'));
-      svg.appendChild(bar);
-
-      var lbl = se('text',{x:padL, y:cy+3, 'class':'cat-label'});
-      lbl.textContent = r.label.length>15 ? r.label.slice(0,14)+'…' : r.label;
-      var titleEl = document.createElementNS(SVGNS,'title'); titleEl.textContent = r.label;
-      lbl.appendChild(titleEl);
-      svg.appendChild(lbl);
-
-      var valX = isWin ? x2+4 : x2-4;
-      svg.appendChild(stext(valX, cy+3, euroShort(r.pl), 'val-label', 'text-anchor:'+(isWin?'start':'end')+';fill:'+(isWin?'var(--win)':'var(--loss)')));
-
-      var hit = se('rect',{x:plotL,y:padT+i*rowH,width:plotW,height:rowH,'class':'hit-area'});
-      svg.appendChild(hit);
-      hit.addEventListener('pointerenter', function(){ showTip(); });
-      hit.addEventListener('pointermove', function(){ showTip(); });
-      hit.addEventListener('pointerleave', function(){ tip.classList.remove('show'); });
-      function showTip(){
-        var rect = svg.getBoundingClientRect(), scaleY = rect.height/H;
-        fillTip(tip, r.label, euro.format(r.pl), isWin?'win':'loss', r.n+' giocate chiuse');
-        tip.style.left = (rect.width/2)+'px'; tip.style.top = (cy*scaleY)+'px';
-        tip.classList.add('show');
-      }
-    });
-
-    if (truncated){
-      svg.appendChild(stext(W/2, H-6, '+'+(allKeys.length-10)+' altre strategie', 'axis-text', 'text-anchor:middle'));
-    }
-  }
 
   function renderTipoChart(){
     var svg = document.getElementById('tipoSvg');
@@ -960,7 +866,6 @@
     renderEquityChart();
     renderEsitoChart();
     renderTipoChart();
-    renderStratChart();
   }
 
   // ---------- filters ----------
@@ -999,14 +904,14 @@
     var list = sortedBets().filter(function(b){
       if (filterState!=='tutte' && (b.esito||'aperta')!==filterState) return false;
       if (searchTerm){
-        var hay = [b.campionato,b.casa,b.trasferta,b.strategia].join(' ').toLowerCase();
+        var hay = [b.campionato,b.casa,b.trasferta].join(' ').toLowerCase();
         if (hay.indexOf(searchTerm)===-1) return false;
       }
       return true;
     });
     var body = document.getElementById('ledgerBody');
     if (!list.length){
-      body.innerHTML = '<tr><td colspan="15" class="full" style="padding:26px;text-align:center;color:var(--text-faint);">Nessuna giocata. Importa un elenco partite o aggiungi una riga manuale.</td></tr>';
+      body.innerHTML = '<tr><td colspan="14" class="full" style="padding:26px;text-align:center;color:var(--text-faint);">Nessuna giocata. Importa un elenco partite o aggiungi una riga manuale.</td></tr>';
       return;
     }
     var html = list.map(rowHtml).join('');
@@ -1036,7 +941,6 @@
       '<td data-label="Campionato"><input class="wide" data-f="campionato" value="'+esc(b.campionato)+'" placeholder="Campionato"></td>'+
       '<td data-label="Match" class="full"><input class="wide" style="min-width:180px" data-f="match" value="'+esc((b.casa||'')+' - '+(b.trasferta||''))+'" placeholder="Casa - Trasferta"></td>'+
       '<td data-label="Cassa"><select class="wide cassa-sel" data-f="cassaId" title="'+esc(cassaNome(b.cassaId)||'')+'">'+casseOptions(b.cassaId)+'</select></td>'+
-      '<td data-label="Strategia"><input class="wide" data-f="strategia" value="'+esc(b.strategia)+'" placeholder="Strategia"></td>'+
       '<td data-label="Tipo"><div class="type-toggle" data-f="tipo">'+
         '<button type="button" class="back'+(b.tipo==='back'?' on':'')+'" data-val="back">Back</button>'+
         '<button type="button" class="lay'+(b.tipo!=='back'?' on':'')+'" data-val="lay">Lay</button>'+
@@ -1122,7 +1026,6 @@
       betsCol.add({
         data: dd+'/'+mm+'/'+yyyy, ora: hh+':'+min, campionato:'', casa:'', trasferta:'',
         cassaId: defaultCassaId(),
-        strategia: document.getElementById('defStrategia').value.trim(),
         tipo: document.getElementById('defTipo').value,
         quota:'', importo:'', commissione: parseFloat(document.getElementById('defComm').value)||0,
         ht:'', ft:'', esito:'aperta', createdAt: Date.now()
@@ -1143,9 +1046,6 @@
     document.getElementById('defTipo').addEventListener('change', function(){
       if (settingsRef) settingsRef.update({tipo: document.getElementById('defTipo').value});
     });
-    document.getElementById('defStrategia').addEventListener('blur', function(){
-      if (settingsRef) settingsRef.update({strategia: document.getElementById('defStrategia').value.trim()});
-    });
     document.getElementById('btnToggleCasse').addEventListener('click', function(){
       document.getElementById('cassePanel').classList.toggle('collapsed');
     });
@@ -1161,7 +1061,6 @@
   }
 
   function applyDefaultsToForm(){
-    document.getElementById('defStrategia').value = settings.strategia||'';
     document.getElementById('defTipo').value = settings.tipo||'lay';
     document.getElementById('defComm').value = (settings.commissione!=null? settings.commissione : 4.5);
   }

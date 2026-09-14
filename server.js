@@ -29,7 +29,6 @@ function betOut(row) {
     campionato: row.campionato || '',
     casa: row.casa || '',
     trasferta: row.trasferta || '',
-    strategia: row.strategia || '',
     tipo: row.tipo || 'lay',
     quota: row.quota === null ? '' : row.quota,
     importo: row.importo === null ? '' : row.importo,
@@ -41,9 +40,8 @@ function betOut(row) {
   };
 }
 function settingsOut(row) {
-  if (!row) return { strategia: '', tipo: 'lay', commissione: 4.5 };
+  if (!row) return { tipo: 'lay', commissione: 4.5 };
   return {
-    strategia: row.strategia || '',
     tipo: row.tipo || 'lay',
     commissione: row.commissione === null ? 4.5 : Number(row.commissione)
   };
@@ -130,8 +128,8 @@ app.delete('/api/casse/:id', async (req, res) => {
 });
 
 // ---------- bets ----------
-const BET_FIELDS = ['cassaId','data','ora','campionato','casa','trasferta','strategia','tipo','quota','importo','commissione','ht','ft','esito'];
-const BET_COLUMNS = { cassaId:'cassa_id', data:'data', ora:'ora', campionato:'campionato', casa:'casa', trasferta:'trasferta', strategia:'strategia', tipo:'tipo', quota:'quota', importo:'importo', commissione:'commissione', ht:'ht', ft:'ft', esito:'esito' };
+const BET_FIELDS = ['cassaId','data','ora','campionato','casa','trasferta','tipo','quota','importo','commissione','ht','ft','esito'];
+const BET_COLUMNS = { cassaId:'cassa_id', data:'data', ora:'ora', campionato:'campionato', casa:'casa', trasferta:'trasferta', tipo:'tipo', quota:'quota', importo:'importo', commissione:'commissione', ht:'ht', ft:'ft', esito:'esito' };
 
 app.post('/api/bets', async (req, res) => {
   try {
@@ -204,15 +202,14 @@ app.delete('/api/bets/:id', async (req, res) => {
 // ---------- settings ----------
 app.put('/api/settings', async (req, res) => {
   try {
-    const { strategia, tipo, commissione } = req.body || {};
+    const { tipo, commissione } = req.body || {};
     const { rows } = await pool.query(
-      `INSERT INTO settings (id, strategia, tipo, commissione) VALUES ('main', $1, $2, $3)
+      `INSERT INTO settings (id, tipo, commissione) VALUES ('main', $1, $2)
        ON CONFLICT (id) DO UPDATE SET
-         strategia = COALESCE(EXCLUDED.strategia, settings.strategia),
          tipo = COALESCE(EXCLUDED.tipo, settings.tipo),
          commissione = COALESCE(EXCLUDED.commissione, settings.commissione)
        RETURNING *`,
-      [strategia != null ? strategia : null, tipo != null ? tipo : null, commissione != null ? Number(commissione) : null]
+      [tipo != null ? tipo : null, commissione != null ? Number(commissione) : null]
     );
     res.json(settingsOut(rows[0]));
   } catch (err) {
