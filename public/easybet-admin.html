@@ -373,17 +373,20 @@
       return s.toUpperCase();
     }
 
-    function crestImg(name){
+    function crestImg(name, campionato){
       var id = 'crest-' + Math.random().toString(36).slice(2);
-      setTimeout(function(){ loadCrest(name, id); }, 0);
+      setTimeout(function(){ loadCrest(name, campionato, id); }, 0);
       return '<span class="crest placeholder" id="'+id+'">'+esc(initials(name))+'</span>';
     }
 
-    function loadCrest(name, id){
-      var key = String(name||'').trim().toLowerCase();
-      if (!key) return;
+    function loadCrest(name, campionato, id){
+      if (!String(name||'').trim()) return;
+      // Il campionato (es. "Iceland: Besta deild") disambigua nomi ambigui come "Fram",
+      // che esistono in più paesi — evita di mostrare lo stemma di un club omonimo sbagliato.
+      var key = String(name||'').trim().toLowerCase() + '|' + String(campionato||'').trim().toLowerCase();
       if (crestCache[key] !== undefined){ applyCrest(id, crestCache[key]); return; }
-      fetch('/api/team-crest?name=' + encodeURIComponent(name))
+      var url = '/api/team-crest?name=' + encodeURIComponent(name) + (campionato ? '&country=' + encodeURIComponent(campionato) : '');
+      fetch(url)
         .then(function(r){ return r.json(); })
         .then(function(d){
           crestCache[key] = d && d.url ? d.url : null;
@@ -431,7 +434,7 @@
           '</div>'+
           (m.campionato? '<div class="league">'+esc(m.campionato)+'</div>' : '')+
           '<div class="teams-row">'+
-            crestImg(m.casa)+
+            crestImg(m.casa, m.campionato)+
             '<div class="teams-names">'+esc(m.casa)+' <span class="vs">vs</span> '+esc(m.trasferta)+'</div>'+
           '</div>'+
           '<div class="meta-row">'+

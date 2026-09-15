@@ -480,11 +480,30 @@ function normCrestName(s) {
 const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;  // 30 giorni per uno stemma trovato
 const CREST_TTL_MISS_MS = 3 * 24 * 60 * 60 * 1000;  // 3 giorni prima di riprovare se non trovato
 
+// Nomi come "Fram" o "United" esistono in più paesi: TheSportsDB a volte restituisce
+// un solo risultato ma del club sbagliato (es. "Fram" → Fram Larvik, Norvegia, invece
+// del Fram islandese). Se sappiamo il paese/campionato della partita (dedotto dal
+// campo "campionato", tipo "Iceland: Besta deild"), scartiamo i risultati di un paese
+// diverso invece di mostrare uno stemma sbagliato — meglio nessuno stemma che quello sbagliato.
+function countryHintFromCampionato(campionato) {
+  const s = String(campionato || '').trim();
+  if (!s) return '';
+  const idx = s.indexOf(':');
+  return (idx === -1 ? s : s.slice(0, idx)).trim();
+}
+function countriesMatch(a, b) {
+  const na = String(a || '').toLowerCase().trim();
+  const nb = String(b || '').toLowerCase().trim();
+  if (!na || !nb) return false;
+  return na === nb || na.indexOf(nb) !== -1 || nb.indexOf(na) !== -1;
+}
+
 app.get('/api/team-crest', async (req, res) => {
   try {
     const name = String(req.query.name || '').trim();
     if (!name) return res.status(400).json({ error: 'Nome squadra mancante.' });
-    const key = normCrestName(name);
+    const countryHint = countryHintFromCampionato(req.query.country || '');
+    const key = normCrestName(name) + (countryHint ? '|' + normCrestName(countryHint) : '');
 
     const { rows } = await pool.query('SELECT * FROM team_crests WHERE name_norm = $1', [key]);
     const cached = rows[0];
@@ -501,7 +520,14 @@ app.get('/api/team-crest', async (req, res) => {
       if (r.ok) {
         const data = await r.json();
         if (data && Array.isArray(data.teams) && data.teams.length) {
-          url = data.teams[0].strBadge || null;
+          let candidates = data.teams;
+          if (countryHint) {
+            const filtered = candidates.filter((t) => countriesMatch(t.strCountry, countryHint));
+            // Se abbiamo un indizio sul paese ma nessun risultato lo conferma, meglio
+            // nessuno stemma che uno sicuramente sbagliato (vedi caso "Fram" sopra).
+            candidates = filtered.length ? filtered : [];
+          }
+          if (candidates.length) url = candidates[0].strBadge || null;
         }
       }
     } catch (fetchErr) {
