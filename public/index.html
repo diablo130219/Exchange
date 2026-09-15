@@ -105,6 +105,8 @@
   .preview-list{border:1px dashed var(--border-strong);border-radius:8px;padding:8px 10px;max-height:180px;overflow:auto;font-size:.78rem;color:var(--text-muted);display:flex;flex-direction:column;gap:3px;}
   .preview-list .pv-row{display:flex;gap:8px;}
   .preview-list .pv-row b{color:var(--text);font-weight:600;}
+  .preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);font-weight:600;}
+  .tiny-btn{padding:2px 8px;font-size:.72rem;}
   .empty-note{font-size:.78rem;color:var(--text-faint);font-style:italic;}
 
   .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;}
@@ -347,7 +349,7 @@
       <thead>
         <tr>
           <th>Data</th><th>Ora</th><th>Campionato</th><th>Match</th><th>Cassa</th><th>Tipo</th>
-          <th>Quota</th><th>Stake/Resp.</th><th>Comm. %</th><th>HT</th><th>FT</th><th>Esito</th><th>P/L</th><th></th>
+          <th>Quota</th><th>Stake/Resp.</th><th>Comm. %</th><th>Esito</th><th>P/L</th><th></th>
         </tr>
       </thead>
       <tbody id="ledgerBody"></tbody>
@@ -430,6 +432,7 @@
   var filterState = 'tutte';
   var searchTerm = '';
   var pendingParsed = [];
+  var lastImported = [];
 
   var euro = new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'});
   var pct1 = function(n){ return n.toLocaleString('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%'; };
@@ -484,17 +487,30 @@
     return out;
   }
 
+  function previewRows(list){
+    return list.map(function(m){
+      return '<div class="pv-row"><span class="num">'+m.data+' '+m.ora+'</span><b>'+esc(m.casa)+' - '+esc(m.trasferta)+'</b><span class="league-tag">'+esc(m.campionato||'')+'</span></div>';
+    }).join('');
+  }
+
   function renderPreview(){
     var area = document.getElementById('previewArea');
-    if (!pendingParsed.length){ area.innerHTML=''; return; }
-    var html = '<div class="preview-list">';
-    pendingParsed.forEach(function(m){
-      html += '<div class="pv-row"><span class="num">'+m.data+' '+m.ora+'</span><b>'+esc(m.casa)+' - '+esc(m.trasferta)+'</b><span class="league-tag">'+esc(m.campionato||'')+'</span></div>';
-    });
-    html += '</div><div class="btn-row" style="margin-top:8px;"><button class="btn primary" id="btnConfirmImport">Conferma import ('+pendingParsed.length+' partite)</button><button class="btn ghost" id="btnCancelImport">Annulla</button></div>';
-    area.innerHTML = html;
-    document.getElementById('btnConfirmImport').onclick = confirmImport;
-    document.getElementById('btnCancelImport').onclick = function(){ pendingParsed=[]; renderPreview(); };
+    if (pendingParsed.length){
+      var html = '<div class="preview-list">'+previewRows(pendingParsed)+'</div>';
+      html += '<div class="btn-row" style="margin-top:8px;"><button class="btn primary" id="btnConfirmImport">Conferma import ('+pendingParsed.length+' partite)</button><button class="btn ghost" id="btnCancelImport">Annulla</button></div>';
+      area.innerHTML = html;
+      document.getElementById('btnConfirmImport').onclick = confirmImport;
+      document.getElementById('btnCancelImport').onclick = function(){ pendingParsed=[]; renderPreview(); };
+      return;
+    }
+    if (lastImported.length){
+      var html2 = '<div class="preview-head"><span>Partite caricate ('+lastImported.length+')</span><button class="btn ghost tiny-btn" id="btnDismissImported">Chiudi</button></div>';
+      html2 += '<div class="preview-list">'+previewRows(lastImported)+'</div>';
+      area.innerHTML = html2;
+      document.getElementById('btnDismissImported').onclick = function(){ lastImported=[]; renderPreview(); };
+      return;
+    }
+    area.innerHTML = '';
   }
 
   function confirmImport(){
@@ -508,9 +524,10 @@
         data:m.data, ora:m.ora, campionato:m.campionato||'', casa:m.casa, trasferta:m.trasferta,
         cassaId: cid,
         tipo:defTipo, quota:'', importo:'', commissione:defComm,
-        ht:'', ft:'', esito:'aperta', createdAt: Date.now()+idx
+        esito:'aperta', createdAt: Date.now()+idx
       });
     });
+    lastImported = batch;
     pendingParsed = [];
     document.getElementById('pasteBox').value = '';
     renderPreview();
@@ -911,7 +928,7 @@
     });
     var body = document.getElementById('ledgerBody');
     if (!list.length){
-      body.innerHTML = '<tr><td colspan="14" class="full" style="padding:26px;text-align:center;color:var(--text-faint);">Nessuna giocata. Importa un elenco partite o aggiungi una riga manuale.</td></tr>';
+      body.innerHTML = '<tr><td colspan="12" class="full" style="padding:26px;text-align:center;color:var(--text-faint);">Nessuna giocata. Importa un elenco partite o aggiungi una riga manuale.</td></tr>';
       return;
     }
     var html = list.map(rowHtml).join('');
@@ -948,8 +965,6 @@
       '<td data-label="Quota"><input class="mid num-in" type="number" step="0.01" min="1.01" data-f="quota" value="'+esc(b.quota)+'"></td>'+
       '<td data-label="Stake/Resp."><input class="mid num-in" type="number" step="0.01" min="0" data-f="importo" value="'+esc(b.importo)+'"></td>'+
       '<td data-label="Comm. %"><input class="tiny num-in" type="number" step="0.1" min="0" max="20" data-f="commissione" value="'+esc(b.commissione)+'"></td>'+
-      '<td data-label="HT"><input class="tiny" data-f="ht" value="'+esc(b.ht)+'"></td>'+
-      '<td data-label="FT"><input class="tiny" data-f="ft" value="'+esc(b.ft)+'"></td>'+
       '<td data-label="Esito"><select class="esito '+esito+'" data-f="esito">'+
         '<option value="aperta"'+(esito==='aperta'?' selected':'')+'>Aperta</option>'+
         '<option value="vinta"'+(esito==='vinta'?' selected':'')+'>Vinta</option>'+
@@ -1028,7 +1043,7 @@
         cassaId: defaultCassaId(),
         tipo: document.getElementById('defTipo').value,
         quota:'', importo:'', commissione: parseFloat(document.getElementById('defComm').value)||0,
-        ht:'', ft:'', esito:'aperta', createdAt: Date.now()
+        esito:'aperta', createdAt: Date.now()
       });
     };
     document.getElementById('searchBox').addEventListener('input', function(e){

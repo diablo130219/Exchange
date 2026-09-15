@@ -33,8 +33,6 @@ function betOut(row) {
     quota: row.quota === null ? '' : row.quota,
     importo: row.importo === null ? '' : row.importo,
     commissione: row.commissione === null ? 0 : Number(row.commissione),
-    ht: row.ht || '',
-    ft: row.ft || '',
     esito: row.esito || 'aperta',
     createdAt: Number(row.created_at)
   };
@@ -128,8 +126,8 @@ app.delete('/api/casse/:id', async (req, res) => {
 });
 
 // ---------- bets ----------
-const BET_FIELDS = ['cassaId','data','ora','campionato','casa','trasferta','tipo','quota','importo','commissione','ht','ft','esito'];
-const BET_COLUMNS = { cassaId:'cassa_id', data:'data', ora:'ora', campionato:'campionato', casa:'casa', trasferta:'trasferta', tipo:'tipo', quota:'quota', importo:'importo', commissione:'commissione', ht:'ht', ft:'ft', esito:'esito' };
+const BET_FIELDS = ['cassaId','data','ora','campionato','casa','trasferta','tipo','quota','importo','commissione','esito'];
+const BET_COLUMNS = { cassaId:'cassa_id', data:'data', ora:'ora', campionato:'campionato', casa:'casa', trasferta:'trasferta', tipo:'tipo', quota:'quota', importo:'importo', commissione:'commissione', esito:'esito' };
 
 app.post('/api/bets', async (req, res) => {
   try {
