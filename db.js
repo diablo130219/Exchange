@@ -86,6 +86,16 @@ async function migrate() {
     ON CONFLICT (id) DO NOTHING;
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_start_at ON matches (start_at);`);
+
+  // --- Segnali Live (profili di ingresso VERDE/GIALLO/ROSSO da bookmarklet FlashScore) ---
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_strategy TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_favorita TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_alert_sent BOOLEAN NOT NULL DEFAULT false;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_level TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_summary TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_updated BIGINT;`);
+  // Colonne di un tentativo precedente (soglie semplici tiri/occasioni/corner), non più usate:
+  // rimangono nel DB se già create in precedenza ma il codice non le legge più.
 }
 
 module.exports = { pool, migrate };

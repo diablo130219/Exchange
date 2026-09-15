@@ -147,6 +147,15 @@
   .match-countdown.soon{background:#3A2E12;color:#E2A93F;}
   .match-countdown.sent{background:var(--win-soft);color:var(--win);}
   .match-actions{display:flex;gap:6px;}
+  .match-live-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);}
+  .match-live-row select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:.78rem;color:var(--text);}
+  .live-status{margin-top:6px;font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .live-status.muted{font-weight:500;color:var(--text-faint);font-style:italic;}
+  .live-summary{font-weight:500;color:var(--text-muted);}
+  .live-howto{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:14px 0;}
+  .live-howto-title{font-weight:700;margin-bottom:6px;}
+  .live-howto-text{font-size:.82rem;color:var(--text-muted);margin-bottom:10px;line-height:1.5;}
+  .bookmarklet-btn{display:inline-block;cursor:grab;}
   .preview-list .pv-row b{color:var(--text);font-weight:600;}
   .preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);font-weight:600;}
   .tiny-btn{padding:2px 8px;font-size:.72rem;}
@@ -489,6 +498,19 @@
         <span>minuti prima dell'inizio (per le nuove partite caricate)</span>
       </div>
 
+      <div class="live-howto">
+        <div class="live-howto-title">⚡ Segnali live (VERDE/GIALLO/ROSSO)</div>
+        <div class="live-howto-text">
+          Trascina questo pulsante nella barra dei preferiti del browser. Durante la partita apri la sua pagina statistiche su
+          <b>FlashScore</b>, clicca il preferito: leggerà da solo xG, tiri in porta e grandi occasioni e ti avviserà su Telegram
+          quando la strategia impostata sotto la partita raggiunge il VERDE.
+        </div>
+        <div class="btn-row" style="margin-top:8px;">
+          <a class="btn primary bookmarklet-btn" id="liveBookmarkletLink" href="#" onclick="return false;">📊 Monitor Live EasyBet</a>
+          <a class="btn ghost" href="/partite.html" target="_blank" rel="noopener">🗂️ Apri pagina partite (schede)</a>
+        </div>
+      </div>
+
       <div class="cards" id="alertMatchCards"></div>
     </div>
   </section>
@@ -769,6 +791,15 @@
     return 'tra ' + days + 'g';
   }
 
+  var LIVE_STRATEGIE = [
+    {key:'', label:'— nessuna —'},
+    {key:'over05ht', label:'Over 0.5 HT'},
+    {key:'over15ft', label:'Over 1.5 FT'},
+    {key:'layx', label:'Lay X'},
+    {key:'backfav', label:'Back Favorita pre-gol'}
+  ];
+  var LIVE_LEVEL_LABEL = {verde:'🟢 VERDE', giallo:'🟡 GIALLO', rosso:'🔴 ROSSO'};
+
   function renderAlertCards(){
     var wrap = document.getElementById('alertMatchCards');
     if (!wrap) return;
@@ -783,6 +814,25 @@
       var cls = 'match-card' + (m.notified?' sent':'') + (soon && !m.notified ? ' soon':'');
       var countdownCls = 'match-countdown' + (m.notified?' sent':(soon?' soon':''));
       var countdownText = m.notified ? 'avviso inviato' : fmtCountdown(remaining);
+      var stratOptions = LIVE_STRATEGIE.map(function(s){
+        return '<option value="'+s.key+'"'+(m.liveStrategy===s.key?' selected':'')+'>'+esc(s.label)+'</option>';
+      }).join('');
+      var favBlock = m.liveStrategy==='backfav'
+        ? '<select data-f="liveFavorita"><option value="">Favorita?</option>'+
+          '<option value="casa"'+(m.liveFavorita==='casa'?' selected':'')+'>'+esc(m.casa)+'</option>'+
+          '<option value="trasferta"'+(m.liveFavorita==='trasferta'?' selected':'')+'>'+esc(m.trasferta)+'</option>'+
+          '</select>'
+        : '';
+      var liveStatus = '';
+      if (m.liveStrategy){
+        if (m.liveAlertSent){
+          liveStatus = '<div class="live-status">🎉 Segnale live inviato <button class="btn small ghost" data-live-reset="'+m.id+'">Riarma</button></div>';
+        } else if (m.liveLastLevel){
+          liveStatus = '<div class="live-status">'+(LIVE_LEVEL_LABEL[m.liveLastLevel]||m.liveLastLevel)+' <span class="live-summary">'+esc(m.liveLastSummary||'')+'</span></div>';
+        } else {
+          liveStatus = '<div class="live-status muted">In attesa di dati dal bookmarklet…</div>';
+        }
+      }
       return '<div class="'+cls+'" data-id="'+m.id+'">'+
         '<div class="match-top">'+
           '<span class="match-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
@@ -797,6 +847,11 @@
             '<button class="btn small ghost" data-del="'+m.id+'">Elimina</button>'+
           '</div>'+
         '</div>'+
+        '<div class="match-live-row">'+
+          '<select data-f="liveStrategy">'+stratOptions+'</select>'+
+          favBlock+
+        '</div>'+
+        liveStatus+
       '</div>';
     }).join('');
     wrap.innerHTML = html;
@@ -840,6 +895,31 @@
           setTimeout(function(){ delBtn.classList.remove('confirm'); delBtn.textContent='Elimina'; }, 2500);
         }
       });
+
+      var stratSel = card.querySelector('[data-f="liveStrategy"]');
+      if (stratSel){
+        stratSel.addEventListener('change', function(){
+          apiFetch('/matches/'+id, {method:'PATCH', body: JSON.stringify({liveStrategy: stratSel.value})})
+            .then(loadState).then(function(){ renderAlertCards(); })
+            .catch(function(err){ showBanner('Errore salvataggio: '+err.message, true); });
+        });
+      }
+      var favSel = card.querySelector('[data-f="liveFavorita"]');
+      if (favSel){
+        favSel.addEventListener('change', function(){
+          apiFetch('/matches/'+id, {method:'PATCH', body: JSON.stringify({liveFavorita: favSel.value})})
+            .then(loadState)
+            .catch(function(err){ showBanner('Errore salvataggio: '+err.message, true); });
+        });
+      }
+      var resetBtn = card.querySelector('[data-live-reset]');
+      if (resetBtn){
+        resetBtn.addEventListener('click', function(){
+          apiFetch('/matches/'+id, {method:'PATCH', body: JSON.stringify({liveAlertSent:false})})
+            .then(loadState).then(function(){ renderAlertCards(); })
+            .catch(function(err){ showBanner('Errore: '+err.message, true); });
+        });
+      }
     });
   }
 
@@ -879,6 +959,14 @@
     });
   }
   wireAlertStaticControls();
+
+  (function setupBookmarklet(){
+    var link = document.getElementById('liveBookmarkletLink');
+    if (!link) return;
+    var origin = window.location.origin;
+    var code = "(function(){var s=document.createElement('script');s.src='" + origin + "/live-bookmarklet.js?t='+Date.now();document.body.appendChild(s);})();";
+    link.setAttribute('href', 'javascript:' + code);
+  })();
 
   // ---------- summary ----------
   function renderStats(){

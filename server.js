@@ -4,6 +4,7 @@ const express = require('express');
 const { pool, migrate } = require('./db');
 const telegram = require('./telegram');
 const scheduler = require('./scheduler');
+const liveStrategie = require('./strategie-live');
 
 const app = express();
 app.use(express.json());
@@ -58,8 +59,31 @@ function matchOut(row) {
     startAt: Number(row.start_at),
     notifyMinutes: Number(row.notify_minutes),
     notified: !!row.notified,
-    createdAt: Number(row.created_at)
+    createdAt: Number(row.created_at),
+    liveStrategy: row.live_strategy || '',
+    liveFavorita: row.live_favorita || '',
+    liveAlertSent: !!row.live_alert_sent,
+    liveLastLevel: row.live_last_level || '',
+    liveLastSummary: row.live_last_summary || '',
+    liveLastUpdated: row.live_last_updated === null || row.live_last_updated === undefined ? null : Number(row.live_last_updated)
   };
+}
+function escapeHtmlLite(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+function normTeamName(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+function teamNamesMatch(a, b) {
+  const na = normTeamName(a), nb = normTeamName(b);
+  if (!na || !nb) return false;
+  return na === nb || na.indexOf(nb) !== -1 || nb.indexOf(na) !== -1;
 }
 function alertSettingsOut(row) {
   if (!row) return { notifyMinutes: 10 };
@@ -282,6 +306,23 @@ app.patch('/api/matches/:id', async (req, res) => {
     if (Object.prototype.hasOwnProperty.call(fields, 'notified')) {
       sets.push('notified = $' + (i++)); vals.push(!!fields.notified);
     }
+    if (Object.prototype.hasOwnProperty.call(fields, 'liveStrategy')) {
+      const v = String(fields.liveStrategy || '').trim();
+      sets.push('live_strategy = $' + (i++)); vals.push(v && liveStrategie.STRATEGIE[v] ? v : null);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'liveFavorita')) {
+      const v = String(fields.liveFavorita || '').trim();
+      sets.push('live_favorita = $' + (i++)); vals.push(v === 'casa' || v === 'trasferta' ? v : null);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'liveAlertSent')) {
+      sets.push('live_alert_sent = $' + (i++)); vals.push(!!fields.liveAlertSent);
+      // Riarmare l'avviso azzera anche l'ultimo stato mostrato in dashboard
+      if (!fields.liveAlertSent) {
+        sets.push('live_last_level = $' + (i++)); vals.push(null);
+        sets.push('live_last_summary = $' + (i++)); vals.push(null);
+        sets.push('live_last_updated = $' + (i++)); vals.push(null);
+      }
+    }
     if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
     vals.push(id);
     const { rows } = await pool.query(
@@ -317,6 +358,82 @@ app.post('/api/matches/:id/test-alert', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nell\'invio della prova.' });
+  }
+});
+
+// ---------- segnali live (bookmarklet da FlashScore) ----------
+// Endpoint pubblico con CORS aperto: il bookmarklet gira sul dominio di FlashScore,
+// quindi il browser fa una richiesta cross-origin verso questo server.
+app.options('/api/live-stats', function(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(204);
+});
+
+app.get('/api/live-stats', async (req, res) => {
+  // Usato dal bookmarklet solo per un rapido controllo "sto parlando col server giusto?"
+  res.header('Access-Control-Allow-Origin', '*');
+  res.json({ ok: true });
+});
+
+function numOrNull(v) {
+  const n = Number(v);
+  return v === null || v === undefined || v === '' || isNaN(n) ? null : n;
+}
+
+app.post('/api/live-stats', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const b = req.body || {};
+    const casa = String(b.casa || '').trim();
+    const trasferta = String(b.trasferta || '').trim();
+    if (!casa || !trasferta) return res.status(400).json({ error: 'Squadre mancanti.' });
+
+    const payload = {
+      scoreHome: numOrNull(b.scoreHome),
+      scoreAway: numOrNull(b.scoreAway),
+      xgHome: numOrNull(b.xgHome) || 0,
+      xgAway: numOrNull(b.xgAway) || 0,
+      sotHome: numOrNull(b.sotHome) || 0,
+      sotAway: numOrNull(b.sotAway) || 0,
+      chancesHome: numOrNull(b.chancesHome) || 0,
+      chancesAway: numOrNull(b.chancesAway) || 0
+    };
+
+    const { rows } = await pool.query(
+      `SELECT * FROM matches WHERE live_alert_sent = false AND live_strategy IS NOT NULL`
+    );
+    const match = rows.find(function (r) {
+      return teamNamesMatch(r.casa, casa) && teamNamesMatch(r.trasferta, trasferta);
+    });
+    if (!match) return res.json({ sent: false, reason: 'no-match' });
+
+    const result = liveStrategie.classify(match.live_strategy, payload, match);
+    if (result.error) return res.json({ sent: false, reason: result.error });
+
+    await pool.query(
+      'UPDATE matches SET live_last_level = $1, live_last_summary = $2, live_last_updated = $3 WHERE id = $4',
+      [result.level, result.summary, Date.now(), match.id]
+    );
+
+    if (result.level === 'verde' && result.gateOk) {
+      const league = match.campionato ? ' (' + escapeHtmlLite(match.campionato) + ')' : '';
+      const tipo = match.tipo_giocata ? escapeHtmlLite(match.tipo_giocata) : '—';
+      const punteggio = (payload.scoreHome !== null && payload.scoreAway !== null)
+        ? ('\n📍 Risultato attuale: ' + payload.scoreHome + '-' + payload.scoreAway) : '';
+      const text = '🟢 <b>Segnale LIVE — ' + escapeHtmlLite(result.label) + '</b>' + league + '\n' +
+        escapeHtmlLite(match.casa) + ' - ' + escapeHtmlLite(match.trasferta) + '\n' +
+        '👉 ' + tipo + punteggio + '\n' +
+        '📊 ' + escapeHtmlLite(result.summary);
+      const sentTo = await telegram.broadcast(text);
+      await pool.query('UPDATE matches SET live_alert_sent = true WHERE id = $1', [match.id]);
+      return res.json({ sent: true, sentTo, level: result.level, summary: result.summary, match: { casa: match.casa, trasferta: match.trasferta } });
+    }
+    return res.json({ sent: false, level: result.level, summary: result.summary, matched: { casa: match.casa, trasferta: match.trasferta } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nel controllo delle statistiche live.' });
   }
 });
 
