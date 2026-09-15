@@ -3,184 +3,639 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EasyBet</title>
+<title>EasyBet — Live Match Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0B0A08;
-    --surface:#161310;
-    --surface-2:#1F1A14;
-    --border:#2C2418;
-    --border-strong:#43371F;
-    --text:#F5EFE2;
-    --text-muted:#B4A98F;
-    --text-faint:#7A705C;
-    --gold:#D9B44A;
-    --gold-bright:#F0CD6E;
-    --gold-deep:#8A6D22;
-    --win:#3FBE6B;
-    --win-soft:#12291B;
-    --giallo:#E8C13B;
-    --giallo-soft:#332A0E;
-    --rosso:#E15C4D;
-    --rosso-soft:#331611;
-    --neutro:#9AA1AF;
-    --neutro-soft:#1E2027;
-    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 34px -14px rgba(0,0,0,.8);
+    --bg:#080807;
+    --bg-2:#0d0c0a;
+    --surface:#12110e;
+    --surface-2:#171612;
+    --surface-3:#1c1a15;
+    --border:#2a2419;
+    --border-strong:#493819;
+    --text:#f6f2e9;
+    --text-muted:#b8af9d;
+    --text-faint:#7f7768;
+    --gold:#d4a93a;
+    --gold-bright:#f2d06e;
+    --gold-soft:#4f3a11;
+    --gold-glow:rgba(242,208,110,.20);
+    --green:#24da6e;
+    --green-soft:rgba(36,218,110,.13);
+    --red:#ff4a44;
+    --red-soft:rgba(255,74,68,.12);
+    --yellow:#f1c93d;
+    --yellow-soft:rgba(241,201,61,.12);
+    --neutral:#b6bcc8;
+    --neutral-soft:rgba(182,188,200,.08);
+    --shadow:0 24px 60px rgba(0,0,0,.35);
+    --shadow-strong:0 34px 80px rgba(0,0,0,.50);
+    --radius:22px;
+    --container:min(1360px, calc(100vw - 36px));
   }
-  *{box-sizing:border-box;}
-  body{margin:0;background:radial-gradient(ellipse at top, #17130d 0%, var(--bg) 55%);color:var(--text);font-family:'Sora',ui-sans-serif,system-ui,sans-serif;min-height:100vh;}
-  a{color:inherit;}
-  ::selection{background:var(--gold-deep);color:#fff;}
 
-  .navbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
-  .brand{font-family:'Playfair Display',serif;font-weight:800;font-size:1.4rem;letter-spacing:.02em;color:var(--gold-bright);}
-  .brand span{color:var(--text);}
-  .navlinks{display:flex;gap:22px;font-size:.82rem;color:var(--text-muted);flex-wrap:wrap;}
-  .navlinks a{text-decoration:none;}
-  .navlinks a:hover{color:var(--gold-bright);}
-  .navlinks a.active{color:var(--gold-bright);font-weight:600;}
-  .admin-btn{background:var(--surface);border:1px solid var(--border-strong);color:var(--text-muted);font-size:.76rem;padding:8px 14px;border-radius:999px;text-decoration:none;white-space:nowrap;}
-  .admin-btn:hover{color:var(--gold-bright);border-color:var(--gold-deep);}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Sora',system-ui,-apple-system,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at top center, rgba(212,169,58,.12), transparent 28%),
+      radial-gradient(circle at 50% -10%, rgba(255,255,255,.05), transparent 18%),
+      linear-gradient(180deg, #110f0b 0%, #0a0908 26%, #070707 100%);
+    overflow-x:hidden;
+  }
+  body:before,
+  body:after{
+    content:"";
+    position:fixed;
+    inset:auto;
+    width:34vw;
+    height:34vw;
+    border-radius:50%;
+    pointer-events:none;
+    filter:blur(80px);
+    opacity:.18;
+    z-index:-1;
+  }
+  body:before{left:-10vw; top:8vh; background:rgba(212,169,58,.22);}
+  body:after{right:-14vw; top:20vh; background:rgba(255,217,96,.14);}
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+  .num{font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;}
 
-  .hero{padding:46px 28px 30px;text-align:center;background:linear-gradient(180deg, rgba(217,180,74,.08), transparent 70%);}
-  .hero h1{font-family:'Playfair Display',serif;font-size:2.1rem;margin:0 0 10px;font-weight:800;}
-  .hero h1 .gold{color:var(--gold-bright);}
-  .hero p{color:var(--text-muted);font-size:.92rem;max-width:520px;margin:0 auto;}
+  .shell{width:var(--container); margin:0 auto;}
 
-  .wrap{max-width:1100px;margin:0 auto;padding:0 20px 70px;}
-  .section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:28px 0 16px;}
-  .section-head h2{font-size:1.05rem;margin:0;letter-spacing:.03em;text-transform:uppercase;color:var(--text);}
-  .section-head h2 small{display:block;text-transform:none;letter-spacing:0;color:var(--text-faint);font-size:.74rem;font-weight:400;margin-top:2px;}
-  .refresh-note{font-size:.7rem;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;}
+  .navbar-wrap{
+    position:sticky; top:0; z-index:50;
+    backdrop-filter:blur(12px);
+    background:linear-gradient(180deg, rgba(8,8,7,.92), rgba(8,8,7,.72));
+    border-bottom:1px solid rgba(242,208,110,.10);
+  }
+  .navbar{
+    width:var(--container);
+    margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:18px; padding:14px 0;
+  }
+  .brand{
+    display:flex; align-items:center; gap:14px; min-width:0;
+  }
+  .brand-mark{
+    width:46px; height:46px; border-radius:14px;
+    display:grid; place-items:center;
+    background:linear-gradient(180deg, rgba(242,208,110,.22), rgba(94,67,18,.40));
+    border:1px solid rgba(242,208,110,.24);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 12px 24px rgba(0,0,0,.28);
+    color:var(--gold-bright);
+    font-weight:800; letter-spacing:.02em; font-size:1rem;
+  }
+  .brand-copy{display:flex; flex-direction:column; min-width:0;}
+  .brand-copy strong{
+    font-family:'Playfair Display',serif;
+    font-size:1.55rem; line-height:1;
+    color:#fff;
+    font-weight:800;
+  }
+  .brand-copy strong span{color:var(--gold-bright);}
+  .brand-copy small{
+    color:var(--text-faint); font-size:.65rem; letter-spacing:.26em; text-transform:uppercase;
+    margin-top:3px;
+  }
+  .navlinks{
+    display:flex; align-items:center; justify-content:center; gap:20px; flex:1; flex-wrap:wrap;
+  }
+  .navlinks a{
+    font-size:.84rem; color:var(--text-muted); font-weight:600; transition:.18s ease;
+    position:relative; padding:8px 0;
+  }
+  .navlinks a:after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:2px;
+    transform:scaleX(0); transform-origin:center;
+    background:linear-gradient(90deg, transparent, var(--gold-bright), transparent);
+    transition:transform .18s ease;
+  }
+  .navlinks a:hover,
+  .navlinks a.active{color:#fff;}
+  .navlinks a:hover:after,
+  .navlinks a.active:after{transform:scaleX(1);}
+  .nav-actions{display:flex; align-items:center; gap:10px;}
+  .nav-btn{
+    border-radius:14px; padding:11px 18px; font-size:.82rem; font-weight:700;
+    border:1px solid rgba(242,208,110,.24);
+    background:rgba(255,255,255,.02); color:#fff;
+  }
+  .nav-btn.primary{
+    background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color:#1b1408; border-color:#d4a93a;
+    box-shadow:0 10px 28px rgba(212,169,58,.22);
+  }
+  .nav-btn:hover{transform:translateY(-1px);}
 
-  .pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
-  .pill{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.76rem;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;}
-  .pill.active{background:var(--surface-2);border-color:var(--gold-deep);color:var(--gold-bright);}
+  .hero{padding:26px 0 14px;}
+  .hero-panel{
+    position:relative; min-height:480px; overflow:hidden;
+    border-radius:28px; border:1px solid rgba(242,208,110,.20);
+    box-shadow:var(--shadow-strong);
+    background:
+      linear-gradient(90deg, rgba(6,6,6,.92) 0%, rgba(6,6,6,.78) 34%, rgba(6,6,6,.36) 62%, rgba(6,6,6,.60) 100%),
+      url('/assets/easybet-hero-banner.png') center/cover no-repeat;
+  }
+  .hero-panel:before{
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(circle at 72% 50%, rgba(242,208,110,.18), transparent 24%);
+    pointer-events:none;
+  }
+  .hero-grid{
+    position:relative; z-index:1;
+    min-height:480px; padding:42px;
+    display:grid; grid-template-columns:1.05fr .95fr; gap:26px; align-items:center;
+  }
+  .hero-copy{max-width:520px;}
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:10px;
+    font-size:.78rem; text-transform:uppercase; letter-spacing:.34em;
+    color:var(--gold-bright); font-weight:700; margin-bottom:16px;
+  }
+  .eyebrow:before{
+    content:""; width:34px; height:1px; background:linear-gradient(90deg, transparent, var(--gold-bright));
+  }
+  .hero-copy h1{
+    margin:0 0 12px; line-height:.96;
+    font-size:clamp(2.8rem, 5vw, 5.1rem);
+    font-weight:800; text-transform:uppercase; letter-spacing:-.03em;
+  }
+  .hero-copy h1 span{
+    display:block;
+    background:linear-gradient(180deg, #fff 0%, #f5d67c 68%, #d3a532 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero-copy p{
+    margin:0 0 26px; max-width:520px;
+    font-size:.97rem; line-height:1.72; color:var(--text-muted);
+  }
+  .hero-actions{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:28px;}
+  .cta-btn{
+    display:inline-flex; align-items:center; gap:10px; padding:16px 22px; border-radius:16px;
+    font-weight:800; letter-spacing:.01em; font-size:.95rem;
+    border:1px solid rgba(242,208,110,.32); transition:.18s ease;
+  }
+  .cta-btn.primary{
+    background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#1a1408;
+    box-shadow:0 12px 26px rgba(212,169,58,.24);
+  }
+  .cta-btn.secondary{
+    background:rgba(255,255,255,.03); color:#fff;
+  }
+  .cta-btn:hover{transform:translateY(-1px);}
+  .hero-features{display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px;}
+  .hero-feature{
+    background:linear-gradient(180deg, rgba(18,17,14,.86), rgba(18,17,14,.72));
+    border:1px solid rgba(242,208,110,.14);
+    border-radius:18px; padding:14px 12px;
+    min-height:92px;
+  }
+  .hero-feature .icon{font-size:1.35rem; line-height:1; margin-bottom:10px; color:var(--gold-bright);}
+  .hero-feature strong{display:block; font-size:.84rem; line-height:1.35;}
+  .hero-feature span{display:block; font-size:.68rem; line-height:1.4; color:var(--text-faint); margin-top:4px;}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
-  .card{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 115%, rgba(154,161,175,.08), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);border:1px solid var(--border);border-radius:18px;padding:18px 18px 0;box-shadow:var(--shadow);}
-  .card.esito-entrata_vinta{border-color:var(--win);box-shadow:0 0 0 1px var(--win) inset, 0 0 26px -6px rgba(63,190,107,.55), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(63,190,107,.14), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
-  .card.esito-entrata_persa{border-color:var(--rosso);box-shadow:0 0 0 1px var(--rosso) inset, 0 0 26px -6px rgba(225,92,77,.5), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(225,92,77,.13), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
-  .card.esito-non_entrata{border-color:var(--giallo);box-shadow:0 0 0 1px var(--giallo) inset, 0 0 26px -6px rgba(232,193,59,.45), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(232,193,59,.12), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
+  .hero-visual{display:flex; justify-content:flex-end; align-items:center;}
+  .hero-badge{
+    width:min(500px, 100%); margin-left:auto; padding:20px;
+    border-radius:26px;
+    background:linear-gradient(180deg, rgba(17,17,15,.18), rgba(17,17,15,.48));
+    border:1px solid rgba(255,255,255,.06);
+    backdrop-filter:blur(3px);
+    box-shadow:0 30px 70px rgba(0,0,0,.38);
+  }
+  .hero-badge img{
+    width:100%; object-fit:contain; filter:drop-shadow(0 28px 50px rgba(0,0,0,.46));
+  }
 
-  .card-top2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;}
-  .league-badge{display:flex;align-items:center;gap:7px;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;color:var(--gold-bright);font-weight:700;min-width:0;}
-  .league-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .league-badge .ico{width:15px;height:15px;color:var(--gold);flex:none;}
-  .kickoff{display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--text-muted);flex:none;}
-  .kickoff .ico{width:13px;height:13px;flex:none;}
+  .overview{
+    margin-top:18px; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:16px;
+  }
+  .mini-stat{
+    background:linear-gradient(180deg, rgba(21,19,16,.96), rgba(13,12,10,.92));
+    border:1px solid rgba(242,208,110,.12);
+    border-radius:20px; padding:18px 18px;
+    box-shadow:var(--shadow);
+  }
+  .mini-stat .label{font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);}
+  .mini-stat .value{margin-top:8px; font-size:1.8rem; font-weight:800; line-height:1;}
+  .mini-stat .sub{margin-top:5px; font-size:.74rem; color:var(--text-muted);}
+  .mini-stat.win .value{color:var(--green);}
+  .mini-stat.loss .value{color:var(--red);}
+  .mini-stat.warn .value{color:var(--yellow);}
+  .mini-stat.live .value{color:var(--gold-bright);}
 
-  .matchup{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:6px;margin-bottom:16px;}
-  .side{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;min-width:0;}
-  .side-label{font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);font-weight:700;}
-  .crest{width:30px;height:30px;border-radius:50%;object-fit:contain;background:var(--surface-2);flex:none;}
-  .crest.placeholder{display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:var(--text-faint);border:1px solid var(--border);}
-  .crest.crest-lg{width:58px;height:58px;border:2px solid var(--border-strong);}
-  .crest.placeholder.crest-lg{font-size:1.05rem;font-weight:800;color:var(--text-muted);}
-  .side-name{font-size:.8rem;font-weight:700;max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .vs-mid{display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-weight:800;font-size:.7rem;letter-spacing:.05em;padding-top:22px;}
+  .section{padding:34px 0 72px;}
+  .section-head{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .section-title{max-width:740px;}
+  .section-title .overline{
+    display:inline-flex; align-items:center; gap:10px; margin-bottom:10px;
+    font-size:.78rem; font-weight:700; color:var(--gold-bright); text-transform:uppercase; letter-spacing:.24em;
+  }
+  .section-title .overline:before{
+    content:""; width:34px; height:1px; background:linear-gradient(90deg, var(--gold-bright), transparent);
+  }
+  .section-title h2{
+    margin:0; font-size:clamp(1.65rem, 2.8vw, 2.3rem); font-weight:800; line-height:1.06;
+  }
+  .section-title p{margin:10px 0 0; color:var(--text-muted); max-width:720px; line-height:1.6;}
+  .refresh-note{font-size:.76rem; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;}
 
-  .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-  .stat{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;min-width:0;}
-  .stat .ico{width:16px;height:16px;color:var(--gold);flex:none;}
-  .stat-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
-  .stat-label{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);}
-  .stat-value{font-size:.8rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-bottom:20px;
+  }
+  .legend{display:flex; flex-wrap:wrap; gap:10px;}
+  .legend-chip,
+  .pill{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:12px 16px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.02);
+    color:var(--text-muted); font-size:.84rem; font-weight:600;
+  }
+  .legend-dot,.pill-dot{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .legend .win .legend-dot,.pill[data-f="entrata_vinta"] .pill-dot{background:var(--green);}
+  .legend .loss .legend-dot,.pill[data-f="entrata_persa"] .pill-dot{background:var(--red);}
+  .legend .skip .legend-dot,.pill[data-f="non_entrata"] .pill-dot{background:var(--yellow);}
+  .legend .wait .legend-dot,.pill[data-f=""] .pill-dot{background:var(--neutral);}
 
-  .esito-banner{display:flex;align-items:center;justify-content:center;gap:9px;padding:13px 10px;margin:0 0;}
-  .esito-banner .ico{width:18px;height:18px;flex:none;}
-  .esito-banner-text{display:flex;flex-direction:column;align-items:center;line-height:1.3;}
-  .esito-tag{font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;opacity:.75;}
-  .esito-value{font-size:.84rem;font-weight:800;letter-spacing:.02em;text-transform:uppercase;}
-  .esito-banner.entrata_vinta{background:linear-gradient(180deg, rgba(63,190,107,.24), rgba(63,190,107,.07));color:var(--win);}
-  .esito-banner.entrata_persa{background:linear-gradient(180deg, rgba(225,92,77,.24), rgba(225,92,77,.07));color:var(--rosso);}
-  .esito-banner.non_entrata{background:linear-gradient(180deg, rgba(232,193,59,.24), rgba(232,193,59,.07));color:var(--giallo);}
-  .esito-banner.attesa{background:linear-gradient(180deg, rgba(154,161,175,.16), rgba(154,161,175,.05));color:var(--neutro);}
-  .empty{grid-column:1/-1;color:var(--text-faint);font-style:italic;padding:50px 0;text-align:center;}
+  .pills{display:flex; flex-wrap:wrap; gap:10px;}
+  .pill{cursor:pointer; transition:.18s ease;}
+  .pill:hover{border-color:rgba(242,208,110,.22); color:#fff;}
+  .pill.active{
+    color:#120f08; background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+    border-color:#d9b44a; box-shadow:0 12px 28px rgba(212,169,58,.18);
+  }
+  .pill.active .pill-dot{background:#1e180d !important;}
 
-  @media(max-width:560px){ .navlinks{display:none;} }
+  .grid{
+    display:grid; gap:20px;
+    grid-template-columns:repeat(auto-fit, minmax(290px, 1fr));
+  }
+  .card{
+    position:relative; overflow:hidden;
+    border-radius:26px; padding:18px;
+    background:
+      linear-gradient(180deg, rgba(24,23,18,.97), rgba(13,12,10,.98)),
+      radial-gradient(circle at top right, rgba(242,208,110,.08), transparent 30%);
+    border:1px solid rgba(242,208,110,.12);
+    box-shadow:var(--shadow);
+    min-height:474px;
+    display:flex; flex-direction:column; gap:16px;
+    isolation:isolate;
+  }
+  .card:before{
+    content:""; position:absolute; inset:auto 0 0 0; height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+    opacity:.8;
+  }
+  .card:after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.03), transparent 26%, transparent 74%, rgba(255,255,255,.02));
+    z-index:-1;
+  }
+  .card.esito-entrata_vinta{border-color:rgba(36,218,110,.58); box-shadow:0 0 0 1px rgba(36,218,110,.16) inset, 0 20px 50px rgba(0,0,0,.34), 0 0 28px rgba(36,218,110,.12);}
+  .card.esito-entrata_persa{border-color:rgba(255,74,68,.56); box-shadow:0 0 0 1px rgba(255,74,68,.16) inset, 0 20px 50px rgba(0,0,0,.34), 0 0 28px rgba(255,74,68,.10);}
+  .card.esito-non_entrata{border-color:rgba(241,201,61,.56); box-shadow:0 0 0 1px rgba(241,201,61,.16) inset, 0 20px 50px rgba(0,0,0,.34), 0 0 28px rgba(241,201,61,.10);}
+
+  .card-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .league-badge{
+    display:inline-flex; align-items:center; gap:10px; max-width:70%;
+    padding:11px 14px; border-radius:16px;
+    background:rgba(242,208,110,.08); border:1px solid rgba(242,208,110,.12);
+  }
+  .league-badge .league-icon{
+    width:38px; height:38px; border-radius:12px; display:grid; place-items:center;
+    background:linear-gradient(180deg, rgba(242,208,110,.24), rgba(87,60,14,.32));
+    color:var(--gold-bright); font-size:1rem;
+    border:1px solid rgba(242,208,110,.16);
+  }
+  .league-badge .league-copy{min-width:0;}
+  .league-badge .league-copy small{display:block; font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-faint);}
+  .league-badge .league-copy strong{display:block; font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .time-box{
+    text-align:right; padding:10px 12px; border-radius:16px;
+    background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); min-width:88px;
+  }
+  .time-box small{display:block; font-size:.62rem; text-transform:uppercase; letter-spacing:.18em; color:var(--text-faint);}
+  .time-box strong{display:block; margin-top:6px; font-size:1.15rem; line-height:1;}
+  .date-chip{
+    align-self:flex-start; margin-top:-4px; font-size:.72rem; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;
+  }
+
+  .matchup{
+    position:relative;
+    display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center;
+    padding:18px 14px;
+    border-radius:22px;
+    background:
+      linear-gradient(180deg, rgba(14,14,12,.50), rgba(14,14,12,.74)),
+      radial-gradient(circle at center, rgba(242,208,110,.12), transparent 50%);
+    border:1px solid rgba(255,255,255,.06);
+    min-height:180px;
+  }
+  .matchup:before{
+    content:""; position:absolute; inset:0;
+    background:
+      linear-gradient(180deg, transparent 48%, rgba(242,208,110,.06) 49%, transparent 50%),
+      radial-gradient(circle at center, rgba(255,255,255,.03) 0, transparent 20%),
+      radial-gradient(circle at 50% 100%, rgba(36,116,35,.24), transparent 54%);
+    pointer-events:none; opacity:.65;
+  }
+  .team{
+    position:relative; z-index:1;
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px;
+  }
+  .team .role{font-size:.70rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-faint);}
+  .crest-wrap{
+    width:96px; height:96px; border-radius:24px; display:grid; place-items:center;
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.18));
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .crest{
+    width:74px; height:74px; object-fit:contain; filter:drop-shadow(0 12px 24px rgba(0,0,0,.30));
+  }
+  .crest.placeholder{
+    display:grid; place-items:center;
+    color:var(--text-muted); font-size:1.2rem; font-weight:800;
+    background:rgba(255,255,255,.02); border-radius:18px;
+  }
+  .team-name{font-size:1.08rem; font-weight:800; line-height:1.18;}
+  .vs-pill{
+    position:relative; z-index:1;
+    width:54px; height:54px; border-radius:50%; display:grid; place-items:center;
+    font-weight:800; font-size:1rem; letter-spacing:.06em;
+    color:#1a1408; background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+    box-shadow:0 10px 20px rgba(212,169,58,.24);
+  }
+
+  .info-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .info-box{
+    padding:14px 14px; border-radius:18px;
+    background:var(--surface-2); border:1px solid rgba(255,255,255,.06);
+    min-height:92px;
+  }
+  .info-box label{
+    display:flex; align-items:center; gap:8px; font-size:.70rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);
+  }
+  .info-box label .mini-icon{font-size:1rem; color:var(--gold-bright);}
+  .info-box strong{
+    display:block; margin-top:10px; font-size:1.36rem; line-height:1.12;
+  }
+  .info-box.strategy strong{font-size:1.05rem; line-height:1.34;}
+  .info-box small{display:block; margin-top:6px; color:var(--text-muted); font-size:.74rem;}
+
+  .card-footer{margin-top:auto; display:flex; flex-direction:column; gap:12px;}
+  .status-pill{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:16px 14px; border-radius:18px;
+    font-size:1rem; font-weight:800; text-transform:uppercase; letter-spacing:.02em;
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .status-pill .status-icon{font-size:1.1rem;}
+  .status-pill.entrata_vinta{background:var(--green-soft); color:var(--green); border-color:rgba(36,218,110,.28);}
+  .status-pill.entrata_persa{background:var(--red-soft); color:var(--red); border-color:rgba(255,74,68,.28);}
+  .status-pill.non_entrata{background:var(--yellow-soft); color:var(--yellow); border-color:rgba(241,201,61,.28);}
+  .status-pill.attesa{background:var(--neutral-soft); color:var(--neutral); border-color:rgba(182,188,200,.20);}
+  .extra-note{display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--text-faint); font-size:.75rem;}
+  .extra-note .mono{font-family:'IBM Plex Mono',monospace;}
+  .empty{
+    grid-column:1/-1; text-align:center; padding:80px 20px; border-radius:24px;
+    background:rgba(255,255,255,.02); border:1px dashed rgba(242,208,110,.18); color:var(--text-faint);
+  }
+
+  @media (max-width: 1180px){
+    .hero-grid{grid-template-columns:1fr;}
+    .hero-visual{justify-content:center;}
+    .hero-badge{max-width:420px;}
+  }
+  @media (max-width: 980px){
+    .overview{grid-template-columns:repeat(2, minmax(0, 1fr));}
+    .hero-features{grid-template-columns:repeat(2, minmax(0, 1fr));}
+    .navlinks{display:none;}
+  }
+  @media (max-width: 760px){
+    :root{--container:min(100vw - 24px, 100vw - 24px);}
+    .navbar{padding:12px 0;}
+    .brand-mark{width:42px; height:42px; border-radius:12px;}
+    .brand-copy strong{font-size:1.36rem;}
+    .nav-actions{display:none;}
+    .hero{padding-top:18px;}
+    .hero-panel{min-height:auto;}
+    .hero-grid{min-height:auto; padding:26px 18px 20px;}
+    .hero-copy h1{font-size:clamp(2.4rem, 12vw, 3.6rem);}
+    .hero-features{grid-template-columns:1fr 1fr;}
+    .section{padding-top:26px;}
+    .toolbar{flex-direction:column; align-items:flex-start;}
+    .overview{grid-template-columns:1fr 1fr;}
+    .grid{grid-template-columns:1fr;}
+  }
+  @media (max-width: 520px){
+    .hero-actions{flex-direction:column; align-items:stretch;}
+    .hero-feature{min-height:unset;}
+    .hero-features,.overview,.info-grid{grid-template-columns:1fr;}
+    .league-badge{max-width:100%;}
+    .matchup{grid-template-columns:1fr; gap:16px; padding:18px 14px;}
+    .vs-pill{margin:0 auto;}
+    .card{min-height:unset;}
+    .time-box{min-width:unset;}
+    .legend,.pills{width:100%;}
+    .pill,.legend-chip{flex:1 1 calc(50% - 10px); justify-content:center;}
+  }
 </style>
 </head>
 <body>
 
-<div class="navbar">
-  <div class="brand">Easy<span>Bet</span></div>
-  <div class="navlinks">
-    <a href="#" class="active">Home</a>
-    <a href="#">Pronostici</a>
-    <a href="#">Live</a>
-    <a href="#">Statistiche</a>
-    <a href="#">Strategie</a>
-    <a href="#">Consigli</a>
+<div class="navbar-wrap">
+  <div class="navbar">
+    <a class="brand" href="/easybet.html" aria-label="EasyBet home">
+      <div class="brand-mark">EB</div>
+      <div class="brand-copy">
+        <strong>Easy<span>Bet</span></strong>
+        <small>Play Smarter</small>
+      </div>
+    </a>
+
+    <nav class="navlinks" aria-label="Navigazione principale">
+      <a href="#" class="active">Home</a>
+      <a href="#partite">Pronostici</a>
+      <a href="#partite">Live</a>
+      <a href="#partite">Statistiche</a>
+      <a href="#partite">Strategie</a>
+      <a href="#partite">Consigli</a>
+    </nav>
+
+    <div class="nav-actions">
+      <a class="nav-btn" href="/easybet-admin.html">Admin</a>
+      <a class="nav-btn primary" href="#partite">Vai alle partite</a>
+    </div>
   </div>
-  <a class="admin-btn" href="/easybet-admin.html">🔒 Admin</a>
 </div>
 
-<div class="hero">
-  <h1>Le mie <span class="gold">giocate</span>.</h1>
-  <p>Partite selezionate a mano, con quota d'ingresso ed esito.</p>
-</div>
+<section class="hero">
+  <div class="shell">
+    <div class="hero-panel">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">Play Smarter</div>
+          <h1>Live Match <span>Tracker</span></h1>
+          <p>
+            Dashboard EasyBet in stile premium: partite iniziate, campionato, ora, casa-trasferta con stemmi,
+            quota di ingresso, strategia da seguire ed esito evidenziato con colori chiari e immediati.
+          </p>
+          <div class="hero-actions">
+            <a class="cta-btn primary" href="#partite">Scopri i pronostici →</a>
+            <a class="cta-btn secondary" href="/easybet-admin.html">Apri area admin</a>
+          </div>
+          <div class="hero-features">
+            <div class="hero-feature">
+              <div class="icon">📊</div>
+              <strong>Statistiche avanzate</strong>
+              <span>Monitoraggio live e riepilogo immediato.</span>
+            </div>
+            <div class="hero-feature">
+              <div class="icon">🎯</div>
+              <strong>Pronostici affidabili</strong>
+              <span>Quota ingresso e strategia in primo piano.</span>
+            </div>
+            <div class="hero-feature">
+              <div class="icon">📡</div>
+              <strong>Live in tempo reale</strong>
+              <span>Colori chiari per esito vinto, perso o saltato.</span>
+            </div>
+            <div class="hero-feature">
+              <div class="icon">🧠</div>
+              <strong>Strategie semplici</strong>
+              <span>Layout pensato per una lettura rapidissima.</span>
+            </div>
+          </div>
+        </div>
 
-<div class="wrap">
-  <div class="section-head">
-    <h2>Partite<small>Aggiornato automaticamente.</small></h2>
-    <div class="refresh-note" id="refreshNote">aggiornamento…</div>
+        <div class="hero-visual">
+          <div class="hero-badge">
+            <img src="/assets/easybet-badge.png" alt="Logo EasyBet premium">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overview">
+      <div class="mini-stat live">
+        <div class="label">Partite totali</div>
+        <div class="value num" id="statTotali">0</div>
+        <div class="sub">Selezioni visibili in pagina</div>
+      </div>
+      <div class="mini-stat win">
+        <div class="label">Entrate e vinte</div>
+        <div class="value num" id="statVinte">0</div>
+        <div class="sub">Righe evidenziate in verde</div>
+      </div>
+      <div class="mini-stat loss">
+        <div class="label">Entrate e perse</div>
+        <div class="value num" id="statPerse">0</div>
+        <div class="sub">Righe evidenziate in rosso</div>
+      </div>
+      <div class="mini-stat warn">
+        <div class="label">Non entrate</div>
+        <div class="value num" id="statSaltate">0</div>
+        <div class="sub">Righe evidenziate in giallo</div>
+      </div>
+    </div>
   </div>
+</section>
 
-  <div class="pills" id="pills">
-    <button class="pill active" data-f="tutte">Tutte</button>
-    <button class="pill" data-f="entrata_vinta">Vinte</button>
-    <button class="pill" data-f="entrata_persa">Perse</button>
-    <button class="pill" data-f="non_entrata">Non entrate</button>
-    <button class="pill" data-f="">In attesa</button>
+<section class="section" id="partite">
+  <div class="shell">
+    <div class="section-head">
+      <div class="section-title">
+        <div class="overline">Partite iniziate</div>
+        <h2>Le giocate live, sotto forma di tessere verticali premium.</h2>
+        <p>
+          Ogni tessera mostra campionato, ora, squadre con stemmi, quota di ingresso e strategia.
+          Il colore finale ti fa capire subito se siamo entrati e abbiamo vinto, se abbiamo perso dopo l’ingresso,
+          oppure se la quota non ci ha permesso di entrare.
+        </p>
+      </div>
+      <div class="refresh-note" id="refreshNote">aggiornamento…</div>
+    </div>
+
+    <div class="toolbar">
+      <div class="legend">
+        <div class="legend-chip win"><span class="legend-dot"></span> Entrati e vinti</div>
+        <div class="legend-chip loss"><span class="legend-dot"></span> Entrati e persi</div>
+        <div class="legend-chip skip"><span class="legend-dot"></span> Non entrati</div>
+        <div class="legend-chip wait"><span class="legend-dot"></span> In attesa</div>
+      </div>
+
+      <div class="pills" id="pills">
+        <button class="pill active" data-f="tutte"><span class="pill-dot"></span> Tutte</button>
+        <button class="pill" data-f="entrata_vinta"><span class="pill-dot"></span> Vinte</button>
+        <button class="pill" data-f="entrata_persa"><span class="pill-dot"></span> Perse</button>
+        <button class="pill" data-f="non_entrata"><span class="pill-dot"></span> Non entrate</button>
+        <button class="pill" data-f=""><span class="pill-dot"></span> In attesa</button>
+      </div>
+    </div>
+
+    <div class="grid" id="grid">
+      <div class="empty">Caricamento in corso…</div>
+    </div>
   </div>
-
-  <div class="grid" id="grid"><div class="empty">Caricamento…</div></div>
-</div>
+</section>
 
 <script>
 (function(){
   var ESITO_LABEL = {
-    entrata_vinta: 'Entrata • Vinta',
-    entrata_persa: 'Entrata • Persa',
-    non_entrata: 'Non entrata'
+    entrata_vinta: 'Entrati • Vinta',
+    entrata_persa: 'Entrati • Persa',
+    non_entrata: 'Non entrati'
+  };
+  var ESITO_ICON = {
+    entrata_vinta: '🏆',
+    entrata_persa: '✖',
+    non_entrata: '⏺'
   };
 
   var crestCache = {};
   var matches = [];
   var currentFilter = 'tutte';
 
-  var ICON_CLOCK = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
-  var ICON_SHIELD = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"/></svg>';
-  var ICON_CHART = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M12 20V4M20 20v-7"/></svg>';
-  var ICON_TARGET = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg>';
-  var ICON_TROPHY = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 01-10 0V4z"/><path d="M7 5H4v1a4 4 0 004 4M17 5h3v1a4 4 0 01-4 4"/></svg>';
-  var ICON_HOURGLASS = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 5.5 5 9s-5 4-5 9M17 3c0 5-5 5.5-5 9s5 4 5 9"/></svg>';
-
   function esc(s){
-    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 
   function initials(name){
-    var parts = String(name||'').trim().split(/\s+/);
-    var s = (parts[0]||'')[0] || '?';
-    return s.toUpperCase();
+    var parts = String(name || '').trim().split(/\s+/);
+    var a = (parts[0] || '')[0] || '?';
+    var b = parts.length > 1 ? (parts[1] || '')[0] || '' : '';
+    return (a + b).toUpperCase();
   }
 
-  function crestImg(name, campionato, size){
+  function crestImg(name, campionato){
     var id = 'crest-' + Math.random().toString(36).slice(2);
     setTimeout(function(){ loadCrest(name, campionato, id); }, 0);
-    var cls = 'crest placeholder' + (size==='lg' ? ' crest-lg' : '');
-    return '<span class="'+cls+'" id="'+id+'">'+esc(initials(name))+'</span>';
+    return '<span class="crest-wrap"><span class="crest placeholder" id="'+id+'">'+esc(initials(name))+'</span></span>';
   }
 
   function loadCrest(name, campionato, id){
-    if (!String(name||'').trim()) return;
-    // Il campionato (es. "Iceland: Besta deild") disambigua nomi ambigui come "Fram",
-    // che esistono in più paesi — evita di mostrare lo stemma di un club omonimo sbagliato.
-    var key = String(name||'').trim().toLowerCase() + '|' + String(campionato||'').trim().toLowerCase();
+    if (!String(name || '').trim()) return;
+    var key = String(name || '').trim().toLowerCase() + '|' + String(campionato || '').trim().toLowerCase();
     if (crestCache[key] !== undefined){ applyCrest(id, crestCache[key]); return; }
     var url = '/api/team-crest?name=' + encodeURIComponent(name) + (campionato ? '&country=' + encodeURIComponent(campionato) : '');
     fetch(url)
@@ -196,74 +651,134 @@
     var el = document.getElementById(id);
     if (!el || !url) return;
     var img = document.createElement('img');
-    img.className = el.className.replace(/\bplaceholder\b/,'').replace(/\s+/g,' ').trim();
+    img.className = 'crest';
     img.src = url;
     img.alt = '';
     el.replaceWith(img);
   }
 
-  function fmtWhen(m){
-    var d = new Date(Number(m.startAt));
-    var dd = (m.data || d.toLocaleDateString('it-IT'));
-    var oo = (m.ora || d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}));
-    return dd + ' ' + oo;
+  function safeDate(value){
+    var d = new Date(Number(value));
+    return isNaN(d.getTime()) ? null : d;
   }
 
-  function matchesFilter(m){
+  function fmtDate(m){
+    if (m.data) return m.data;
+    var d = safeDate(m.startAt);
+    return d ? d.toLocaleDateString('it-IT') : '—';
+  }
+
+  function fmtTime(m){
+    if (m.ora) return m.ora;
+    var d = safeDate(m.startAt);
+    return d ? d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}) : '—';
+  }
+
+  function filterMatch(m){
     if (currentFilter === 'tutte') return true;
     return (m.esitoManuale || '') === currentFilter;
   }
 
+  function updateStats(){
+    var total = matches.length;
+    var wins = 0, losses = 0, skips = 0;
+    matches.forEach(function(m){
+      if (m.esitoManuale === 'entrata_vinta') wins += 1;
+      else if (m.esitoManuale === 'entrata_persa') losses += 1;
+      else if (m.esitoManuale === 'non_entrata') skips += 1;
+    });
+    document.getElementById('statTotali').textContent = total;
+    document.getElementById('statVinte').textContent = wins;
+    document.getElementById('statPerse').textContent = losses;
+    document.getElementById('statSaltate').textContent = skips;
+  }
+
   function render(){
     var grid = document.getElementById('grid');
-    var list = matches.filter(matchesFilter);
+    var list = matches.filter(filterMatch);
     if (!list.length){
-      grid.innerHTML = '<div class="empty">Nessuna partita in questa vista.</div>';
+      grid.innerHTML = '<div class="empty">Nessuna partita disponibile in questa vista.</div>';
       return;
     }
+
     grid.innerHTML = list.map(function(m){
       var esito = m.esitoManuale || '';
-      var cls = 'card' + (esito ? ' esito-'+esito : '');
-      var bannerCls = esito ? esito : 'attesa';
-      var bannerValue = esito ? ESITO_LABEL[esito] : 'In attesa';
-      var bannerIcon = esito ? ICON_TROPHY : ICON_HOURGLASS;
-      return '<div class="'+cls+'">'+
-        '<div class="card-top2">'+
-          '<div class="league-badge">'+ICON_SHIELD+'<span>'+esc(m.campionato||'—')+'</span></div>'+
-          '<div class="kickoff">'+ICON_CLOCK+'<span>'+esc(fmtWhen(m))+'</span></div>'+
-        '</div>'+
-        '<div class="matchup">'+
-          '<div class="side">'+
-            '<div class="side-label">Casa</div>'+
-            crestImg(m.casa, m.campionato, 'lg')+
-            '<div class="side-name">'+esc(m.casa)+'</div>'+
-          '</div>'+
-          '<div class="vs-mid">VS</div>'+
-          '<div class="side">'+
-            '<div class="side-label">Trasferta</div>'+
-            crestImg(m.trasferta, m.campionato, 'lg')+
-            '<div class="side-name">'+esc(m.trasferta)+'</div>'+
-          '</div>'+
-        '</div>'+
-        '<div class="stats-row">'+
-          '<div class="stat">'+ICON_CHART+'<div class="stat-text"><span class="stat-label">Quota ingresso</span><span class="stat-value">'+esc(m.quotaIngresso||'—')+'</span></div></div>'+
-          '<div class="stat">'+ICON_TARGET+'<div class="stat-text"><span class="stat-label">Strategia</span><span class="stat-value">'+esc(m.tipoGiocata||'—')+'</span></div></div>'+
-        '</div>'+
-        '<div class="esito-banner '+bannerCls+'">'+bannerIcon+
-          '<div class="esito-banner-text"><span class="esito-tag">Esito</span><span class="esito-value">'+esc(bannerValue)+'</span></div>'+
-        '</div>'+
-      '</div>';
+      var cardCls = 'card' + (esito ? ' esito-' + esito : '');
+      var statusCls = esito ? esito : 'attesa';
+      var statusLabel = esito ? ESITO_LABEL[esito] : 'In attesa';
+      var statusIcon = esito ? ESITO_ICON[esito] : '⏳';
+      var quota = m.quotaIngresso ? esc(m.quotaIngresso) : '—';
+      var strategia = m.tipoGiocata ? esc(m.tipoGiocata) : 'Da definire';
+      var campionato = m.campionato ? esc(m.campionato) : 'Campionato';
+      var casa = esc(m.casa || 'Squadra casa');
+      var trasferta = esc(m.trasferta || 'Squadra trasferta');
+      return '' +
+        '<article class="' + cardCls + '">' +
+          '<div class="card-head">' +
+            '<div class="league-badge">' +
+              '<div class="league-icon">⚽</div>' +
+              '<div class="league-copy">' +
+                '<small>Campionato</small>' +
+                '<strong title="' + campionato + '">' + campionato + '</strong>' +
+              '</div>' +
+            '</div>' +
+            '<div class="time-box">' +
+              '<small>Ora</small>' +
+              '<strong class="num">' + esc(fmtTime(m)) + '</strong>' +
+            '</div>' +
+          '</div>' +
+          '<div class="date-chip num">' + esc(fmtDate(m)) + '</div>' +
+          '<div class="matchup">' +
+            '<div class="team">' +
+              '<div class="role">Casa</div>' +
+              crestImg(m.casa, m.campionato) +
+              '<div class="team-name">' + casa + '</div>' +
+            '</div>' +
+            '<div class="vs-pill">VS</div>' +
+            '<div class="team">' +
+              '<div class="role">Trasferta</div>' +
+              crestImg(m.trasferta, m.campionato) +
+              '<div class="team-name">' + trasferta + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="info-grid">' +
+            '<div class="info-box">' +
+              '<label><span class="mini-icon">📈</span> Quota ingresso</label>' +
+              '<strong class="num">' + quota + '</strong>' +
+              '<small>Ingresso previsto dalla strategia</small>' +
+            '</div>' +
+            '<div class="info-box strategy">' +
+              '<label><span class="mini-icon">🎯</span> Strategia</label>' +
+              '<strong>' + strategia + '</strong>' +
+              '<small>Linea operativa da seguire</small>' +
+            '</div>' +
+          '</div>' +
+          '<div class="card-footer">' +
+            '<div class="status-pill ' + statusCls + '">' +
+              '<span class="status-icon">' + statusIcon + '</span>' +
+              '<span>' + esc(statusLabel) + '</span>' +
+            '</div>' +
+            '<div class="extra-note">' +
+              '<span>Tracker EasyBet</span>' +
+              '<span class="mono">live match</span>' +
+            '</div>' +
+          '</div>' +
+        '</article>';
     }).join('');
   }
 
   function loadMatches(){
-    return fetch('/api/state').then(function(r){ return r.json(); }).then(function(s){
-      matches = (s.matches || []).slice().sort(function(a,b){ return a.startAt - b.startAt; });
-      render();
-      document.getElementById('refreshNote').textContent = 'aggiornato alle ' + new Date().toLocaleTimeString('it-IT');
-    }).catch(function(){
-      document.getElementById('refreshNote').textContent = 'errore di aggiornamento';
-    });
+    return fetch('/api/state')
+      .then(function(r){ return r.json(); })
+      .then(function(s){
+        matches = (s.matches || []).slice().sort(function(a, b){ return Number(a.startAt) - Number(b.startAt); });
+        updateStats();
+        render();
+        document.getElementById('refreshNote').textContent = 'aggiornato alle ' + new Date().toLocaleTimeString('it-IT');
+      })
+      .catch(function(){
+        document.getElementById('refreshNote').textContent = 'errore di aggiornamento';
+      });
   }
 
   document.getElementById('pills').addEventListener('click', function(e){
