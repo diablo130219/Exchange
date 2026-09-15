@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EasyBet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0A08;
+    --surface:#161310;
+    --surface-2:#1F1A14;
+    --border:#2C2418;
+    --border-strong:#43371F;
+    --text:#F5EFE2;
+    --text-muted:#B4A98F;
+    --text-faint:#7A705C;
+    --gold:#D9B44A;
+    --gold-bright:#F0CD6E;
+    --gold-deep:#8A6D22;
+    --win:#3FBE6B;
+    --win-soft:#12291B;
+    --giallo:#E8C13B;
+    --giallo-soft:#332A0E;
+    --rosso:#E15C4D;
+    --rosso-soft:#331611;
+    --neutro:#9AA1AF;
+    --neutro-soft:#1E2027;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 34px -14px rgba(0,0,0,.8);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(ellipse at top, #17130d 0%, var(--bg) 55%);color:var(--text);font-family:'Sora',ui-sans-serif,system-ui,sans-serif;min-height:100vh;}
+  a{color:inherit;}
+  ::selection{background:var(--gold-deep);color:#fff;}
+
+  .navbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+  .brand{font-family:'Playfair Display',serif;font-weight:800;font-size:1.4rem;letter-spacing:.02em;color:var(--gold-bright);}
+  .brand span{color:var(--text);}
+  .navlinks{display:flex;gap:22px;font-size:.82rem;color:var(--text-muted);flex-wrap:wrap;}
+  .navlinks a{text-decoration:none;}
+  .navlinks a:hover{color:var(--gold-bright);}
+  .navlinks a.active{color:var(--gold-bright);font-weight:600;}
+  .admin-btn{background:var(--surface);border:1px solid var(--border-strong);color:var(--text-muted);font-size:.76rem;padding:8px 14px;border-radius:999px;text-decoration:none;white-space:nowrap;}
+  .admin-btn:hover{color:var(--gold-bright);border-color:var(--gold-deep);}
+
+  .hero{padding:46px 28px 30px;text-align:center;background:linear-gradient(180deg, rgba(217,180,74,.08), transparent 70%);}
+  .hero h1{font-family:'Playfair Display',serif;font-size:2.1rem;margin:0 0 10px;font-weight:800;}
+  .hero h1 .gold{color:var(--gold-bright);}
+  .hero p{color:var(--text-muted);font-size:.92rem;max-width:520px;margin:0 auto;}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px 70px;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:28px 0 16px;}
+  .section-head h2{font-size:1.05rem;margin:0;letter-spacing:.03em;text-transform:uppercase;color:var(--text);}
+  .section-head h2 small{display:block;text-transform:none;letter-spacing:0;color:var(--text-faint);font-size:.74rem;font-weight:400;margin-top:2px;}
+  .refresh-note{font-size:.7rem;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;}
+
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+  .pill{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.76rem;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;}
+  .pill.active{background:var(--surface-2);border-color:var(--gold-deep);color:var(--gold-bright);}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
+  .card{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 115%, rgba(154,161,175,.08), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);border:1px solid var(--border);border-radius:18px;padding:18px 18px 0;box-shadow:var(--shadow);}
+  .card.esito-entrata_vinta{border-color:var(--win);box-shadow:0 0 0 1px var(--win) inset, 0 0 26px -6px rgba(63,190,107,.55), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(63,190,107,.14), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
+  .card.esito-entrata_persa{border-color:var(--rosso);box-shadow:0 0 0 1px var(--rosso) inset, 0 0 26px -6px rgba(225,92,77,.5), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(225,92,77,.13), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
+  .card.esito-non_entrata{border-color:var(--giallo);box-shadow:0 0 0 1px var(--giallo) inset, 0 0 26px -6px rgba(232,193,59,.45), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(232,193,59,.12), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
+
+  .card-top2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;}
+  .league-badge{display:flex;align-items:center;gap:7px;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;color:var(--gold-bright);font-weight:700;min-width:0;}
+  .league-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .league-badge .ico{width:15px;height:15px;color:var(--gold);flex:none;}
+  .kickoff{display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--text-muted);flex:none;}
+  .kickoff .ico{width:13px;height:13px;flex:none;}
+
+  .matchup{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:6px;margin-bottom:16px;}
+  .side{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;min-width:0;}
+  .side-label{font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);font-weight:700;}
+  .crest{width:30px;height:30px;border-radius:50%;object-fit:contain;background:var(--surface-2);flex:none;}
+  .crest.placeholder{display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:var(--text-faint);border:1px solid var(--border);}
+  .crest.crest-lg{width:58px;height:58px;border:2px solid var(--border-strong);}
+  .crest.placeholder.crest-lg{font-size:1.05rem;font-weight:800;color:var(--text-muted);}
+  .side-name{font-size:.8rem;font-weight:700;max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .vs-mid{display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-weight:800;font-size:.7rem;letter-spacing:.05em;padding-top:22px;}
+
+  .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .stat{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;min-width:0;}
+  .stat .ico{width:16px;height:16px;color:var(--gold);flex:none;}
+  .stat-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .stat-label{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);}
+  .stat-value{font-size:.8rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  .esito-banner{display:flex;align-items:center;justify-content:center;gap:9px;padding:13px 10px;margin:0 0;}
+  .esito-banner .ico{width:18px;height:18px;flex:none;}
+  .esito-banner-text{display:flex;flex-direction:column;align-items:center;line-height:1.3;}
+  .esito-tag{font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;opacity:.75;}
+  .esito-value{font-size:.84rem;font-weight:800;letter-spacing:.02em;text-transform:uppercase;}
+  .esito-banner.entrata_vinta{background:linear-gradient(180deg, rgba(63,190,107,.24), rgba(63,190,107,.07));color:var(--win);}
+  .esito-banner.entrata_persa{background:linear-gradient(180deg, rgba(225,92,77,.24), rgba(225,92,77,.07));color:var(--rosso);}
+  .esito-banner.non_entrata{background:linear-gradient(180deg, rgba(232,193,59,.24), rgba(232,193,59,.07));color:var(--giallo);}
+  .esito-banner.attesa{background:linear-gradient(180deg, rgba(154,161,175,.16), rgba(154,161,175,.05));color:var(--neutro);}
+  .empty{grid-column:1/-1;color:var(--text-faint);font-style:italic;padding:50px 0;text-align:center;}
+
+  @media(max-width:560px){ .navlinks{display:none;} }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="brand">Easy<span>Bet</span></div>
+  <div class="navlinks">
+    <a href="#" class="active">Home</a>
+    <a href="#">Pronostici</a>
+    <a href="#">Live</a>
+    <a href="#">Statistiche</a>
+    <a href="#">Strategie</a>
+    <a href="#">Consigli</a>
+  </div>
+  <a class="admin-btn" href="/easybet-admin.html">🔒 Admin</a>
+</div>
+
+<div class="hero">
+  <h1>Le mie <span class="gold">giocate</span>.</h1>
+  <p>Partite selezionate a mano, con quota d'ingresso ed esito.</p>
+</div>
+
+<div class="wrap">
+  <div class="section-head">
+    <h2>Partite<small>Aggiornato automaticamente.</small></h2>
+    <div class="refresh-note" id="refreshNote">aggiornamento…</div>
+  </div>
+
+  <div class="pills" id="pills">
+    <button class="pill active" data-f="tutte">Tutte</button>
+    <button class="pill" data-f="entrata_vinta">Vinte</button>
+    <button class="pill" data-f="entrata_persa">Perse</button>
+    <button class="pill" data-f="non_entrata">Non entrate</button>
+    <button class="pill" data-f="">In attesa</button>
+  </div>
+
+  <div class="grid" id="grid"><div class="empty">Caricamento…</div></div>
+</div>
+
+<script>
+(function(){
+  var ESITO_LABEL = {
+    entrata_vinta: 'Entrata • Vinta',
+    entrata_persa: 'Entrata • Persa',
+    non_entrata: 'Non entrata'
+  };
+
+  var crestCache = {};
+  var matches = [];
+  var currentFilter = 'tutte';
+
+  var ICON_CLOCK = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+  var ICON_SHIELD = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"/></svg>';
+  var ICON_CHART = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M12 20V4M20 20v-7"/></svg>';
+  var ICON_TARGET = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg>';
+  var ICON_TROPHY = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 01-10 0V4z"/><path d="M7 5H4v1a4 4 0 004 4M17 5h3v1a4 4 0 01-4 4"/></svg>';
+  var ICON_HOURGLASS = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 5.5 5 9s-5 4-5 9M17 3c0 5-5 5.5-5 9s5 4 5 9"/></svg>';
+
+  function esc(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function initials(name){
+    var parts = String(name||'').trim().split(/\s+/);
+    var s = (parts[0]||'')[0] || '?';
+    return s.toUpperCase();
+  }
+
+  function crestImg(name, campionato, size){
+    var id = 'crest-' + Math.random().toString(36).slice(2);
+    setTimeout(function(){ loadCrest(name, campionato, id); }, 0);
+    var cls = 'crest placeholder' + (size==='lg' ? ' crest-lg' : '');
+    return '<span class="'+cls+'" id="'+id+'">'+esc(initials(name))+'</span>';
+  }
+
+  function loadCrest(name, campionato, id){
+    if (!String(name||'').trim()) return;
+    // Il campionato (es. "Iceland: Besta deild") disambigua nomi ambigui come "Fram",
+    // che esistono in più paesi — evita di mostrare lo stemma di un club omonimo sbagliato.
+    var key = String(name||'').trim().toLowerCase() + '|' + String(campionato||'').trim().toLowerCase();
+    if (crestCache[key] !== undefined){ applyCrest(id, crestCache[key]); return; }
+    var url = '/api/team-crest?name=' + encodeURIComponent(name) + (campionato ? '&country=' + encodeURIComponent(campionato) : '');
+    fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        crestCache[key] = d && d.url ? d.url : null;
+        applyCrest(id, crestCache[key]);
+      })
+      .catch(function(){ crestCache[key] = null; });
+  }
+
+  function applyCrest(id, url){
+    var el = document.getElementById(id);
+    if (!el || !url) return;
+    var img = document.createElement('img');
+    img.className = el.className.replace(/\bplaceholder\b/,'').replace(/\s+/g,' ').trim();
+    img.src = url;
+    img.alt = '';
+    el.replaceWith(img);
+  }
+
+  function fmtWhen(m){
+    var d = new Date(Number(m.startAt));
+    var dd = (m.data || d.toLocaleDateString('it-IT'));
+    var oo = (m.ora || d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}));
+    return dd + ' ' + oo;
+  }
+
+  function matchesFilter(m){
+    if (currentFilter === 'tutte') return true;
+    return (m.esitoManuale || '') === currentFilter;
+  }
+
+  function render(){
+    var grid = document.getElementById('grid');
+    var list = matches.filter(matchesFilter);
+    if (!list.length){
+      grid.innerHTML = '<div class="empty">Nessuna partita in questa vista.</div>';
+      return;
+    }
+    grid.innerHTML = list.map(function(m){
+      var esito = m.esitoManuale || '';
+      var cls = 'card' + (esito ? ' esito-'+esito : '');
+      var bannerCls = esito ? esito : 'attesa';
+      var bannerValue = esito ? ESITO_LABEL[esito] : 'In attesa';
+      var bannerIcon = esito ? ICON_TROPHY : ICON_HOURGLASS;
+      return '<div class="'+cls+'">'+
+        '<div class="card-top2">'+
+          '<div class="league-badge">'+ICON_SHIELD+'<span>'+esc(m.campionato||'—')+'</span></div>'+
+          '<div class="kickoff">'+ICON_CLOCK+'<span>'+esc(fmtWhen(m))+'</span></div>'+
+        '</div>'+
+        '<div class="matchup">'+
+          '<div class="side">'+
+            '<div class="side-label">Casa</div>'+
+            crestImg(m.casa, m.campionato, 'lg')+
+            '<div class="side-name">'+esc(m.casa)+'</div>'+
+          '</div>'+
+          '<div class="vs-mid">VS</div>'+
+          '<div class="side">'+
+            '<div class="side-label">Trasferta</div>'+
+            crestImg(m.trasferta, m.campionato, 'lg')+
+            '<div class="side-name">'+esc(m.trasferta)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="stats-row">'+
+          '<div class="stat">'+ICON_CHART+'<div class="stat-text"><span class="stat-label">Quota ingresso</span><span class="stat-value">'+esc(m.quotaIngresso||'—')+'</span></div></div>'+
+          '<div class="stat">'+ICON_TARGET+'<div class="stat-text"><span class="stat-label">Strategia</span><span class="stat-value">'+esc(m.tipoGiocata||'—')+'</span></div></div>'+
+        '</div>'+
+        '<div class="esito-banner '+bannerCls+'">'+bannerIcon+
+          '<div class="esito-banner-text"><span class="esito-tag">Esito</span><span class="esito-value">'+esc(bannerValue)+'</span></div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  function loadMatches(){
+    return fetch('/api/state').then(function(r){ return r.json(); }).then(function(s){
+      matches = (s.matches || []).slice().sort(function(a,b){ return a.startAt - b.startAt; });
+      render();
+      document.getElementById('refreshNote').textContent = 'aggiornato alle ' + new Date().toLocaleTimeString('it-IT');
+    }).catch(function(){
+      document.getElementById('refreshNote').textContent = 'errore di aggiornamento';
+    });
+  }
+
+  document.getElementById('pills').addEventListener('click', function(e){
+    var btn = e.target.closest('.pill');
+    if (!btn) return;
+    currentFilter = btn.getAttribute('data-f');
+    document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    render();
+  });
+
+  loadMatches();
+  setInterval(loadMatches, 15000);
+})();
+</script>
+</body>
+</html>
