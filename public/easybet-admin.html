@@ -68,6 +68,9 @@
   .section-head h2{font-size:1.05rem;margin:0;letter-spacing:.03em;text-transform:uppercase;color:var(--text);}
   .section-head h2 small{display:block;text-transform:none;letter-spacing:0;color:var(--text-faint);font-size:.74rem;font-weight:400;margin-top:2px;}
   .add-btn{background:linear-gradient(180deg,var(--gold-bright),var(--gold-deep));border:none;color:#1a1408;font-weight:700;font-size:.82rem;padding:10px 18px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+  .head-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .add-btn.ghost-btn{background:var(--surface);border:1px solid var(--border-strong);color:var(--text-muted);font-weight:600;}
+  .add-btn.ghost-btn:hover{color:var(--gold-bright);border-color:var(--gold-deep);}
 
   .pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
   .pill{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.76rem;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;}
@@ -120,6 +123,19 @@
   .btn-danger{background:var(--rosso-soft);color:var(--rosso);border:1px solid var(--rosso);}
   .modal-err{color:var(--rosso);font-size:.76rem;margin-top:8px;min-height:14px;}
 
+  .modal.wide{max-width:560px;}
+  textarea#importBox{width:100%;min-height:140px;resize:vertical;background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--text);line-height:1.5;}
+  textarea#importBox:focus{outline:none;border-color:var(--gold);}
+  .import-preview{margin-top:14px;max-height:320px;overflow:auto;}
+  .preview-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:center;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;}
+  .preview-row .pv-when{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--text-faint);white-space:nowrap;}
+  .preview-row .pv-match{font-weight:700;font-size:.84rem;}
+  .preview-row .pv-league{font-size:.68rem;color:var(--text-faint);font-weight:500;}
+  .preview-row input.pv-tipo{grid-column:1/-1;width:100%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-size:.78rem;padding:6px 8px;border-radius:6px;font-family:inherit;}
+  .preview-row .pv-del{background:transparent;border:none;color:var(--text-faint);cursor:pointer;font-size:.9rem;padding:2px 6px;}
+  .preview-row .pv-del:hover{color:var(--rosso);}
+  .import-hint{font-size:.72rem;color:var(--text-faint);margin-top:6px;}
+
   @media(max-width:560px){ .navlinks{display:none;} .field-row{grid-template-columns:1fr;} }
 </style>
 </head>
@@ -155,7 +171,10 @@
   <div class="wrap">
     <div class="section-head">
       <h2>Partite<small>Aggiungi, modifica ed elimina liberamente — tutto resta privato qui.</small></h2>
-      <button class="add-btn" id="addBtn">+ Aggiungi partita</button>
+      <div class="head-actions">
+        <button class="add-btn ghost-btn" id="importBtn">📋 Importa elenco</button>
+        <button class="add-btn" id="addBtn">+ Aggiungi partita</button>
+      </div>
     </div>
 
     <div class="pills" id="pills">
@@ -225,6 +244,23 @@
       <button class="btn btn-ghost" id="cancelBtn">Annulla</button>
       <button class="btn btn-primary" id="saveBtn">Salva</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="importBackdrop">
+  <div class="modal wide">
+    <h3>Importa elenco partite</h3>
+    <div class="field">
+      <label>Incolla qui l'elenco (data, ora, campionato, squadre)</label>
+      <textarea id="importBox" placeholder="[United States: Major League Soccer]&#10;14/09/2026 00:30&#9;Vancouver Whitecaps - Austin&#9;-"></textarea>
+      <div class="import-hint">Una riga tipo "[Campionato]" seguita da righe "GG/MM/AAAA HH:MM  Squadra Casa - Squadra Trasferta" — lo stesso formato che usi nel Taccuino Exchange.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="importCancelBtn">Chiudi</button>
+      <button class="btn btn-primary" id="importParseBtn">Analizza elenco</button>
+    </div>
+    <div class="modal-err" id="importErr"></div>
+    <div class="import-preview" id="importPreview"></div>
   </div>
 </div>
 
@@ -568,6 +604,126 @@
         closeModal();
         loadMatches();
       });
+    });
+
+    // ---------------- import elenco (incolla lista partite) ----------------
+    // Stesso formato/parser usato nel Taccuino Exchange: righe "[Campionato]" seguite
+    // da righe "GG/MM/AAAA HH:MM  Squadra Casa - Squadra Trasferta".
+    function toStartAt(dataStr, oraStr){
+      var dm = (dataStr||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      var tm = (oraStr||'').match(/^(\d{1,2}):(\d{2})$/);
+      if (!dm || !tm) return null;
+      var d = new Date(parseInt(dm[3],10), parseInt(dm[2],10)-1, parseInt(dm[1],10), parseInt(tm[1],10), parseInt(tm[2],10), 0, 0);
+      return d.getTime();
+    }
+
+    function parsePaste(text){
+      var lines = text.split('\n');
+      var league = '';
+      var out = [];
+      for (var i=0;i<lines.length;i++){
+        var raw = lines[i].replace(/\r$/,'');
+        var trimmed = raw.trim();
+        if (!trimmed) continue;
+        var lm = trimmed.match(/^\[(.+)\]$/);
+        if (lm){ league = lm[1].trim(); continue; }
+        var parts = raw.split('\t').map(function(s){return s.trim();}).filter(function(s){return s.length && s !== '-';});
+        if (parts.length < 2){
+          parts = trimmed.split(/\s{2,}/).map(function(s){return s.trim();}).filter(function(s){return s.length && s !== '-';});
+        }
+        var dateStr, timeStr, matchStr;
+        if (parts.length >= 2){
+          var dt = parts[0].match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{1,2}:\d{2})$/);
+          if (dt){ dateStr = dt[1]; timeStr = dt[2]; matchStr = parts[1]; }
+        }
+        if (!dateStr){
+          var full = trimmed.match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{1,2}:\d{2})\s+(.+)$/);
+          if (full){ dateStr = full[1]; timeStr = full[2]; matchStr = full[3]; }
+        }
+        if (!dateStr || !matchStr) continue;
+        matchStr = matchStr.replace(/\s*-\s*$/,'').trim();
+        var tm2 = matchStr.match(/^(.+?)\s+-\s+(.+)$/);
+        if (!tm2) continue;
+        out.push({data:dateStr, ora:timeStr, campionato:league, casa:tm2[1].trim(), trasferta:tm2[2].trim(), tipoGiocata:''});
+      }
+      return out;
+    }
+
+    var importPending = [];
+    var importBackdrop = document.getElementById('importBackdrop');
+    var importBox = document.getElementById('importBox');
+    var importErr = document.getElementById('importErr');
+    var importPreview = document.getElementById('importPreview');
+
+    function openImportModal(){
+      importPending = [];
+      importBox.value = '';
+      importErr.textContent = '';
+      importPreview.innerHTML = '';
+      importBackdrop.classList.add('open');
+    }
+    function closeImportModal(){ importBackdrop.classList.remove('open'); }
+
+    function renderImportPreview(){
+      if (!importPending.length){ importPreview.innerHTML = ''; return; }
+      var html = importPending.map(function(m, idx){
+        return '<div class="preview-row">'+
+          '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
+          '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
+          '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
+          '<input class="pv-tipo" data-idx="'+idx+'" placeholder="Strategia / tipo di giocata (opzionale)" value="'+esc(m.tipoGiocata||'')+'">'+
+        '</div>';
+      }).join('');
+      html += '<div class="modal-actions" style="margin-top:10px;">'+
+        '<div style="flex:1"></div>'+
+        '<button class="btn btn-primary" id="importConfirmBtn">Conferma import ('+importPending.length+' partite)</button>'+
+      '</div>';
+      importPreview.innerHTML = html;
+      Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-tipo'), function(inp){
+        inp.addEventListener('input', function(){ importPending[+inp.getAttribute('data-idx')].tipoGiocata = inp.value; });
+      });
+      Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-del'), function(btn){
+        btn.addEventListener('click', function(){ importPending.splice(+btn.getAttribute('data-idx'),1); renderImportPreview(); });
+      });
+      document.getElementById('importConfirmBtn').addEventListener('click', confirmImport);
+    }
+
+    function confirmImport(){
+      var batch = importPending.slice();
+      var chain = Promise.resolve();
+      batch.forEach(function(m){
+        var startAt = toStartAt(m.data, m.ora);
+        if (startAt == null) return;
+        chain = chain.then(function(){
+          return fetch('/api/matches', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              campionato: m.campionato || '', casa: m.casa, trasferta: m.trasferta,
+              data: m.data, ora: m.ora, startAt: startAt,
+              tipoGiocata: m.tipoGiocata || '', quotaIngresso: '', esitoManuale: '', botEnabled: true
+            })
+          });
+        });
+      });
+      chain.then(function(){
+        importPending = [];
+        closeImportModal();
+        loadMatches();
+      }).catch(function(){
+        importErr.textContent = 'Errore durante l\'import.';
+      });
+    }
+
+    document.getElementById('importBtn').addEventListener('click', openImportModal);
+    document.getElementById('importCancelBtn').addEventListener('click', closeImportModal);
+    importBackdrop.addEventListener('click', function(e){ if (e.target === importBackdrop) closeImportModal(); });
+    document.getElementById('importParseBtn').addEventListener('click', function(){
+      importErr.textContent = '';
+      var parsed = parsePaste(importBox.value);
+      if (!parsed.length){ importErr.textContent = 'Nessuna partita riconosciuta in questo testo.'; importPreview.innerHTML=''; return; }
+      importPending = parsed;
+      renderImportPreview();
     });
 
     loadMatches();
