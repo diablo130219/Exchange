@@ -160,8 +160,8 @@
   .charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
   @media (max-width:640px){.charts-grid{grid-template-columns:1fr;}}
   .chart-card{display:flex;flex-direction:column;gap:8px;}
-  .chart-card + .charts-grid{margin-top:2px;}
-  .panel-body > .chart-card + .charts-grid{margin-top:4px;}
+  .chart-card + .charts-grid, .charts-grid + .chart-card{margin-top:2px;}
+  .panel-body > .chart-card + .charts-grid, .panel-body > .charts-grid + .chart-card{margin-top:4px;}
   .chart-title-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
   .chart-title{font-size:.85rem;font-weight:700;color:var(--text);}
   .chart-sub{font-size:.7rem;color:var(--text-faint);}
@@ -296,19 +296,6 @@
       <span class="chev">▾</span>
     </div>
     <div class="panel-body">
-      <div class="chart-card">
-        <div class="chart-title-row">
-          <div>
-            <div class="chart-title" id="equityTitle">Saldo cassa nel tempo</div>
-            <div class="chart-sub" id="equitySub">Verde = sopra la cassa di partenza, rosso = sotto</div>
-          </div>
-        </div>
-        <div class="chart-wrap" id="equityWrap">
-          <svg id="equitySvg" class="chart-svg" viewBox="0 0 640 220" preserveAspectRatio="none"></svg>
-          <div class="chart-tooltip" id="equityTip"></div>
-        </div>
-      </div>
-
       <div class="charts-grid">
         <div class="chart-card">
           <div class="chart-title-row">
@@ -334,6 +321,19 @@
             <svg id="tipoSvg" class="chart-svg" viewBox="0 0 320 100" preserveAspectRatio="none"></svg>
             <div class="chart-tooltip" id="tipoTip"></div>
           </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title-row">
+          <div>
+            <div class="chart-title" id="equityTitle">Saldo cassa nel tempo</div>
+            <div class="chart-sub" id="equitySub">Verde = sopra la cassa di partenza, rosso = sotto</div>
+          </div>
+        </div>
+        <div class="chart-wrap" id="equityWrap">
+          <svg id="equitySvg" class="chart-svg" viewBox="0 0 640 220" preserveAspectRatio="none"></svg>
+          <div class="chart-tooltip" id="equityTip"></div>
         </div>
       </div>
     </div>
