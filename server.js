@@ -2,6 +2,8 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const { pool, migrate } = require('./db');
+const telegram = require('./telegram');
+const scheduler = require('./scheduler');
 
 const app = express();
 app.use(express.json());
@@ -44,19 +46,45 @@ function settingsOut(row) {
     commissione: row.commissione === null ? 4.5 : Number(row.commissione)
   };
 }
+function matchOut(row) {
+  return {
+    id: row.id,
+    data: row.data,
+    ora: row.ora,
+    campionato: row.campionato || '',
+    casa: row.casa,
+    trasferta: row.trasferta,
+    tipoGiocata: row.tipo_giocata || '',
+    startAt: Number(row.start_at),
+    notifyMinutes: Number(row.notify_minutes),
+    notified: !!row.notified,
+    createdAt: Number(row.created_at)
+  };
+}
+function alertSettingsOut(row) {
+  if (!row) return { notifyMinutes: 10 };
+  return { notifyMinutes: Number(row.notify_minutes) || 10 };
+}
 
 // ---------- combined state (used for initial load + polling sync) ----------
 app.get('/api/state', async (req, res) => {
   try {
-    const [casseRes, betsRes, settingsRes] = await Promise.all([
+    const [casseRes, betsRes, settingsRes, matchesRes, alertSettingsRes, subsRes] = await Promise.all([
       pool.query('SELECT * FROM casse ORDER BY created_at ASC'),
       pool.query('SELECT * FROM bets ORDER BY created_at ASC'),
-      pool.query("SELECT * FROM settings WHERE id='main'")
+      pool.query("SELECT * FROM settings WHERE id='main'"),
+      pool.query('SELECT * FROM matches ORDER BY start_at ASC'),
+      pool.query("SELECT * FROM alert_settings WHERE id='main'"),
+      pool.query('SELECT COUNT(*)::int AS n FROM subscribers')
     ]);
     res.json({
       casse: casseRes.rows.map(cassaOut),
       bets: betsRes.rows.map(betOut),
-      settings: settingsOut(settingsRes.rows[0])
+      settings: settingsOut(settingsRes.rows[0]),
+      matches: matchesRes.rows.map(matchOut),
+      alertSettings: alertSettingsOut(alertSettingsRes.rows[0]),
+      subscriberCount: subsRes.rows[0] ? subsRes.rows[0].n : 0,
+      botConfigured: telegram.isConfigured
     });
   } catch (err) {
     console.error(err);
@@ -216,6 +244,98 @@ app.put('/api/settings', async (req, res) => {
   }
 });
 
+// ---------- avvisi partite (Telegram) ----------
+app.post('/api/matches', async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!b.casa || !b.trasferta) return res.status(400).json({ error: 'Squadre mancanti.' });
+    if (!b.startAt || isNaN(Number(b.startAt))) return res.status(400).json({ error: 'Data/ora non valida.' });
+    const id = newId();
+    const createdAt = Date.now();
+    const notifyMinutes = isNaN(parseInt(b.notifyMinutes, 10)) ? 10 : parseInt(b.notifyMinutes, 10);
+    const { rows } = await pool.query(
+      `INSERT INTO matches (id, data, ora, campionato, casa, trasferta, tipo_giocata, start_at, notify_minutes, notified, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,$10) RETURNING *`,
+      [id, b.data || '', b.ora || '', b.campionato || '', b.casa, b.trasferta, b.tipoGiocata || '', Number(b.startAt), notifyMinutes, createdAt]
+    );
+    res.status(201).json(matchOut(rows[0]));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nella creazione della partita.' });
+  }
+});
+
+app.patch('/api/matches/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fields = req.body || {};
+    const sets = [];
+    const vals = [];
+    let i = 1;
+    if (Object.prototype.hasOwnProperty.call(fields, 'tipoGiocata')) {
+      sets.push('tipo_giocata = $' + (i++)); vals.push(String(fields.tipoGiocata || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'notifyMinutes')) {
+      const nm = parseInt(fields.notifyMinutes, 10);
+      sets.push('notify_minutes = $' + (i++)); vals.push(isNaN(nm) ? 10 : nm);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'notified')) {
+      sets.push('notified = $' + (i++)); vals.push(!!fields.notified);
+    }
+    if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
+    vals.push(id);
+    const { rows } = await pool.query(
+      'UPDATE matches SET ' + sets.join(', ') + ' WHERE id = $' + i + ' RETURNING *',
+      vals
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Partita non trovata.' });
+    res.json(matchOut(rows[0]));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nell\'aggiornamento della partita.' });
+  }
+});
+
+app.delete('/api/matches/:id', async (req, res) => {
+  try {
+    const { rowCount } = await pool.query('DELETE FROM matches WHERE id = $1', [req.params.id]);
+    if (!rowCount) return res.status(404).json({ error: 'Partita non trovata.' });
+    res.status(204).end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nell\'eliminazione della partita.' });
+  }
+});
+
+app.post('/api/matches/:id/test-alert', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM matches WHERE id = $1', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Partita non trovata.' });
+    const text = scheduler.formatAlert(rows[0]);
+    const sentTo = await telegram.broadcast('🔔 <i>Prova avviso</i>\n\n' + text);
+    res.json({ sentTo });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nell\'invio della prova.' });
+  }
+});
+
+app.put('/api/alert-settings', async (req, res) => {
+  try {
+    const { notifyMinutes } = req.body || {};
+    const nm = parseInt(notifyMinutes, 10);
+    if (isNaN(nm) || nm < 1) return res.status(400).json({ error: 'Minuti non validi.' });
+    const { rows } = await pool.query(
+      "UPDATE alert_settings SET notify_minutes = $1 WHERE id='main' RETURNING *",
+      [nm]
+    );
+    res.json(alertSettingsOut(rows[0]));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nel salvataggio delle impostazioni avvisi.' });
+  }
+});
+
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
 // SPA fallback: serve index.html for any non-API GET (harmless here since there's one page,
@@ -232,6 +352,8 @@ migrate()
     app.listen(PORT, function(){
       console.log('Taccuino Exchange in ascolto sulla porta ' + PORT);
     });
+    telegram.startPolling();
+    scheduler.start();
   })
   .catch(function(err){
     console.error('Errore durante la migrazione del database:', err);

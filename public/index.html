@@ -104,6 +104,49 @@
 
   .preview-list{border:1px dashed var(--border-strong);border-radius:8px;padding:8px 10px;max-height:180px;overflow:auto;font-size:.78rem;color:var(--text-muted);display:flex;flex-direction:column;gap:3px;}
   .preview-list .pv-row{display:flex;gap:8px;}
+
+  /* ---- Avvisi Partite (Telegram) ---- */
+  .field textarea{width:100%;min-height:100px;resize:vertical;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.78rem;color:var(--text);line-height:1.5;}
+  .field textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .manual-grid .full{grid-column:1/-1;}
+  @media (max-width:520px){.manual-grid{grid-template-columns:1fr;}}
+
+  .status-banner{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.82rem;color:var(--text-muted);}
+  .status-banner .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .status-banner.ok .dot{background:var(--win);}
+  .status-banner.warn .dot{background:#E2A93F;}
+  .status-banner b{color:var(--text);}
+  .status-banner code{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.78rem;}
+
+  #alertsPanel .preview-list{max-height:360px;}
+  .preview-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;}
+  .preview-row:last-child{margin-bottom:0;}
+  .preview-row .pv-when{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.72rem;color:var(--text-faint);white-space:nowrap;}
+  .preview-row .pv-match{font-weight:700;font-size:.84rem;}
+  .preview-row .pv-league{font-size:.68rem;color:var(--text-faint);font-weight:500;}
+  .preview-row input.pv-tipo{grid-column:1/-1;width:100%;}
+  .preview-row .pv-del{background:transparent;border:none;color:var(--text-faint);cursor:pointer;font-size:.9rem;padding:2px 6px;}
+  .preview-row .pv-del:hover{color:var(--loss);}
+
+  .settings-row{display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--text-muted);flex-wrap:wrap;}
+  .settings-row input{width:70px;}
+
+  .cards{display:flex;flex-direction:column;gap:10px;}
+  .match-card{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:12px;padding:13px 15px;}
+  .match-card.sent{opacity:.55;}
+  .match-card.soon{border-left-color:#E2A93F;}
+  .match-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .match-when{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:.78rem;color:var(--text-muted);}
+  .match-league{font-size:.68rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.03em;}
+  .match-teams{font-size:1rem;font-weight:700;margin:5px 0 8px;}
+  .match-bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .match-tipo{display:flex;align-items:center;gap:8px;flex:1;min-width:160px;}
+  .match-tipo input{flex:1;font-weight:600;}
+  .match-countdown{font-size:.74rem;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--open-soft);color:var(--text-muted);white-space:nowrap;}
+  .match-countdown.soon{background:#3A2E12;color:#E2A93F;}
+  .match-countdown.sent{background:var(--win-soft);color:var(--win);}
+  .match-actions{display:flex;gap:6px;}
   .preview-list .pv-row b{color:var(--text);font-weight:600;}
   .preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);font-weight:600;}
   .tiny-btn{padding:2px 8px;font-size:.72rem;}
@@ -403,6 +446,53 @@
     </div>
   </section>
 
+  <section class="panel" id="alertsPanel">
+    <div class="panel-head" data-toggle="alertsPanel">
+      <h2>Avvisi Partite (Telegram)</h2>
+      <span class="chev">▾</span>
+    </div>
+    <div class="panel-body">
+      <div class="status-banner" id="alertStatusBanner">
+        <span class="dot"></span>
+        <span id="alertStatusText">Verifica dello stato del bot…</span>
+      </div>
+
+      <div class="import-grid">
+        <div class="field">
+          <label for="alertPasteBox">Incolla l'elenco partite (data, ora, campionato, squadre)</label>
+          <textarea id="alertPasteBox" placeholder="[United States: Major League Soccer]&#10;14/09/2026 00:30&#9;Vancouver Whitecaps - Austin&#9;-"></textarea>
+          <div class="btn-row" style="margin-top:8px;">
+            <button class="btn primary" id="btnAlertParse">Analizza elenco</button>
+            <button class="btn ghost" id="btnAlertClearPaste">Svuota</button>
+          </div>
+          <div id="alertPreviewArea" style="margin-top:10px;"></div>
+        </div>
+        <div class="field">
+          <label>Aggiungi una partita manualmente</label>
+          <div class="manual-grid">
+            <div class="field"><label for="amData">Data</label><input id="amData" placeholder="GG/MM/AAAA"></div>
+            <div class="field"><label for="amOra">Ora</label><input id="amOra" placeholder="HH:MM"></div>
+            <div class="field full"><label for="amCampionato">Campionato</label><input id="amCampionato" placeholder="Campionato (opzionale)"></div>
+            <div class="field full"><label for="amCasa">Squadra casa</label><input id="amCasa" placeholder="Squadra in casa"></div>
+            <div class="field full"><label for="amTrasferta">Squadra trasferta</label><input id="amTrasferta" placeholder="Squadra in trasferta"></div>
+            <div class="field full"><label for="amTipo">Tipo di giocata</label><input id="amTipo" placeholder="es. Lay Over 1.5"></div>
+          </div>
+          <div class="btn-row" style="margin-top:10px;">
+            <button class="btn" id="btnAlertAddManual">+ Aggiungi partita</button>
+          </div>
+          <div class="empty-note" style="margin-top:6px;">Gli orari si intendono nel fuso orario del tuo dispositivo.</div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span>Avvisami</span>
+        <input id="alertDefMinutes" type="number" min="1" max="180" value="10">
+        <span>minuti prima dell'inizio (per le nuove partite caricate)</span>
+      </div>
+
+      <div class="cards" id="alertMatchCards"></div>
+    </div>
+  </section>
+
   <footer class="note">I dati sono salvati automaticamente e sincronizzati su tutti i tuoi dispositivi.</footer>
 </div>
 
@@ -412,6 +502,11 @@
   var casse = [];
   var activeCassaId = null; // null = "Tutte"
   var settings = {tipo:'lay', commissione:4.5};
+  var alertMatches = [];
+  var alertSettings = {notifyMinutes:10};
+  var subscriberCount = 0;
+  var botConfigured = false;
+  var alertPendingParsed = [];
 
   // ---------- API layer (talks to server.js / Postgres, replaces the Claude Artifacts db capability) ----------
   var API_BASE = '/api';
@@ -428,6 +523,10 @@
   function loadState(){
     return apiFetch('/state').then(function(s){
       bets = s.bets; casse = s.casse; settings = Object.assign(settings, s.settings);
+      alertMatches = s.matches || [];
+      alertSettings = s.alertSettings || {notifyMinutes:10};
+      subscriberCount = s.subscriberCount || 0;
+      botConfigured = !!s.botConfigured;
     });
   }
   function refreshAndRenderAll(){
@@ -581,6 +680,205 @@
   }
 
   function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  // =====================================================================
+  // ---------- Avvisi Partite (Telegram) ----------
+  // =====================================================================
+  function toStartAt(dataStr, oraStr){
+    var dm = (dataStr||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    var tm = (oraStr||'').match(/^(\d{1,2}):(\d{2})$/);
+    if (!dm || !tm) return null;
+    var d = new Date(parseInt(dm[3],10), parseInt(dm[2],10)-1, parseInt(dm[1],10), parseInt(tm[1],10), parseInt(tm[2],10), 0, 0);
+    return d.getTime();
+  }
+
+  function renderAlertStatus(){
+    var el = document.getElementById('alertStatusBanner');
+    var txt = document.getElementById('alertStatusText');
+    if (!el || !txt) return;
+    if (!botConfigured){
+      el.className = 'status-banner warn';
+      txt.innerHTML = '<b>Bot Telegram non configurato.</b> Imposta la variabile <code>TELEGRAM_BOT_TOKEN</code> per attivare gli avvisi.';
+    } else if (subscriberCount === 0){
+      el.className = 'status-banner warn';
+      txt.innerHTML = '<b>Nessun destinatario registrato.</b> Apri la chat con il tuo bot su Telegram e scrivi <code>/start</code>.';
+    } else {
+      el.className = 'status-banner ok';
+      txt.innerHTML = '<b>Bot attivo</b> — avvisi inviati a ' + subscriberCount + (subscriberCount===1?' destinatario.':' destinatari.');
+    }
+    var mEl = document.getElementById('alertDefMinutes');
+    if (mEl && document.activeElement !== mEl) mEl.value = alertSettings.notifyMinutes;
+  }
+
+  function renderAlertPreview(){
+    var area = document.getElementById('alertPreviewArea');
+    if (!area) return;
+    if (!alertPendingParsed.length){ area.innerHTML=''; return; }
+    var html = '<div class="preview-list">';
+    alertPendingParsed.forEach(function(m, idx){
+      html += '<div class="preview-row">'+
+        '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
+        '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
+        '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
+        '<input class="pv-tipo" data-idx="'+idx+'" placeholder="Tipo di giocata (es. Lay Over 1.5)" value="'+esc(m.tipoGiocata||'')+'">'+
+      '</div>';
+    });
+    html += '</div><div class="btn-row" style="margin-top:8px;"><button class="btn primary" id="btnAlertConfirmImport">Conferma import ('+alertPendingParsed.length+' partite)</button><button class="btn ghost" id="btnAlertCancelImport">Annulla</button></div>';
+    area.innerHTML = html;
+    document.getElementById('btnAlertConfirmImport').onclick = confirmAlertImport;
+    document.getElementById('btnAlertCancelImport').onclick = function(){ alertPendingParsed=[]; renderAlertPreview(); };
+    Array.prototype.forEach.call(area.querySelectorAll('.pv-tipo'), function(inp){
+      inp.addEventListener('input', function(){ alertPendingParsed[+inp.getAttribute('data-idx')].tipoGiocata = inp.value; });
+    });
+    Array.prototype.forEach.call(area.querySelectorAll('.pv-del'), function(btn){
+      btn.addEventListener('click', function(){ alertPendingParsed.splice(+btn.getAttribute('data-idx'),1); renderAlertPreview(); });
+    });
+  }
+
+  function confirmAlertImport(){
+    var nm = parseInt(document.getElementById('alertDefMinutes').value,10) || 10;
+    var batch = alertPendingParsed.slice();
+    var chain = Promise.resolve();
+    batch.forEach(function(m){
+      var startAt = toStartAt(m.data, m.ora);
+      if (startAt == null) return;
+      chain = chain.then(function(){
+        return apiFetch('/matches', {method:'POST', body: JSON.stringify({
+          data:m.data, ora:m.ora, campionato:m.campionato||'', casa:m.casa, trasferta:m.trasferta,
+          tipoGiocata:m.tipoGiocata||'', startAt:startAt, notifyMinutes:nm
+        })});
+      });
+    });
+    chain.then(function(){
+      alertPendingParsed = [];
+      document.getElementById('alertPasteBox').value = '';
+      renderAlertPreview();
+      return loadState();
+    }).then(function(){
+      renderAlertStatus(); renderAlertCards();
+    }).catch(function(err){ showBanner('Errore import avvisi: '+err.message, true); });
+  }
+
+  function fmtCountdown(ms){
+    if (ms <= 0) return 'iniziata';
+    var totalMin = Math.round(ms/60000);
+    if (totalMin < 60) return 'tra ' + totalMin + ' min';
+    var h = Math.floor(totalMin/60), m = totalMin%60;
+    if (h < 24) return 'tra ' + h + 'h ' + (m? m+'m':'');
+    var days = Math.floor(h/24);
+    return 'tra ' + days + 'g';
+  }
+
+  function renderAlertCards(){
+    var wrap = document.getElementById('alertMatchCards');
+    if (!wrap) return;
+    if (!alertMatches.length){
+      wrap.innerHTML = '<div class="empty-note">Nessuna partita caricata. Incolla un elenco o aggiungine una manualmente.</div>';
+      return;
+    }
+    var now = Date.now();
+    var html = alertMatches.map(function(m){
+      var remaining = m.startAt - now;
+      var soon = !m.notified && remaining <= m.notifyMinutes*60000;
+      var cls = 'match-card' + (m.notified?' sent':'') + (soon && !m.notified ? ' soon':'');
+      var countdownCls = 'match-countdown' + (m.notified?' sent':(soon?' soon':''));
+      var countdownText = m.notified ? 'avviso inviato' : fmtCountdown(remaining);
+      return '<div class="'+cls+'" data-id="'+m.id+'">'+
+        '<div class="match-top">'+
+          '<span class="match-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
+          '<span class="'+countdownCls+'">'+countdownText+'</span>'+
+        '</div>'+
+        (m.campionato? '<div class="match-league">'+esc(m.campionato)+'</div>' : '')+
+        '<div class="match-teams">'+esc(m.casa)+' - '+esc(m.trasferta)+'</div>'+
+        '<div class="match-bottom">'+
+          '<div class="match-tipo"><input data-f="tipoGiocata" value="'+esc(m.tipoGiocata)+'" placeholder="Tipo di giocata"></div>'+
+          '<div class="match-actions">'+
+            '<button class="btn small" data-test="'+m.id+'">Prova avviso</button>'+
+            '<button class="btn small ghost" data-del="'+m.id+'">Elimina</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+    wrap.innerHTML = html;
+    wireAlertCards();
+  }
+
+  function wireAlertCards(){
+    var wrap = document.getElementById('alertMatchCards');
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-id]'), function(card){
+      var id = card.getAttribute('data-id');
+
+      var inp = card.querySelector('[data-f="tipoGiocata"]');
+      inp.addEventListener('blur', function(){
+        apiFetch('/matches/'+id, {method:'PATCH', body: JSON.stringify({tipoGiocata: inp.value})})
+          .then(loadState)
+          .catch(function(err){ showBanner('Errore salvataggio: '+err.message, true); });
+      });
+      inp.addEventListener('keydown', function(e){ if (e.key==='Enter'){ inp.blur(); } });
+
+      var testBtn = card.querySelector('[data-test]');
+      testBtn.addEventListener('click', function(){
+        var original = testBtn.textContent;
+        testBtn.disabled = true; testBtn.textContent = 'Invio…';
+        apiFetch('/matches/'+id+'/test-alert', {method:'POST'}).then(function(r){
+          testBtn.textContent = r && r.sentTo ? 'Inviato ✓' : 'Nessun destinatario';
+          setTimeout(function(){ testBtn.textContent = original; testBtn.disabled=false; }, 2200);
+        }).catch(function(err){
+          showBanner('Errore invio prova: '+err.message, true);
+          testBtn.textContent = original; testBtn.disabled=false;
+        });
+      });
+
+      var delBtn = card.querySelector('[data-del]');
+      delBtn.addEventListener('click', function(){
+        if (delBtn.classList.contains('confirm')){
+          apiFetch('/matches/'+id, {method:'DELETE'}).then(loadState).then(function(){ renderAlertStatus(); renderAlertCards(); })
+            .catch(function(err){ showBanner('Errore eliminazione: '+err.message, true); });
+        } else {
+          delBtn.classList.add('confirm');
+          delBtn.textContent = 'Confermi?';
+          setTimeout(function(){ delBtn.classList.remove('confirm'); delBtn.textContent='Elimina'; }, 2500);
+        }
+      });
+    });
+  }
+
+  function wireAlertStaticControls(){
+    document.getElementById('btnAlertParse').onclick = function(){
+      var text = document.getElementById('alertPasteBox').value;
+      alertPendingParsed = parsePaste(text).map(function(m){ return Object.assign({tipoGiocata:''}, m); });
+      renderAlertPreview();
+    };
+    document.getElementById('btnAlertClearPaste').onclick = function(){
+      document.getElementById('alertPasteBox').value=''; alertPendingParsed=[]; renderAlertPreview();
+    };
+    document.getElementById('btnAlertAddManual').onclick = function(){
+      var data = document.getElementById('amData').value.trim();
+      var ora = document.getElementById('amOra').value.trim();
+      var casa = document.getElementById('amCasa').value.trim();
+      var trasferta = document.getElementById('amTrasferta').value.trim();
+      var campionato = document.getElementById('amCampionato').value.trim();
+      var tipoGiocata = document.getElementById('amTipo').value.trim();
+      var startAt = toStartAt(data, ora);
+      if (!casa || !trasferta){ showBanner('Inserisci entrambe le squadre.', true); setTimeout(hideBanner, 2500); return; }
+      if (startAt == null){ showBanner('Data (GG/MM/AAAA) o ora (HH:MM) non valida.', true); setTimeout(hideBanner, 2500); return; }
+      var nm = parseInt(document.getElementById('alertDefMinutes').value,10) || 10;
+      apiFetch('/matches', {method:'POST', body: JSON.stringify({data:data, ora:ora, campionato:campionato, casa:casa, trasferta:trasferta, tipoGiocata:tipoGiocata, startAt:startAt, notifyMinutes:nm})})
+        .then(function(){
+          ['amData','amOra','amCampionato','amCasa','amTrasferta','amTipo'].forEach(function(id){ document.getElementById(id).value=''; });
+          return loadState();
+        })
+        .then(function(){ renderAlertStatus(); renderAlertCards(); })
+        .catch(function(err){ showBanner('Errore: '+err.message, true); });
+    };
+    document.getElementById('alertDefMinutes').addEventListener('blur', function(){
+      var v = parseInt(document.getElementById('alertDefMinutes').value, 10);
+      if (!isNaN(v) && v>0){
+        apiFetch('/alert-settings', {method:'PUT', body: JSON.stringify({notifyMinutes:v})}).then(loadState).catch(function(){});
+      }
+    });
+  }
+  wireAlertStaticControls();
 
   // ---------- summary ----------
   function renderStats(){
@@ -1236,13 +1534,18 @@
   loadState().then(function(){
     hideBanner();
     renderAll();
+    renderAlertStatus();
+    renderAlertCards();
     startPolling();
   }).catch(function(err){
     console.error('Errore nel caricamento iniziale', err);
     showBanner('Impossibile contattare il server. Riprovo automaticamente…', true);
     renderAll();
+    renderAlertStatus();
+    renderAlertCards();
     startPolling();
   });
+  setInterval(renderAlertCards, 15000); // keep the "tra N min" countdown fresh between syncs
 
   // ---------- polling sync (keeps multiple devices/tabs aligned without a realtime connection) ----------
   var pollTimer = null;
@@ -1252,9 +1555,17 @@
       var changed = JSON.stringify(s.bets)!==JSON.stringify(bets) ||
                     JSON.stringify(s.casse)!==JSON.stringify(casse) ||
                     JSON.stringify(s.settings)!==JSON.stringify(settings);
+      var alertChanged = JSON.stringify(s.matches)!==JSON.stringify(alertMatches) ||
+                    JSON.stringify(s.alertSettings)!==JSON.stringify(alertSettings) ||
+                    s.subscriberCount!==subscriberCount || !!s.botConfigured!==botConfigured;
       if (changed){
         bets = s.bets; casse = s.casse; settings = Object.assign(settings, s.settings);
         renderAll();
+      }
+      if (alertChanged){
+        alertMatches = s.matches || []; alertSettings = s.alertSettings || {notifyMinutes:10};
+        subscriberCount = s.subscriberCount || 0; botConfigured = !!s.botConfigured;
+        renderAlertStatus(); renderAlertCards();
       }
     }).catch(function(err){
       console.error('Errore di sincronizzazione', err);

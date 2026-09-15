@@ -49,6 +49,43 @@ async function migrate() {
       commissione NUMERIC
     );
   `);
+
+  // --- Avvisi Partite (Telegram) ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS matches (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      ora TEXT NOT NULL,
+      campionato TEXT DEFAULT '',
+      casa TEXT NOT NULL,
+      trasferta TEXT NOT NULL,
+      tipo_giocata TEXT DEFAULT '',
+      start_at BIGINT NOT NULL,
+      notify_minutes INTEGER NOT NULL DEFAULT 10,
+      notified BOOLEAN NOT NULL DEFAULT false,
+      created_at BIGINT NOT NULL
+    );
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS subscribers (
+      chat_id TEXT PRIMARY KEY,
+      username TEXT DEFAULT '',
+      created_at BIGINT NOT NULL
+    );
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS alert_settings (
+      id TEXT PRIMARY KEY DEFAULT 'main',
+      notify_minutes INTEGER NOT NULL DEFAULT 10,
+      telegram_offset BIGINT NOT NULL DEFAULT 0
+    );
+  `);
+  await pool.query(`
+    INSERT INTO alert_settings (id, notify_minutes, telegram_offset)
+    VALUES ('main', 10, 0)
+    ON CONFLICT (id) DO NOTHING;
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_start_at ON matches (start_at);`);
 }
 
 module.exports = { pool, migrate };
