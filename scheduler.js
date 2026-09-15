@@ -22,7 +22,7 @@ function formatAlert(m) {
 async function checkOnce() {
   const now = Date.now();
   // notify_minutes varies per match, so fetch all not-yet-notified matches and filter precisely in JS.
-  const { rows: pending } = await pool.query(`SELECT * FROM matches WHERE notified = false ORDER BY start_at ASC`);
+  const { rows: pending } = await pool.query(`SELECT * FROM matches WHERE notified = false AND bot_enabled = true ORDER BY start_at ASC`);
   for (const m of pending) {
     const startAt = Number(m.start_at);
     const windowMs = Number(m.notify_minutes) * 60000;

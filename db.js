@@ -96,6 +96,21 @@ async function migrate() {
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_updated BIGINT;`);
   // Colonne di un tentativo precedente (soglie semplici tiri/occasioni/corner), non più usate:
   // rimangono nel DB se già create in precedenza ma il codice non le legge più.
+
+  // --- Sito EasyBet (gestione manuale: quota ingresso, esito, invio al bot) ---
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS quota_ingresso TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS esito_manuale TEXT;`); // null|'entrata_vinta'|'entrata_persa'|'non_entrata'
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS bot_enabled BOOLEAN NOT NULL DEFAULT true;`);
+
+  // --- Stemmi squadre (cache per le pagine schede) ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS team_crests (
+      name_norm TEXT PRIMARY KEY,
+      nome_originale TEXT,
+      url TEXT,
+      fetched_at BIGINT NOT NULL
+    );
+  `);
 }
 
 module.exports = { pool, migrate };

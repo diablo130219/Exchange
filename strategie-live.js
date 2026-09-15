@@ -9,6 +9,7 @@ const STRATEGIE = {
     label: 'Over 0.5 HT',
     scope: 'totale',
     gate: null,
+    quotaLabel: '1,65–1,80',
     verde: function (m) { return m.xg >= 0.65 && m.sot >= 2 && m.chances >= 1; },
     giallo: function (m) { return m.xg >= 0.35; }
   },
@@ -17,6 +18,7 @@ const STRATEGIE = {
     label: 'Over 1.5 FT',
     scope: 'totale',
     gate: null,
+    quotaLabel: '~1,66',
     verde: function (m) { return m.xg >= 1.00 && m.sot >= 3 && m.chances >= 1; },
     giallo: function (m) { return m.xg >= 0.55; }
   },
@@ -29,6 +31,7 @@ const STRATEGIE = {
         ctx.scoreHome === ctx.scoreAway && (ctx.scoreHome === 0 || ctx.scoreHome === 1);
     },
     gateLabel: 'punteggio 0-0 o 1-1',
+    quotaLabel: '1,90–2,20',
     verde: function (m) { return m.xg >= 1.5 && m.sot >= 4 && m.chances >= 2; },
     giallo: function (m) { return m.xg >= 0.9; }
   },
@@ -40,6 +43,7 @@ const STRATEGIE = {
       return ctx.scoreHome !== null && ctx.scoreAway !== null && ctx.scoreHome === 0 && ctx.scoreAway === 0;
     },
     gateLabel: 'punteggio ancora 0-0',
+    quotaLabel: '~1,90',
     verde: function (m) { return m.xg >= 0.60 && m.sot >= 2 && m.chances >= 1; },
     giallo: function (m) { return m.xg >= 0.30; }
   }

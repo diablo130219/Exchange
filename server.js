@@ -65,7 +65,10 @@ function matchOut(row) {
     liveAlertSent: !!row.live_alert_sent,
     liveLastLevel: row.live_last_level || '',
     liveLastSummary: row.live_last_summary || '',
-    liveLastUpdated: row.live_last_updated === null || row.live_last_updated === undefined ? null : Number(row.live_last_updated)
+    liveLastUpdated: row.live_last_updated === null || row.live_last_updated === undefined ? null : Number(row.live_last_updated),
+    quotaIngresso: row.quota_ingresso || '',
+    esitoManuale: row.esito_manuale || '',
+    botEnabled: row.bot_enabled === false ? false : true
   };
 }
 function escapeHtmlLite(s) {
@@ -277,10 +280,11 @@ app.post('/api/matches', async (req, res) => {
     const id = newId();
     const createdAt = Date.now();
     const notifyMinutes = isNaN(parseInt(b.notifyMinutes, 10)) ? 10 : parseInt(b.notifyMinutes, 10);
+    const botEnabled = b.botEnabled === false ? false : true;
     const { rows } = await pool.query(
-      `INSERT INTO matches (id, data, ora, campionato, casa, trasferta, tipo_giocata, start_at, notify_minutes, notified, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,$10) RETURNING *`,
-      [id, b.data || '', b.ora || '', b.campionato || '', b.casa, b.trasferta, b.tipoGiocata || '', Number(b.startAt), notifyMinutes, createdAt]
+      `INSERT INTO matches (id, data, ora, campionato, casa, trasferta, tipo_giocata, start_at, notify_minutes, notified, created_at, quota_ingresso, esito_manuale, bot_enabled)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,$10,$11,$12,$13) RETURNING *`,
+      [id, b.data || '', b.ora || '', b.campionato || '', b.casa, b.trasferta, b.tipoGiocata || '', Number(b.startAt), notifyMinutes, createdAt, b.quotaIngresso || '', b.esitoManuale || null, botEnabled]
     );
     res.status(201).json(matchOut(rows[0]));
   } catch (err) {
@@ -322,6 +326,36 @@ app.patch('/api/matches/:id', async (req, res) => {
         sets.push('live_last_summary = $' + (i++)); vals.push(null);
         sets.push('live_last_updated = $' + (i++)); vals.push(null);
       }
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'casa')) {
+      sets.push('casa = $' + (i++)); vals.push(String(fields.casa || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'trasferta')) {
+      sets.push('trasferta = $' + (i++)); vals.push(String(fields.trasferta || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'campionato')) {
+      sets.push('campionato = $' + (i++)); vals.push(String(fields.campionato || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'data')) {
+      sets.push('data = $' + (i++)); vals.push(String(fields.data || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'ora')) {
+      sets.push('ora = $' + (i++)); vals.push(String(fields.ora || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'startAt')) {
+      const sa = Number(fields.startAt);
+      if (!isNaN(sa)) { sets.push('start_at = $' + (i++)); vals.push(sa); }
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'quotaIngresso')) {
+      sets.push('quota_ingresso = $' + (i++)); vals.push(String(fields.quotaIngresso || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'esitoManuale')) {
+      const v = String(fields.esitoManuale || '').trim();
+      const valid = ['entrata_vinta', 'entrata_persa', 'non_entrata'];
+      sets.push('esito_manuale = $' + (i++)); vals.push(valid.indexOf(v) !== -1 ? v : null);
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'botEnabled')) {
+      sets.push('bot_enabled = $' + (i++)); vals.push(!!fields.botEnabled);
     }
     if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
     vals.push(id);
@@ -434,6 +468,53 @@ app.post('/api/live-stats', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nel controllo delle statistiche live.' });
+  }
+});
+
+// ---------- stemmi squadre (cache, usata dalle pagine schede) ----------
+function normCrestName(s) {
+  return String(s || '').trim().toLowerCase();
+}
+const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;  // 30 giorni per uno stemma trovato
+const CREST_TTL_MISS_MS = 3 * 24 * 60 * 60 * 1000;  // 3 giorni prima di riprovare se non trovato
+
+app.get('/api/team-crest', async (req, res) => {
+  try {
+    const name = String(req.query.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Nome squadra mancante.' });
+    const key = normCrestName(name);
+
+    const { rows } = await pool.query('SELECT * FROM team_crests WHERE name_norm = $1', [key]);
+    const cached = rows[0];
+    const now = Date.now();
+    if (cached) {
+      const age = now - Number(cached.fetched_at);
+      const fresh = cached.url ? age < CREST_TTL_HIT_MS : age < CREST_TTL_MISS_MS;
+      if (fresh) return res.json({ url: cached.url || null });
+    }
+
+    let url = null;
+    try {
+      const r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(name));
+      if (r.ok) {
+        const data = await r.json();
+        if (data && Array.isArray(data.teams) && data.teams.length) {
+          url = data.teams[0].strBadge || null;
+        }
+      }
+    } catch (fetchErr) {
+      console.error('Errore lookup stemma per "' + name + '":', fetchErr.message);
+    }
+
+    await pool.query(
+      `INSERT INTO team_crests (name_norm, nome_originale, url, fetched_at) VALUES ($1,$2,$3,$4)
+       ON CONFLICT (name_norm) DO UPDATE SET nome_originale = EXCLUDED.nome_originale, url = EXCLUDED.url, fetched_at = EXCLUDED.fetched_at`,
+      [key, name, url, now]
+    );
+    res.json({ url: url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nel recupero dello stemma.' });
   }
 });
 

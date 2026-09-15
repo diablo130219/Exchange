@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EasyBet — Gestione</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0A08;
+    --surface:#161310;
+    --surface-2:#1F1A14;
+    --border:#2C2418;
+    --border-strong:#43371F;
+    --text:#F5EFE2;
+    --text-muted:#B4A98F;
+    --text-faint:#7A705C;
+    --gold:#D9B44A;
+    --gold-bright:#F0CD6E;
+    --gold-deep:#8A6D22;
+    --win:#3FBE6B;
+    --win-soft:#12291B;
+    --giallo:#E8C13B;
+    --giallo-soft:#332A0E;
+    --rosso:#E15C4D;
+    --rosso-soft:#331611;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 34px -14px rgba(0,0,0,.8);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(ellipse at top, #17130d 0%, var(--bg) 55%);color:var(--text);font-family:'Sora',ui-sans-serif,system-ui,sans-serif;min-height:100vh;}
+  a{color:inherit;}
+  ::selection{background:var(--gold-deep);color:#fff;}
+
+  /* ---------- PIN gate ---------- */
+  #pinGate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;}
+  .pin-box{width:100%;max-width:340px;text-align:center;}
+  .pin-logo{font-family:'Playfair Display',serif;font-weight:800;font-size:2rem;letter-spacing:.02em;color:var(--gold-bright);margin-bottom:4px;}
+  .pin-logo span{color:var(--text);}
+  .pin-sub{color:var(--text-muted);font-size:.82rem;margin-bottom:26px;}
+  #pinInput{width:100%;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;color:var(--text);font-size:1.4rem;letter-spacing:.5em;text-align:center;padding:14px 10px;font-family:'IBM Plex Mono',monospace;}
+  #pinInput:focus{outline:none;border-color:var(--gold);}
+  .pin-btn{margin-top:14px;width:100%;background:linear-gradient(180deg,var(--gold-bright),var(--gold-deep));border:none;color:#1a1408;font-weight:700;font-size:.9rem;padding:12px;border-radius:10px;cursor:pointer;}
+  .pin-btn:active{transform:translateY(1px);}
+  .pin-error{color:var(--rosso);font-size:.78rem;margin-top:10px;min-height:16px;}
+  .pin-reset{color:var(--text-faint);font-size:.72rem;margin-top:22px;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit;}
+
+  /* ---------- shell ---------- */
+  #app{display:none;}
+  .navbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+  .brand{font-family:'Playfair Display',serif;font-weight:800;font-size:1.4rem;letter-spacing:.02em;color:var(--gold-bright);}
+  .brand span{color:var(--text);}
+  .navlinks{display:flex;gap:22px;font-size:.82rem;color:var(--text-muted);flex-wrap:wrap;}
+  .navlinks a{text-decoration:none;}
+  .navlinks a:hover{color:var(--gold-bright);}
+  .navlinks a.active{color:var(--gold-bright);font-weight:600;}
+  .nav-right{display:flex;gap:10px;align-items:center;}
+  .lock-btn{background:var(--surface);border:1px solid var(--border-strong);color:var(--text-muted);font-size:.76rem;padding:8px 14px;border-radius:999px;cursor:pointer;font-family:inherit;}
+  .lock-btn:hover{color:var(--gold-bright);border-color:var(--gold-deep);}
+
+  .hero{padding:46px 28px 30px;text-align:center;background:linear-gradient(180deg, rgba(217,180,74,.08), transparent 70%);}
+  .hero h1{font-family:'Playfair Display',serif;font-size:2.1rem;margin:0 0 10px;font-weight:800;}
+  .hero h1 .gold{color:var(--gold-bright);}
+  .hero p{color:var(--text-muted);font-size:.92rem;max-width:520px;margin:0 auto;}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px 70px;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:28px 0 16px;}
+  .section-head h2{font-size:1.05rem;margin:0;letter-spacing:.03em;text-transform:uppercase;color:var(--text);}
+  .section-head h2 small{display:block;text-transform:none;letter-spacing:0;color:var(--text-faint);font-size:.74rem;font-weight:400;margin-top:2px;}
+  .add-btn{background:linear-gradient(180deg,var(--gold-bright),var(--gold-deep));border:none;color:#1a1408;font-weight:700;font-size:.82rem;padding:10px 18px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+  .pill{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.76rem;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:inherit;}
+  .pill.active{background:var(--surface-2);border-color:var(--gold-deep);color:var(--gold-bright);}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 17px;box-shadow:var(--shadow);position:relative;}
+  .card.esito-entrata_vinta{border-color:var(--win);box-shadow:0 0 0 1px var(--win) inset, var(--shadow);}
+  .card.esito-entrata_persa{border-color:var(--rosso);box-shadow:0 0 0 1px var(--rosso) inset, var(--shadow);}
+  .card.esito-non_entrata{border-color:var(--giallo);box-shadow:0 0 0 1px var(--giallo) inset, var(--shadow);}
+  .card-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .when{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--text-muted);}
+  .league{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-top:3px;font-weight:600;}
+  .teams-row{display:flex;align-items:center;gap:10px;margin:14px 0 10px;}
+  .crest{width:30px;height:30px;border-radius:50%;object-fit:contain;background:var(--surface-2);flex:none;}
+  .crest.placeholder{display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:var(--text-faint);border:1px solid var(--border);}
+  .teams-names{font-size:.95rem;font-weight:700;line-height:1.35;}
+  .vs{color:var(--text-faint);font-weight:400;font-size:.8rem;}
+  .meta-row{display:flex;flex-direction:column;gap:5px;font-size:.8rem;color:var(--text-muted);margin-bottom:12px;}
+  .meta-row b{color:var(--text);font-weight:600;}
+  .esito-row{margin-bottom:12px;}
+  .esito-select{width:100%;background:var(--surface-2);border:1px solid var(--border-strong);color:var(--text);font-size:.78rem;padding:8px 10px;border-radius:8px;font-family:inherit;}
+  .esito-select.esito-entrata_vinta{color:var(--win);border-color:var(--win);}
+  .esito-select.esito-entrata_persa{color:var(--rosso);border-color:var(--rosso);}
+  .esito-select.esito-non_entrata{color:var(--giallo);border-color:var(--giallo);}
+  .card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--border);}
+  .bot-toggle{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-faint);cursor:pointer;user-select:none;}
+  .bot-toggle input{accent-color:var(--gold);}
+  .card-actions{display:flex;gap:6px;}
+  .icon-btn{background:none;border:1px solid var(--border);color:var(--text-faint);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;}
+  .icon-btn:hover{border-color:var(--gold-deep);color:var(--gold-bright);}
+  .empty{grid-column:1/-1;color:var(--text-faint);font-style:italic;padding:50px 0;text-align:center;}
+
+  /* ---------- modal ---------- */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:500;padding:16px;}
+  .modal-backdrop.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;padding:22px 22px 20px;width:100%;max-width:440px;max-height:92vh;overflow:auto;box-shadow:var(--shadow);}
+  .modal h3{margin:0 0 16px;font-size:1.05rem;color:var(--gold-bright);font-family:'Playfair Display',serif;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:.72rem;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em;}
+  .field input, .field select{width:100%;background:var(--surface-2);border:1px solid var(--border-strong);color:var(--text);font-size:.85rem;padding:9px 10px;border-radius:8px;font-family:inherit;}
+  .field input:focus, .field select:focus{outline:none;border-color:var(--gold);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text-muted);margin:14px 0 4px;}
+  .checkline input{accent-color:var(--gold);}
+  .modal-actions{display:flex;justify-content:space-between;gap:10px;margin-top:18px;}
+  .btn{border:none;border-radius:9px;padding:10px 16px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:linear-gradient(180deg,var(--gold-bright),var(--gold-deep));color:#1a1408;}
+  .btn-ghost{background:var(--surface-2);color:var(--text-muted);border:1px solid var(--border);}
+  .btn-danger{background:var(--rosso-soft);color:var(--rosso);border:1px solid var(--rosso);}
+  .modal-err{color:var(--rosso);font-size:.76rem;margin-top:8px;min-height:14px;}
+
+  @media(max-width:560px){ .navlinks{display:none;} .field-row{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<div id="pinGate">
+  <div class="pin-box">
+    <div class="pin-logo">Easy<span>Bet</span></div>
+    <div class="pin-sub" id="pinSub">Inserisci il PIN per accedere</div>
+    <input id="pinInput" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+    <button class="pin-btn" id="pinBtn">Sblocca</button>
+    <div class="pin-error" id="pinError"></div>
+    <button class="pin-reset" id="pinReset">PIN dimenticato? Reimposta accesso</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="navbar">
+    <div class="brand">Easy<span>Bet</span> <small style="font-family:'Sora',sans-serif;font-weight:600;font-size:.6rem;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;vertical-align:middle;">Gestione</small></div>
+    <div class="navlinks">
+      <a href="/easybet.html">Vedi sito pubblico ↗</a>
+    </div>
+    <div class="nav-right">
+      <button class="lock-btn" id="lockBtn">🔒 Blocca</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <h1>Le tue giocate, <span class="gold">gestite a mano</span>.</h1>
+    <p>Area privata: inserisci le partite, imposta quota ed esito, decidi tu quali arrivano sul bot Telegram. Le modifiche si vedono subito sul sito pubblico.</p>
+  </div>
+
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Partite<small>Aggiungi, modifica ed elimina liberamente — tutto resta privato qui.</small></h2>
+      <button class="add-btn" id="addBtn">+ Aggiungi partita</button>
+    </div>
+
+    <div class="pills" id="pills">
+      <button class="pill active" data-f="tutte">Tutte</button>
+      <button class="pill" data-f="entrata_vinta">Vinte</button>
+      <button class="pill" data-f="entrata_persa">Perse</button>
+      <button class="pill" data-f="non_entrata">Non entrate</button>
+      <button class="pill" data-f="">Da impostare</button>
+    </div>
+
+    <div class="grid" id="grid"><div class="empty">Caricamento…</div></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Aggiungi partita</h3>
+    <input type="hidden" id="fId">
+    <div class="field">
+      <label>Campionato / dove</label>
+      <input type="text" id="fCampionato" placeholder="es. Serie A, Premier League…">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Squadra casa</label>
+        <input type="text" id="fCasa" placeholder="Squadra casa">
+      </div>
+      <div class="field">
+        <label>Squadra trasferta</label>
+        <input type="text" id="fTrasferta" placeholder="Squadra trasferta">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Data</label>
+        <input type="date" id="fData">
+      </div>
+      <div class="field">
+        <label>Ora</label>
+        <input type="time" id="fOra">
+      </div>
+    </div>
+    <div class="field">
+      <label>Strategia / tipo di giocata</label>
+      <input type="text" id="fTipo" placeholder="es. Over 1.5 FT, Lay X 0-0…">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Quota ingresso</label>
+        <input type="text" id="fQuota" placeholder="es. 1.66">
+      </div>
+      <div class="field">
+        <label>Esito</label>
+        <select id="fEsito">
+          <option value="">— da impostare —</option>
+          <option value="entrata_vinta">Entrata e vinta</option>
+          <option value="entrata_persa">Entrata e persa</option>
+          <option value="non_entrata">Non entrata</option>
+        </select>
+      </div>
+    </div>
+    <label class="checkline"><input type="checkbox" id="fBot" checked> Invia avviso pre-match su Telegram</label>
+    <div class="modal-err" id="modalErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="deleteBtn" style="display:none;">Elimina</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" id="cancelBtn">Annulla</button>
+      <button class="btn btn-primary" id="saveBtn">Salva</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------------- PIN gate ----------------
+  var LS_HASH = 'easybet_pin_h';
+  var SS_UNLOCK = 'easybet_unlocked';
+
+  function simpleHash(s){
+    var h = 5381;
+    for (var i=0;i<s.length;i++){ h = ((h*33) ^ s.charCodeAt(i)) >>> 0; }
+    return String(h);
+  }
+
+  var pinGate = document.getElementById('pinGate');
+  var appEl = document.getElementById('app');
+  var pinInput = document.getElementById('pinInput');
+  var pinBtn = document.getElementById('pinBtn');
+  var pinError = document.getElementById('pinError');
+  var pinSub = document.getElementById('pinSub');
+  var pinReset = document.getElementById('pinReset');
+
+  function isSetup(){ return !!localStorage.getItem(LS_HASH); }
+
+  function refreshPinMode(){
+    if (isSetup()){
+      pinSub.textContent = 'Inserisci il PIN per accedere';
+      pinBtn.textContent = 'Sblocca';
+    } else {
+      pinSub.textContent = 'Prima volta qui: scegli un PIN (4-8 cifre) per proteggere questa pagina';
+      pinBtn.textContent = 'Imposta PIN';
+    }
+  }
+
+  function showApp(){
+    pinGate.style.display = 'none';
+    appEl.style.display = 'block';
+    initAppOnce();
+  }
+
+  function tryUnlock(){
+    var v = pinInput.value.trim();
+    pinError.textContent = '';
+    if (!v){ pinError.textContent = 'Inserisci un PIN.'; return; }
+    if (!isSetup()){
+      if (v.length < 4){ pinError.textContent = 'Usa almeno 4 cifre/caratteri.'; return; }
+      localStorage.setItem(LS_HASH, simpleHash(v));
+      sessionStorage.setItem(SS_UNLOCK, '1');
+      showApp();
+      return;
+    }
+    if (simpleHash(v) === localStorage.getItem(LS_HASH)){
+      sessionStorage.setItem(SS_UNLOCK, '1');
+      showApp();
+    } else {
+      pinError.textContent = 'PIN errato.';
+      pinInput.value = '';
+    }
+  }
+
+  pinBtn.addEventListener('click', tryUnlock);
+  pinInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') tryUnlock(); });
+  pinReset.addEventListener('click', function(){
+    if (confirm('Questo cancella il PIN attuale da questo browser e te ne farà scegliere uno nuovo. Continuare?')){
+      localStorage.removeItem(LS_HASH);
+      sessionStorage.removeItem(SS_UNLOCK);
+      pinInput.value = '';
+      pinError.textContent = '';
+      refreshPinMode();
+    }
+  });
+
+  document.getElementById('lockBtn').addEventListener('click', function(){
+    sessionStorage.removeItem(SS_UNLOCK);
+    location.reload();
+  });
+
+  refreshPinMode();
+  if (isSetup() && sessionStorage.getItem(SS_UNLOCK) === '1'){
+    showApp();
+  }
+
+  // ---------------- app ----------------
+  var appInited = false;
+  function initAppOnce(){
+    if (appInited) return;
+    appInited = true;
+    startApp();
+  }
+
+  function startApp(){
+    var ESITO_LABEL = {
+      entrata_vinta: '🟢 Entrata e vinta',
+      entrata_persa: '🔴 Entrata e persa',
+      non_entrata: '🟡 Non entrata'
+    };
+
+    var crestCache = {};
+    var matches = [];
+    var currentFilter = 'tutte';
+
+    function esc(s){
+      return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function initials(name){
+      var parts = String(name||'').trim().split(/\s+/);
+      var s = (parts[0]||'')[0] || '?';
+      return s.toUpperCase();
+    }
+
+    function crestImg(name){
+      var id = 'crest-' + Math.random().toString(36).slice(2);
+      setTimeout(function(){ loadCrest(name, id); }, 0);
+      return '<span class="crest placeholder" id="'+id+'">'+esc(initials(name))+'</span>';
+    }
+
+    function loadCrest(name, id){
+      var key = String(name||'').trim().toLowerCase();
+      if (!key) return;
+      if (crestCache[key] !== undefined){ applyCrest(id, crestCache[key]); return; }
+      fetch('/api/team-crest?name=' + encodeURIComponent(name))
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          crestCache[key] = d && d.url ? d.url : null;
+          applyCrest(id, crestCache[key]);
+        })
+        .catch(function(){ crestCache[key] = null; });
+    }
+
+    function applyCrest(id, url){
+      var el = document.getElementById(id);
+      if (!el || !url) return;
+      var img = document.createElement('img');
+      img.className = 'crest';
+      img.src = url;
+      img.alt = '';
+      img.onerror = function(){ /* keep placeholder look on broken url */ };
+      el.replaceWith(img);
+    }
+
+    function fmtWhen(m){
+      var d = new Date(Number(m.startAt));
+      var dd = (m.data || d.toLocaleDateString('it-IT'));
+      var oo = (m.ora || d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}));
+      return dd + ' ' + oo;
+    }
+
+    function matchesFilter(m){
+      if (currentFilter === 'tutte') return true;
+      return (m.esitoManuale || '') === currentFilter;
+    }
+
+    function render(){
+      var grid = document.getElementById('grid');
+      var list = matches.filter(matchesFilter);
+      if (!list.length){
+        grid.innerHTML = '<div class="empty">Nessuna partita in questa vista.</div>';
+        return;
+      }
+      grid.innerHTML = list.map(function(m){
+        var esito = m.esitoManuale || '';
+        var cls = 'card' + (esito ? ' esito-'+esito : '');
+        return '<div class="'+cls+'" data-id="'+esc(m.id)+'">'+
+          '<div class="card-top">'+
+            '<span class="when">'+esc(fmtWhen(m))+'</span>'+
+          '</div>'+
+          (m.campionato? '<div class="league">'+esc(m.campionato)+'</div>' : '')+
+          '<div class="teams-row">'+
+            crestImg(m.casa)+
+            '<div class="teams-names">'+esc(m.casa)+' <span class="vs">vs</span> '+esc(m.trasferta)+'</div>'+
+          '</div>'+
+          '<div class="meta-row">'+
+            (m.tipoGiocata? '<div>Strategia: <b>'+esc(m.tipoGiocata)+'</b></div>' : '')+
+            (m.quotaIngresso? '<div>Quota ingresso: <b>'+esc(m.quotaIngresso)+'</b></div>' : '')+
+          '</div>'+
+          '<div class="esito-row">'+
+            '<select class="esito-select esito-'+esc(esito)+'" data-id="'+esc(m.id)+'" data-role="esito">'+
+              '<option value=""'+(esito===''?' selected':'')+'>— da impostare —</option>'+
+              '<option value="entrata_vinta"'+(esito==='entrata_vinta'?' selected':'')+'>'+ESITO_LABEL.entrata_vinta+'</option>'+
+              '<option value="entrata_persa"'+(esito==='entrata_persa'?' selected':'')+'>'+ESITO_LABEL.entrata_persa+'</option>'+
+              '<option value="non_entrata"'+(esito==='non_entrata'?' selected':'')+'>'+ESITO_LABEL.non_entrata+'</option>'+
+            '</select>'+
+          '</div>'+
+          '<div class="card-foot">'+
+            '<label class="bot-toggle"><input type="checkbox" data-role="bot" data-id="'+esc(m.id)+'"'+(m.botEnabled?' checked':'')+'> su Telegram</label>'+
+            '<div class="card-actions">'+
+              '<button class="icon-btn" data-role="edit" data-id="'+esc(m.id)+'" title="Modifica">✎</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+    }
+
+    function loadMatches(){
+      return fetch('/api/state').then(function(r){ return r.json(); }).then(function(s){
+        matches = (s.matches || []).slice().sort(function(a,b){ return a.startAt - b.startAt; });
+        render();
+      }).catch(function(){
+        document.getElementById('grid').innerHTML = '<div class="empty">Errore nel caricamento.</div>';
+      });
+    }
+
+    // pills
+    document.getElementById('pills').addEventListener('click', function(e){
+      var btn = e.target.closest('.pill');
+      if (!btn) return;
+      currentFilter = btn.getAttribute('data-f');
+      document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      render();
+    });
+
+    // inline esito / bot toggle
+    document.getElementById('grid').addEventListener('change', function(e){
+      var role = e.target.getAttribute('data-role');
+      var id = e.target.getAttribute('data-id');
+      if (!role || !id) return;
+      var payload = {};
+      if (role === 'esito') payload.esitoManuale = e.target.value;
+      if (role === 'bot') payload.botEnabled = e.target.checked;
+      fetch('/api/matches/' + encodeURIComponent(id), {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      }).then(function(r){ return r.json(); }).then(function(updated){
+        var idx = matches.findIndex(function(m){ return m.id === id; });
+        if (idx !== -1) matches[idx] = updated;
+        render();
+      });
+    });
+
+    document.getElementById('grid').addEventListener('click', function(e){
+      var btn = e.target.closest('[data-role="edit"]');
+      if (!btn) return;
+      var id = btn.getAttribute('data-id');
+      var m = matches.find(function(x){ return x.id === id; });
+      if (m) openModal(m);
+    });
+
+    // ---------------- modal ----------------
+    var backdrop = document.getElementById('modalBackdrop');
+    var modalTitle = document.getElementById('modalTitle');
+    var fId = document.getElementById('fId');
+    var fCampionato = document.getElementById('fCampionato');
+    var fCasa = document.getElementById('fCasa');
+    var fTrasferta = document.getElementById('fTrasferta');
+    var fData = document.getElementById('fData');
+    var fOra = document.getElementById('fOra');
+    var fTipo = document.getElementById('fTipo');
+    var fQuota = document.getElementById('fQuota');
+    var fEsito = document.getElementById('fEsito');
+    var fBot = document.getElementById('fBot');
+    var modalErr = document.getElementById('modalErr');
+    var deleteBtn = document.getElementById('deleteBtn');
+
+    function pad(n){ return n < 10 ? '0'+n : ''+n; }
+
+    function openModal(m){
+      modalErr.textContent = '';
+      if (m){
+        modalTitle.textContent = 'Modifica partita';
+        fId.value = m.id;
+        fCampionato.value = m.campionato || '';
+        fCasa.value = m.casa || '';
+        fTrasferta.value = m.trasferta || '';
+        var d = new Date(Number(m.startAt));
+        fData.value = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+        fOra.value = pad(d.getHours()) + ':' + pad(d.getMinutes());
+        fTipo.value = m.tipoGiocata || '';
+        fQuota.value = m.quotaIngresso || '';
+        fEsito.value = m.esitoManuale || '';
+        fBot.checked = !!m.botEnabled;
+        deleteBtn.style.display = 'inline-block';
+      } else {
+        modalTitle.textContent = 'Aggiungi partita';
+        fId.value = '';
+        fCampionato.value = '';
+        fCasa.value = '';
+        fTrasferta.value = '';
+        var now = new Date(Date.now() + 60*60000);
+        fData.value = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate());
+        fOra.value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+        fTipo.value = '';
+        fQuota.value = '';
+        fEsito.value = '';
+        fBot.checked = true;
+        deleteBtn.style.display = 'none';
+      }
+      backdrop.classList.add('open');
+    }
+
+    function closeModal(){ backdrop.classList.remove('open'); }
+
+    document.getElementById('addBtn').addEventListener('click', function(){ openModal(null); });
+    document.getElementById('cancelBtn').addEventListener('click', closeModal);
+    backdrop.addEventListener('click', function(e){ if (e.target === backdrop) closeModal(); });
+
+    document.getElementById('saveBtn').addEventListener('click', function(){
+      var casa = fCasa.value.trim(), trasferta = fTrasferta.value.trim();
+      if (!casa || !trasferta){ modalErr.textContent = 'Inserisci entrambe le squadre.'; return; }
+      if (!fData.value || !fOra.value){ modalErr.textContent = 'Inserisci data e ora.'; return; }
+      var startAt = new Date(fData.value + 'T' + fOra.value).getTime();
+      if (isNaN(startAt)){ modalErr.textContent = 'Data/ora non valida.'; return; }
+
+      var payload = {
+        campionato: fCampionato.value.trim(),
+        casa: casa,
+        trasferta: trasferta,
+        data: fData.value,
+        ora: fOra.value,
+        startAt: startAt,
+        tipoGiocata: fTipo.value.trim(),
+        quotaIngresso: fQuota.value.trim(),
+        esitoManuale: fEsito.value,
+        botEnabled: fBot.checked
+      };
+
+      var id = fId.value;
+      var req = id
+        ? fetch('/api/matches/' + encodeURIComponent(id), { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+        : fetch('/api/matches', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+
+      req.then(function(r){
+        if (!r.ok) throw new Error('save-failed');
+        return r.json();
+      }).then(function(){
+        closeModal();
+        loadMatches();
+      }).catch(function(){
+        modalErr.textContent = 'Errore nel salvataggio.';
+      });
+    });
+
+    deleteBtn.addEventListener('click', function(){
+      var id = fId.value;
+      if (!id) return;
+      if (!confirm('Eliminare questa partita?')) return;
+      fetch('/api/matches/' + encodeURIComponent(id), { method:'DELETE' }).then(function(){
+        closeModal();
+        loadMatches();
+      });
+    });
+
+    loadMatches();
+    setInterval(loadMatches, 30000);
+  }
+})();
+</script>
+</body>
+</html>
