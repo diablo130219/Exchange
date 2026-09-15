@@ -5,43 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Taccuino Exchange</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* Committed dark dashboard identity (Bet-Analytix-style) — intentionally single-theme,
-     colors painted explicitly so the page holds regardless of the host's light/dark setting. */
+  /* Identità EasyBet (gold/black premium) — stessa palette delle pagine easybet.html /
+     easybet-admin.html, colori dipinti esplicitamente così la pagina resta coerente
+     a prescindere dal tema chiaro/scuro dell'host. */
   :root{
-    --bg:#0A0C10;
-    --surface:#12151B;
-    --surface-2:#1A1E26;
-    --border:#242932;
-    --border-strong:#333A46;
-    --text:#EDEFF3;
-    --text-muted:#9AA1AF;
-    --text-faint:#626976;
-    --accent:#4C8DFF;
-    --accent-ink:#6AA5FF;
-    --accent-text:#07101F;
-    --accent-soft:#16233F;
-    --win:#12A88A;
-    --win-soft:#0E2C24;
-    --loss:#E2604F;
-    --loss-soft:#34190F;
-    --void:#9184C9;
-    --void-soft:#211D33;
-    --open-soft:#1A1E26;
+    --bg:#0B0A08;
+    --surface:#161310;
+    --surface-2:#1F1A14;
+    --border:#2C2418;
+    --border-strong:#43371F;
+    --text:#F5EFE2;
+    --text-muted:#B4A98F;
+    --text-faint:#7A705C;
+    --accent:#D9B44A;
+    --accent-ink:#F0CD6E;
+    --accent-deep:#8A6D22;
+    --accent-text:#1A1408;
+    --accent-soft:#332912;
+    --win:#3FBE6B;
+    --win-soft:#12291B;
+    --loss:#E15C4D;
+    --loss-soft:#331611;
+    --void:#B49BDD;
+    --void-soft:#241E33;
+    --open-soft:#1F1A14;
     --chart-grid:#FFFFFF14;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -12px rgba(0,0,0,.65);
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 34px -14px rgba(0,0,0,.8);
     --radius: 12px;
   }
 
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Sora',ui-sans-serif,system-ui,sans-serif;}
+  body{margin:0;background:radial-gradient(ellipse at top, #17130d 0%, var(--bg) 55%);color:var(--text);font-family:'Sora',ui-sans-serif,system-ui,sans-serif;}
   .num{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
 
   .page{max-width:1240px;margin:0 auto;padding:28px 20px 64px;display:flex;flex-direction:column;gap:22px;}
 
   header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;}
-  header.top h1{font-size:1.5rem;font-weight:800;letter-spacing:-.01em;margin:0;}
+  header.top h1{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;letter-spacing:.01em;margin:0;}
   header.top h1 .mark{color:var(--accent-ink);}
   header.top .sub{font-size:.85rem;color:var(--text-muted);}
   .cassa-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
@@ -95,8 +97,8 @@
   button{font-family:inherit;cursor:pointer;}
   .btn{border:1px solid var(--border-strong);background:var(--surface);color:var(--text);border-radius:7px;padding:8px 14px;font-size:.82rem;font-weight:600;transition:background .12s ease,border-color .12s ease;}
   .btn:hover{background:var(--surface-2);}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text);}
-  .btn.primary:hover{filter:brightness(1.06);}
+  .btn.primary{background:linear-gradient(180deg,var(--accent-ink),var(--accent-deep));border-color:var(--accent-deep);color:var(--accent-text);font-weight:700;}
+  .btn.primary:hover{filter:brightness(1.08);}
   .btn.ghost{border-color:transparent;background:transparent;color:var(--text-muted);}
   .btn.ghost:hover{background:var(--surface-2);color:var(--text);}
   .btn:disabled{opacity:.45;cursor:not-allowed;}
@@ -142,7 +144,9 @@
   .match-teams{font-size:1rem;font-weight:700;margin:5px 0 8px;}
   .match-bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
   .match-tipo{display:flex;align-items:center;gap:8px;flex:1;min-width:160px;}
-  .match-tipo input{flex:1;font-weight:600;}
+  .match-tipo input{flex:1;font-weight:600;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:.85rem;}
+  .match-tipo input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .match-tipo input::placeholder{color:var(--text-faint);font-weight:400;}
   .match-countdown{font-size:.74rem;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--open-soft);color:var(--text-muted);white-space:nowrap;}
   .match-countdown.soon{background:#3A2E12;color:#E2A93F;}
   .match-countdown.sent{background:var(--win-soft);color:var(--win);}
