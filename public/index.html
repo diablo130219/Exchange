@@ -192,14 +192,61 @@
   footer.note{font-size:.72rem;color:var(--text-faint);text-align:center;padding-top:4px;}
 
   @media (max-width:760px){
-    table{min-width:0;}
+    .ledger-wrap{overflow-x:visible;border:none;background:transparent;box-shadow:none;}
+    table{display:block;min-width:0;width:100%;}
     thead{display:none;}
-    tbody, tr, td{display:block;width:100%;}
-    tbody tr{border-bottom:1px solid var(--border);padding:10px 4px;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;}
-    tbody td{border-bottom:none;padding:2px 4px;}
-    tbody td::before{content:attr(data-label);display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;margin-bottom:1px;}
-    tbody td.full{grid-column:1/-1;}
-    tbody td.actions-cell{grid-column:1/-1;display:flex;justify-content:flex-end;}
+    tbody{display:flex;flex-direction:column;gap:10px;}
+    tr, td{display:block;width:100%;}
+    tbody tr{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      grid-template-areas:
+        "date time league"
+        "match match match"
+        "cassa cassa cassa"
+        "tipo tipo esito"
+        "quota stake comm"
+        "pl pl del";
+      gap:8px 10px;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-left:3px solid var(--border-strong);
+      border-radius:10px;
+      padding:12px 12px 10px;
+      box-shadow:var(--shadow);
+    }
+    tbody tr.row-vinta{border-left-color:var(--win);}
+    tbody tr.row-persa{border-left-color:var(--loss);}
+    tbody tr.row-void{border-left-color:var(--void);}
+    tbody tr:hover{background:var(--surface);}
+    tbody td{border-bottom:none;padding:0;}
+    tbody td::before{content:attr(data-label);display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;margin-bottom:2px;}
+
+    tbody td[data-label="Data"]{grid-area:date;}
+    tbody td[data-label="Ora"]{grid-area:time;}
+    tbody td[data-label="Campionato"]{grid-area:league;}
+    tbody td[data-label="Match"]{grid-area:match;}
+    tbody td[data-label="Match"]::before{display:none;}
+    tbody td[data-label="Match"] input{font-weight:700;font-size:.95rem;min-width:0;}
+    tbody td[data-label="Cassa"]{grid-area:cassa;}
+    tbody td[data-label="Tipo"]{grid-area:tipo;}
+    tbody td[data-label="Esito"]{grid-area:esito;}
+    tbody td[data-label="Quota"]{grid-area:quota;}
+    tbody td[data-label="Stake/Resp."]{grid-area:stake;}
+    tbody td[data-label="Comm. %"]{grid-area:comm;}
+    tbody td[data-label="P/L"]{grid-area:pl;display:flex;align-items:baseline;gap:6px;}
+    tbody td[data-label="P/L"]::before{margin-bottom:0;}
+    tbody td[data-label="P/L"] .pl-cell{font-size:1rem;}
+    tbody td.actions-cell{grid-area:del;display:flex;align-items:center;justify-content:flex-end;}
+    tbody td.actions-cell .del-btn{padding:7px 10px;font-size:1rem;}
+
+    tbody td input, tbody td select{width:100%;}
+    tbody td input.narrow, tbody td input.mid, tbody td input.tiny{width:100%;}
+    tbody .type-toggle{width:100%;}
+    tbody .type-toggle button{flex:1;text-align:center;}
+
+    tbody tr:not([data-id]){display:block;background:transparent;border:none;box-shadow:none;padding:0;}
+    tbody tr:not([data-id]) td{padding:0;}
   }
 
   .sync-banner{display:none;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border-strong);border-radius:10px;padding:10px 14px;font-size:.8rem;color:var(--text-muted);}
@@ -952,7 +999,7 @@
     }
     var esito = b.esito || 'aperta';
     return ''+
-    '<tr data-id="'+b.id+'">'+
+    '<tr data-id="'+b.id+'" class="row-'+esito+'">'+
       '<td data-label="Data"><input class="wide" data-f="data" value="'+esc(b.data)+'" placeholder="GG/MM/AAAA"></td>'+
       '<td data-label="Ora"><input class="narrow" data-f="ora" value="'+esc(b.ora)+'" placeholder="HH:MM"></td>'+
       '<td data-label="Campionato"><input class="wide" data-f="campionato" value="'+esc(b.campionato)+'" placeholder="Campionato"></td>'+
