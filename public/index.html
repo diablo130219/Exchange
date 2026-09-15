@@ -311,11 +311,38 @@
   .sync-banner .spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border-strong);border-top-color:var(--accent-ink);animation:spin .8s linear infinite;flex:none;}
   .sync-banner.error .spin{display:none;}
   @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- PIN gate (area privata) ---------- */
+  #pinGate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;}
+  .pin-box{width:100%;max-width:340px;text-align:center;}
+  .pin-logo{font-family:'Playfair Display',serif;font-weight:800;font-size:1.8rem;letter-spacing:.01em;color:var(--accent-ink);margin-bottom:4px;}
+  .pin-logo span{color:var(--text);}
+  .pin-sub{color:var(--text-muted);font-size:.82rem;margin-bottom:26px;}
+  #pinInput{width:100%;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;color:var(--text);font-size:1.4rem;letter-spacing:.5em;text-align:center;padding:14px 10px;font-family:'IBM Plex Mono',monospace;}
+  #pinInput:focus{outline:none;border-color:var(--accent);}
+  .pin-btn{margin-top:14px;width:100%;background:linear-gradient(180deg,var(--accent-ink),var(--accent-deep));border:none;color:var(--accent-text);font-weight:700;font-size:.9rem;padding:12px;border-radius:10px;cursor:pointer;font-family:inherit;}
+  .pin-btn:active{transform:translateY(1px);}
+  .pin-error{color:var(--loss);font-size:.78rem;margin-top:10px;min-height:16px;}
+  .pin-reset{color:var(--text-faint);font-size:.72rem;margin-top:22px;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit;}
+  #pageRoot{display:none;}
+  .lock-btn{background:var(--surface);border:1px solid var(--border-strong);color:var(--text-muted);font-size:.76rem;padding:8px 14px;border-radius:999px;cursor:pointer;font-family:inherit;}
+  .lock-btn:hover{color:var(--accent-ink);border-color:var(--accent-deep);}
 </style>
 </head>
 <body>
 
-<div class="page">
+<div id="pinGate">
+  <div class="pin-box">
+    <div class="pin-logo"><span>Taccuino</span> Exchange</div>
+    <div class="pin-sub" id="pinSub">Inserisci il PIN per accedere</div>
+    <input id="pinInput" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+    <button class="pin-btn" id="pinBtn">Sblocca</button>
+    <div class="pin-error" id="pinError"></div>
+    <button class="pin-reset" id="pinReset">PIN dimenticato? Reimposta accesso</button>
+  </div>
+</div>
+
+<div class="page" id="pageRoot">
   <div class="sync-banner" id="syncBanner"><span class="spin"></span><span id="syncBannerText"></span></div>
 
   <header class="top">
@@ -323,6 +350,7 @@
       <h1><span class="mark">Taccuino</span> Exchange</h1>
       <div class="sub">Registro giocate back &amp; lay — stake, quote, commissioni e P/L calcolati in automatico</div>
     </div>
+    <button class="lock-btn" id="lockBtn">🔒 Blocca</button>
   </header>
 
   <section class="cassa-bar">
@@ -524,7 +552,7 @@
 </div>
 
 <script>
-(function(){
+function startApp(){
   var bets = [];
   var casse = [];
   var activeCassaId = null; // null = "Tutte"
@@ -1671,6 +1699,91 @@
     document.addEventListener('visibilitychange', function(){
       if (!document.hidden) pollOnce();
     });
+  }
+}
+
+// ---------- PIN gate ----------
+(function(){
+  var LS_HASH = 'taccuino_pin_h';
+  var SS_UNLOCK = 'taccuino_unlocked';
+
+  function simpleHash(s){
+    var h = 5381;
+    for (var i=0;i<s.length;i++){ h = ((h*33) ^ s.charCodeAt(i)) >>> 0; }
+    return String(h);
+  }
+
+  var pinGate = document.getElementById('pinGate');
+  var pageRoot = document.getElementById('pageRoot');
+  var pinInput = document.getElementById('pinInput');
+  var pinBtn = document.getElementById('pinBtn');
+  var pinError = document.getElementById('pinError');
+  var pinSub = document.getElementById('pinSub');
+  var pinReset = document.getElementById('pinReset');
+
+  function isSetup(){ return !!localStorage.getItem(LS_HASH); }
+
+  function refreshPinMode(){
+    if (isSetup()){
+      pinSub.textContent = 'Inserisci il PIN per accedere';
+      pinBtn.textContent = 'Sblocca';
+    } else {
+      pinSub.textContent = 'Prima volta qui: scegli un PIN (4-8 cifre) per proteggere questa pagina';
+      pinBtn.textContent = 'Imposta PIN';
+    }
+  }
+
+  var appStarted = false;
+  function showApp(){
+    pinGate.style.display = 'none';
+    // #pageRoot{display:none} in CSS has higher specificity (ID) than .page{display:flex}
+    // (class), so we must set the visible value explicitly rather than clearing it.
+    pageRoot.style.display = 'flex';
+    if (!appStarted){ appStarted = true; startApp(); }
+  }
+
+  function tryUnlock(){
+    var v = pinInput.value.trim();
+    pinError.textContent = '';
+    if (!v){ pinError.textContent = 'Inserisci un PIN.'; return; }
+    if (!isSetup()){
+      if (v.length < 4){ pinError.textContent = 'Usa almeno 4 cifre/caratteri.'; return; }
+      localStorage.setItem(LS_HASH, simpleHash(v));
+      sessionStorage.setItem(SS_UNLOCK, '1');
+      showApp();
+      return;
+    }
+    if (simpleHash(v) === localStorage.getItem(LS_HASH)){
+      sessionStorage.setItem(SS_UNLOCK, '1');
+      showApp();
+    } else {
+      pinError.textContent = 'PIN errato.';
+      pinInput.value = '';
+    }
+  }
+
+  pinBtn.addEventListener('click', tryUnlock);
+  pinInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') tryUnlock(); });
+  pinReset.addEventListener('click', function(){
+    if (confirm('Questo cancella il PIN attuale da questo browser e te ne farà scegliere uno nuovo. Continuare?')){
+      localStorage.removeItem(LS_HASH);
+      sessionStorage.removeItem(SS_UNLOCK);
+      pinInput.value = '';
+      pinError.textContent = '';
+      refreshPinMode();
+    }
+  });
+
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'lockBtn'){
+      sessionStorage.removeItem(SS_UNLOCK);
+      location.reload();
+    }
+  });
+
+  refreshPinMode();
+  if (isSetup() && sessionStorage.getItem(SS_UNLOCK) === '1'){
+    showApp();
   }
 })();
 </script>

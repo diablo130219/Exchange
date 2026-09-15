@@ -8,7 +8,9 @@ const liveStrategie = require('./strategie-live');
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// La pagina pubblica (easybet.html) è la home del sito: il Taccuino (index.html) contiene
+// dati personali (saldo, casse, giocate) ed è raggiungibile solo direttamente, dietro PIN.
+app.use(express.static(path.join(__dirname, 'public'), { index: 'easybet.html' }));
 
 function newId() {
   return crypto.randomUUID();
@@ -536,11 +538,11 @@ app.put('/api/alert-settings', async (req, res) => {
 
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
-// SPA fallback: serve index.html for any non-API GET (harmless here since there's one page,
-// but keeps things robust if navigation ever adds routes).
+// Fallback per qualsiasi GET non-API su un percorso sconosciuto: manda alla pagina
+// pubblica (non al Taccuino, che è privato) invece di un 404 nudo.
 app.get('*', function(req, res, next){
   if (req.path.indexOf('/api/') === 0) return next();
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'easybet.html'));
 });
 
 const PORT = process.env.PORT || 3000;
