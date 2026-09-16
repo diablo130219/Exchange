@@ -39,26 +39,6 @@ function apiCall(method, params, options) {
   });
 }
 
-
-async function configureWebhook() {
-  if (!API_BASE) return false;
-  const url = String(process.env.TELEGRAM_WEBHOOK_URL || '').trim();
-  if (!url) {
-    console.warn('TELEGRAM_WEBHOOK_URL non impostato: webhook Telegram non configurato.');
-    return false;
-  }
-  const params = { url, drop_pending_updates: false };
-  const secret = String(process.env.TELEGRAM_WEBHOOK_SECRET || '').trim();
-  if (secret) params.secret_token = secret;
-  const result = await apiCall('setWebhook', params);
-  if (result && result.ok) {
-    console.log('Telegram webhook configurato su Supabase.');
-    return true;
-  }
-  console.error('Impossibile configurare il webhook Telegram.');
-  return false;
-}
-
 async function sendMessage(chatId, text) {
   return apiCall('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML' });
 }
@@ -237,4 +217,4 @@ async function stopPolling() {
   leaderLoopPromise = null;
 }
 
-module.exports = { sendMessage, broadcast, startPolling, stopPolling, configureWebhook, isConfigured: !!API_BASE };
+module.exports = { sendMessage, broadcast, startPolling, stopPolling, isConfigured: !!API_BASE };

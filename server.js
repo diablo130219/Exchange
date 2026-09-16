@@ -7,7 +7,6 @@ const scheduler = require('./scheduler');
 const liveStrategie = require('./strategie-live');
 
 const app = express();
-const USE_SUPABASE_AUTOMATIONS = String(process.env.SUPABASE_AUTOMATIONS || 'false').toLowerCase() === 'true';
 app.use(express.json());
 // La pagina pubblica (easybet.html) è la home del sito: il Taccuino (index.html) contiene
 // dati personali (saldo, casse, giocate) ed è raggiungibile solo direttamente, dietro PIN.
@@ -563,6 +562,21 @@ app.put('/api/alert-settings', async (req, res) => {
   }
 });
 
+app.post('/api/cron/telegram', async (req, res) => {
+  try {
+    const expected = String(process.env.CRON_SECRET || '');
+    const received = String(req.get('x-cron-secret') || '');
+    if (!expected || received !== expected) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    await scheduler.checkOnce();
+    res.json({ ok: true, checkedAt: Date.now() });
+  } catch (err) {
+    console.error('Errore cron Telegram:', err);
+    res.status(500).json({ error: 'Errore nel controllo notifiche Telegram.' });
+  }
+});
+
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
 // Fallback per qualsiasi GET non-API su un percorso sconosciuto: manda alla pagina
@@ -578,10 +592,7 @@ let httpServer = null;
 
 async function shutdown(signal) {
   console.log(signal + ' ricevuto: arresto pulito in corso...');
-  if (!USE_SUPABASE_AUTOMATIONS) {
-    try { await telegram.stopPolling(); } catch (err) { console.error('Errore stop Telegram:', err.message); }
-    try { scheduler.stop(); } catch (_) {}
-  }
+  try { await telegram.stopPolling(); } catch (err) { console.error('Errore stop Telegram:', err.message); }
   if (httpServer) {
     httpServer.close(function(){ process.exit(0); });
     setTimeout(function(){ process.exit(0); }, 5000).unref();
@@ -598,13 +609,8 @@ migrate()
     httpServer = app.listen(PORT, function(){
       console.log('Taccuino Exchange in ascolto sulla porta ' + PORT);
     });
-    if (USE_SUPABASE_AUTOMATIONS) {
-      console.log('Automazioni Telegram gestite da Supabase: polling e scheduler locali disattivati.');
-      telegram.configureWebhook().catch(function(err){ console.error('Errore configurazione webhook Telegram:', err.message); });
-    } else {
-      telegram.startPolling();
-      scheduler.start();
-    }
+    telegram.startPolling();
+    scheduler.start();
   })
   .catch(function(err){
     console.error('Errore durante la migrazione del database:', err);
