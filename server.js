@@ -573,9 +573,25 @@ app.get('*', function(req, res, next){
 
 const PORT = process.env.PORT || 3000;
 
+let httpServer = null;
+
+async function shutdown(signal) {
+  console.log(signal + ' ricevuto: arresto pulito in corso...');
+  try { await telegram.stopPolling(); } catch (err) { console.error('Errore stop Telegram:', err.message); }
+  if (httpServer) {
+    httpServer.close(function(){ process.exit(0); });
+    setTimeout(function(){ process.exit(0); }, 5000).unref();
+  } else {
+    process.exit(0);
+  }
+}
+
+process.once('SIGTERM', function(){ shutdown('SIGTERM'); });
+process.once('SIGINT', function(){ shutdown('SIGINT'); });
+
 migrate()
   .then(function(){
-    app.listen(PORT, function(){
+    httpServer = app.listen(PORT, function(){
       console.log('Taccuino Exchange in ascolto sulla porta ' + PORT);
     });
     telegram.startPolling();

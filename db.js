@@ -7,8 +7,21 @@ if (!process.env.DATABASE_URL) {
 
 const useSsl = process.env.PGSSL !== 'false';
 
+// Render spesso include ?sslmode=require nella DATABASE_URL. Poiché configuriamo
+// già SSL esplicitamente, rimuoviamo i parametri SSL dalla URL per evitare il
+// warning di pg/pg-connection-string e mantenere un comportamento non ambiguo.
+function normalizedDatabaseUrl(raw) {
+  try {
+    const u = new URL(raw);
+    ['sslmode', 'sslcert', 'sslkey', 'sslrootcert'].forEach((k) => u.searchParams.delete(k));
+    return u.toString();
+  } catch (_) {
+    return raw;
+  }
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: normalizedDatabaseUrl(process.env.DATABASE_URL),
   ssl: useSsl ? { rejectUnauthorized: false } : false
 });
 
