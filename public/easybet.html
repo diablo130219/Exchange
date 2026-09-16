@@ -41,6 +41,29 @@ a{text-decoration:none;color:inherit}.num{font-family:'IBM Plex Mono',monospace}
 .advice-board{display:none;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;margin-top:8px}.advice-board.show{display:grid}.advice-hero{grid-column:1/-1;display:grid;grid-template-columns:1.3fr .7fr;gap:18px;align-items:center;border:1px solid rgba(243,210,113,.22);background:linear-gradient(135deg,rgba(216,173,61,.10),rgba(255,255,255,.015));border-radius:22px;padding:20px}.advice-hero h3{margin:0 0 8px;font-size:1.25rem}.advice-hero p{margin:0;color:#b9af9d;font-size:.82rem;line-height:1.65}.advice-score{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}.advice-score span{padding:9px 12px;border-radius:999px;border:1px solid rgba(243,210,113,.22);background:#12110f;color:var(--gold2);font-size:.67rem;font-weight:800;letter-spacing:.06em}.advice-card{grid-column:span 4;position:relative;overflow:hidden;border-radius:20px;border:1px solid #2d2921;background:linear-gradient(180deg,#13120f,#0b0b0a);padding:17px;box-shadow:0 16px 30px rgba(0,0,0,.22)}.advice-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(216,173,61,.10),transparent 34%);pointer-events:none}.advice-icon{position:relative;z-index:1;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(180deg,rgba(243,210,113,.18),rgba(216,173,61,.07));border:1px solid rgba(243,210,113,.20);font-size:1.1rem;margin-bottom:12px}.advice-card h3{position:relative;z-index:1;margin:0 0 8px;font-size:.98rem}.advice-card p{position:relative;z-index:1;margin:0;color:#aaa18f;font-size:.77rem;line-height:1.6}.advice-card ul{position:relative;z-index:1;margin:12px 0 0;padding-left:18px;color:#c1b8a8;font-size:.74rem;line-height:1.55}.advice-card li+li{margin-top:5px}.advice-card.wide{grid-column:span 6}.advice-card.gold{border-color:rgba(243,210,113,.34)}.advice-card.green{border-color:rgba(36,216,108,.28)}.advice-card.red{border-color:rgba(255,75,69,.28)}.five-rules{grid-column:1/-1;border-radius:22px;border:1px solid rgba(243,210,113,.28);background:linear-gradient(180deg,#13110d,#0c0b09);padding:20px}.five-rules h3{margin:0 0 14px;font-size:1.05rem;color:var(--gold2)}.rules-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.rule-item{border:1px solid #2c2922;background:#11110f;border-radius:15px;padding:13px}.rule-item b{display:block;color:var(--gold2);font-size:1rem;margin-bottom:6px}.rule-item span{font-size:.72rem;color:#b5ac9a;line-height:1.45}.semaforo{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.signal{border-radius:18px;padding:16px;border:1px solid}.signal strong{display:block;font-size:.8rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}.signal p{margin:0;font-size:.75rem;line-height:1.55}.signal.green{background:rgba(36,216,108,.08);border-color:rgba(36,216,108,.28);color:#bdf4cf}.signal.yellow{background:rgba(240,200,60,.08);border-color:rgba(240,200,60,.28);color:#f7e7a0}.signal.red{background:rgba(255,75,69,.08);border-color:rgba(255,75,69,.28);color:#ffc1bd}.responsible{grid-column:1/-1;border:1px dashed rgba(243,210,113,.22);border-radius:18px;padding:14px 16px;color:#9e9585;font-size:.72rem;line-height:1.6;background:rgba(255,255,255,.015)}@media(max-width:1000px){.advice-card{grid-column:span 6}.rules-grid{grid-template-columns:repeat(2,1fr)}.advice-hero{grid-template-columns:1fr}.advice-score{justify-content:flex-start}}@media(max-width:620px){.advice-card,.advice-card.wide{grid-column:1/-1}.rules-grid,.semaforo{grid-template-columns:1fr}.advice-board{gap:12px}}
 
 
+/* ===== EASYBET LIGHT / DARK THEME ===== */
+.theme-toggle{width:44px;height:44px;flex:0 0 44px;border-radius:12px;border:1px solid rgba(242,208,110,.32);background:#0f0f0e;color:var(--gold2);display:grid;place-items:center;cursor:pointer;font-size:1.08rem;transition:transform .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}.theme-toggle:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(216,173,61,.18)}.theme-toggle:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+body[data-theme="light"]{--bg:#f4f1ea;--panel:#ffffff;--panel2:#f8f5ee;--line:#ddd4c2;--text:#171713;--muted:#746b5d;background:#e9e5dc;color:var(--text)}
+body[data-theme="light"] .page-shell{background:#f4f1ea;box-shadow:0 18px 55px rgba(55,43,20,.12)}
+body[data-theme="light"] .topbar{background:linear-gradient(180deg,#fff,#f5f1e9);border-bottom-color:rgba(151,112,22,.18)}
+body[data-theme="light"] .brand-mark{background:linear-gradient(180deg,#fff8df,#ead9a4);color:#8d6500;border-color:rgba(151,112,22,.25);box-shadow:inset 0 1px 0 #fff}
+body[data-theme="light"] .brand-copy small{color:#817764}body[data-theme="light"] .nav a{color:#665e50}body[data-theme="light"] .nav a.active,body[data-theme="light"] .nav a:hover{color:#111}
+body[data-theme="light"] .nav-btn,body[data-theme="light"] .theme-toggle,body[data-theme="light"] .mobile-menu-btn{background:#fff;color:#282318;border-color:#d8caa9}body[data-theme="light"] .nav-btn.primary{background:linear-gradient(180deg,#f5d66d,#d8ad3d);color:#211806}
+body[data-theme="light"] .mobile-nav{background:#f6f2e9;border-color:#ddd2b9}body[data-theme="light"] .mobile-nav a{background:#fff;color:#544c3f;border-color:#dfd7c8}
+body[data-theme="light"] .hero{background:#ece7dc}body[data-theme="light"] .hero:after{background:linear-gradient(180deg,transparent,#f4f1ea)}
+body[data-theme="light"] .section{background:linear-gradient(180deg,#f4f1ea,#ebe6dc)}body[data-theme="light"] .section-head p,body[data-theme="light"] .refresh{color:#756c5d}
+body[data-theme="light"] .pill{background:#fff;color:#665f52;border-color:#d7cfbf}body[data-theme="light"] .pill.active{color:#211806}
+body[data-theme="light"] .card{background:linear-gradient(180deg,#fff,#f4f0e7);border-color:rgba(177,137,36,.45);box-shadow:0 0 0 1px rgba(214,170,58,.06) inset,0 15px 30px rgba(87,68,27,.10)}body[data-theme="light"] .card:before{background:radial-gradient(circle at 50% 46%,rgba(32,159,67,.13),transparent 33%),linear-gradient(180deg,rgba(255,255,255,.6),transparent 28%)}
+body[data-theme="light"] .league small,body[data-theme="light"] .role,body[data-theme="light"] .info label{color:#746b5c}body[data-theme="light"] .date{color:#817767}body[data-theme="light"] .time{background:rgba(255,255,255,.75);border-color:#ddd6c8}
+body[data-theme="light"] .matchup{background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(246,242,233,.9));border-color:#ddd6c7}body[data-theme="light"] .crest-wrap{background:#fff;border-color:#ddd5c6;box-shadow:0 5px 15px rgba(56,45,21,.06)}
+body[data-theme="light"] .info-grid{border-top-color:rgba(153,115,21,.35)}body[data-theme="light"] .info + .info{border-left-color:rgba(153,115,21,.28)}
+body[data-theme="light"] .strategies-intro,body[data-theme="light"] .strategy-card,body[data-theme="light"] .advice-hero,body[data-theme="light"] .advice-card,body[data-theme="light"] .five-rules,body[data-theme="light"] .stat-box,body[data-theme="light"] .chart-box{background:linear-gradient(180deg,#fff,#f5f1e8);color:#1c1a16;box-shadow:0 14px 30px rgba(67,52,20,.08)}
+body[data-theme="light"] .strategy-intro,body[data-theme="light"] .strategies-intro,body[data-theme="light"] .advice-hero p,body[data-theme="light"] .advice-card p,body[data-theme="light"] .advice-card ul,body[data-theme="light"] .strategy-notes ul,body[data-theme="light"] .traffic-copy,body[data-theme="light"] .strategy-footer,body[data-theme="light"] .responsible,body[data-theme="light"] .chart-sub{color:#6f6657}
+body[data-theme="light"] .metric-chip,body[data-theme="light"] .rule-item,body[data-theme="light"] .strategy-window,body[data-theme="light"] .advice-score span{background:#fff;border-color:#ded5c5;color:#211d16}
+body[data-theme="light"] .donut:after{background:#f7f3eb;border-color:#ded5c6}body[data-theme="light"] .trend-grid{stroke:rgba(0,0,0,.08)}
+body[data-theme="light"] .empty,body[data-theme="light"] .stats-empty{color:#756c5d}
+@media(max-width:560px){body[data-theme="light"]{background:#ece8df}.theme-toggle{width:42px;height:42px;flex-basis:42px}}
+
 </style>
 </head>
 <body>
@@ -53,7 +76,7 @@ a{text-decoration:none;color:inherit}.num{font-family:'IBM Plex Mono',monospace}
     <nav class="nav">
       <a class="view-link active" data-view="home" href="#home">Home</a><a class="view-link" data-view="pronostici" href="#pronostici">Pronostici</a><a class="view-link" data-view="live" href="#live">Live</a><a class="view-link" data-view="statistiche" href="#statistiche">Statistiche</a><a class="view-link" data-view="strategie" href="#strategie">Strategie</a><a class="view-link" data-view="consigli" href="#consigli">Consigli</a>
     </nav>
-    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Apri menu" aria-expanded="false">☰</button><div class="nav-actions"><a class="nav-btn" href="/easybet-admin.html">Accedi</a><a class="nav-btn primary" href="#partite">Registrati</a></div>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Apri menu" aria-expanded="false">☰</button><div class="nav-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-label="Attiva modalità chiara" title="Cambia tema">☀️</button><a class="nav-btn" href="/easybet-admin.html">Accedi</a><a class="nav-btn primary" href="#partite">Registrati</a></div>
   </header>
   <nav class="mobile-nav" id="mobileNav" aria-label="Navigazione mobile">
     <a class="active" href="#" data-view="home">Home</a>
@@ -85,6 +108,21 @@ a{text-decoration:none;color:inherit}.num{font-family:'IBM Plex Mono',monospace}
 </div>
 <script>
 (function(){
+  var themeToggle=document.getElementById('themeToggle');
+  var savedTheme=localStorage.getItem('easybet-theme');
+  var initialTheme=savedTheme==='light'||savedTheme==='dark'?savedTheme:'dark';
+  function applyTheme(theme){
+    document.body.setAttribute('data-theme',theme);
+    if(themeToggle){
+      var light=theme==='light';
+      themeToggle.textContent=light?'🌙':'☀️';
+      themeToggle.setAttribute('aria-label',light?'Attiva modalità scura':'Attiva modalità chiara');
+      themeToggle.title=light?'Modalità scura':'Modalità chiara';
+    }
+  }
+  applyTheme(initialTheme);
+  if(themeToggle){themeToggle.addEventListener('click',function(){var next=document.body.getAttribute('data-theme')==='light'?'dark':'light';localStorage.setItem('easybet-theme',next);applyTheme(next)})}
+
   var mobileMenuBtn=document.getElementById('mobileMenuBtn');var mobileNav=document.getElementById('mobileNav');if(mobileMenuBtn&&mobileNav){mobileMenuBtn.addEventListener('click',function(){var isOpen=mobileNav.classList.toggle('open');mobileMenuBtn.setAttribute('aria-expanded',isOpen?'true':'false');mobileMenuBtn.textContent=isOpen?'✕':'☰'});mobileNav.addEventListener('click',function(e){var a=e.target.closest('a');if(a){mobileNav.classList.remove('open');mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰'}})}
   var ESITO_LABEL={entrata_vinta:'Entrati • Vinta',entrata_persa:'Entrati • Persa',non_entrata:'Non entrati'};var ESITO_ICON={entrata_vinta:'🏆',entrata_persa:'✖',non_entrata:'−'};
   var crestCache={},matches=[],currentFilter='tutte',currentView='home';
