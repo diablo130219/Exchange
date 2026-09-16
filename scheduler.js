@@ -1,5 +1,5 @@
 const { pool } = require('./db');
-const { broadcast } = require('./telegram');
+const { broadcastAlert } = require('./telegram');
 
 const CHECK_INTERVAL_MS = 30 * 1000;
 const STALE_GRACE_MS = 5 * 60 * 1000; // matches missed by more than this are skipped silently, not alerted late
@@ -33,8 +33,8 @@ async function checkOnce() {
       await pool.query('UPDATE matches SET notified = true WHERE id = $1', [m.id]);
       continue;
     }
-    const text = formatAlert(m);
-    const sentTo = await broadcast(text);
+    const minutesLeft = Math.max(0, Math.round((startAt - now) / 60000));
+    const sentTo = await broadcastAlert(m, minutesLeft);
     await pool.query('UPDATE matches SET notified = true WHERE id = $1', [m.id]);
     console.log(`Avviso inviato per ${m.casa} - ${m.trasferta} a ${sentTo} destinatari.`);
   }
