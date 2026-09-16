@@ -144,10 +144,9 @@ async function broadcast(text) {
 async function broadcastAlert(match, minutesLeft) {
   const { rows } = await pool.query('SELECT chat_id FROM subscribers');
   const card = await createAlertCard(match, minutesLeft);
-  const strategy = escHtml(match.tipo_giocata || '—');
-  const caption = `⚽ <b>Nuovo alert EasyBet pronto</b> ✅\n${escHtml(match.casa)} - ${escHtml(match.trasferta)}\n<b>${strategy}</b>`;
-  const keyboard = { inline_keyboard: [[{ text:'📲 Apri EasyBet', url: PUBLIC_SITE_URL }]] };
-  for (const row of rows) await sendPhoto(row.chat_id, card, caption, keyboard);
+  for (const row of rows) {
+    await sendPhoto(row.chat_id, card);
+  }
   return rows.length;
 }
 
