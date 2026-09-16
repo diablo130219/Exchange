@@ -108,7 +108,7 @@ a{text-decoration:none;color:inherit}.num{font-family:'IBM Plex Mono',monospace}
   function matchesOutcomeFilter(m){return currentFilter==='tutte'||(m.esitoManuale||'')===currentFilter}
   function updateViewUI(){
     var title=document.getElementById('sectionTitle'),sub=document.getElementById('sectionSubtitle'),toolbar=document.getElementById('toolbar');
-    document.querySelectorAll('.view-link').forEach(function(a){a.classList.toggle('active',a.getAttribute('data-view')===currentView)});
+    document.querySelectorAll('[data-view]').forEach(function(a){a.classList.toggle('active',a.getAttribute('data-view')===currentView)});
     if(currentView==='pronostici'){
       title.textContent='PRONOSTICI';
       sub.textContent='TUTTE LE PARTITE PROGRAMMATE PRIMA DEL CALCIO D’INIZIO';
@@ -237,7 +237,7 @@ a{text-decoration:none;color:inherit}.num{font-family:'IBM Plex Mono',monospace}
     render();
     if(scroll) document.getElementById('partite').scrollIntoView({behavior:'smooth',block:'start'});
   }
-  document.querySelectorAll('.view-link').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var v=a.getAttribute('data-view');history.replaceState(null,'','#'+v);setView(v,true)})});
+  document.querySelectorAll('[data-view]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var v=a.getAttribute('data-view');if(!v)return;history.replaceState(null,'','#'+v);setView(v,true);if(mobileNav){mobileNav.classList.remove('open')}if(mobileMenuBtn){mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰'}})});
   document.getElementById('pills').addEventListener('click',function(e){var b=e.target.closest('.pill');if(!b)return;currentFilter=b.getAttribute('data-f');document.querySelectorAll('.pill').forEach(function(p){p.classList.remove('active')});b.classList.add('active');render()});
   var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
 })();
