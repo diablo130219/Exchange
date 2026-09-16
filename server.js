@@ -7,6 +7,7 @@ const scheduler = require('./scheduler');
 const liveStrategie = require('./strategie-live');
 
 const app = express();
+const USE_SUPABASE_AUTOMATIONS = String(process.env.SUPABASE_AUTOMATIONS || 'false').toLowerCase() === 'true';
 app.use(express.json());
 // La pagina pubblica (easybet.html) è la home del sito: il Taccuino (index.html) contiene
 // dati personali (saldo, casse, giocate) ed è raggiungibile solo direttamente, dietro PIN.
@@ -577,7 +578,10 @@ let httpServer = null;
 
 async function shutdown(signal) {
   console.log(signal + ' ricevuto: arresto pulito in corso...');
-  try { await telegram.stopPolling(); } catch (err) { console.error('Errore stop Telegram:', err.message); }
+  if (!USE_SUPABASE_AUTOMATIONS) {
+    try { await telegram.stopPolling(); } catch (err) { console.error('Errore stop Telegram:', err.message); }
+    try { scheduler.stop(); } catch (_) {}
+  }
   if (httpServer) {
     httpServer.close(function(){ process.exit(0); });
     setTimeout(function(){ process.exit(0); }, 5000).unref();
@@ -594,8 +598,13 @@ migrate()
     httpServer = app.listen(PORT, function(){
       console.log('Taccuino Exchange in ascolto sulla porta ' + PORT);
     });
-    telegram.startPolling();
-    scheduler.start();
+    if (USE_SUPABASE_AUTOMATIONS) {
+      console.log('Automazioni Telegram gestite da Supabase: polling e scheduler locali disattivati.');
+      telegram.configureWebhook().catch(function(err){ console.error('Errore configurazione webhook Telegram:', err.message); });
+    } else {
+      telegram.startPolling();
+      scheduler.start();
+    }
   })
   .catch(function(err){
     console.error('Errore durante la migrazione del database:', err);
