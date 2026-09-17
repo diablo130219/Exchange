@@ -1,19 +1,20 @@
-# EasyBet – Telegram Card Alerts
+# EasyBet Telegram Card Alerts — Concept 1 Premium Dark Gold
 
-Gli avvisi pre-partita ora vengono inviati come card PNG dinamiche in stile EasyBet.
+Questa versione usa il Concept 1 scelto per gli alert Telegram.
 
-La card mostra automaticamente:
-- minuti mancanti;
-- campionato e bandiera;
-- casa e trasferta;
-- strategia;
-- orario della partita;
-- bottone `Apri EasyBet` sotto la foto.
+## Stile
+- Base premium dark / black-gold
+- Doppio bordo oro
+- Badge `Tra 10 min` e `LIVE SOON`
+- Nome partita in forte evidenza
+- Footer minimale con orario
+- Nessun link o bottone Telegram sotto la card
+- Nessuna caption testuale: viene inviata solo l'immagine
 
-## Render
-Il progetto usa `sharp` per generare le PNG. `render.yaml` usa già `npm install`, quindi Render installerà automaticamente la dipendenza.
+## Varianti automatiche
+Lo stesso layout viene applicato a tutte le strategie. Il colore della barra centrale cambia automaticamente:
+- OVER / GOAL: verde premium
+- BANCA / LAY / SEGNO: oro premium
+- altre strategie: oro EasyBet
 
-Variabile opzionale:
-`PUBLIC_SITE_URL=https://exchange-igc1.onrender.com`
-
-Se non impostata, viene usato `RENDER_EXTERNAL_URL`; in mancanza anche di quello viene usato l'URL EasyBet attuale.
+Le icone dentro la card sono disegnate direttamente in SVG, evitando emoji che su alcuni server potevano comparire come quadratini o simboli strani.
