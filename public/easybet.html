@@ -71,6 +71,50 @@ body[data-theme="light"] .empty,body[data-theme="light"] .stats-empty{color:#756
 @media(max-width:900px){.date-group{padding:14px}.date-group-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}}
 @media(max-width:560px){.date-group{padding:12px;border-radius:18px}.date-group-head{margin-bottom:12px}.date-group-grid{grid-template-columns:1fr}.date-group.archive summary{min-height:58px;padding:12px 13px}.archive-label{gap:8px;flex-wrap:wrap}.date-group.archive .date-group-grid{padding:12px}}
 </style>
+
+<style id="finished-results-redesign">
+/* Completed matches redesign — scoped only to the home/results area */
+#grid.home-history{display:flex!important;flex-direction:column!important;gap:18px!important;width:100%!important;max-width:none!important}
+#grid.home-history>.date-group{width:100%!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+#grid.home-history .date-group-head{margin:0 0 12px!important;padding:0 2px 10px!important;display:flex!important;align-items:center!important;gap:10px!important;font-size:.72rem!important;letter-spacing:.16em!important;color:#f2cd61!important;border-bottom:1px solid rgba(242,205,97,.22)!important}
+#grid.home-history .date-group-head:before{content:''!important;width:5px!important;height:22px!important;border-radius:999px!important;background:linear-gradient(180deg,#ffe58a,#c89519)!important;border:0!important;box-shadow:0 0 14px rgba(229,183,47,.28)!important}
+#grid.home-history .date-group-head:after{display:none!important}
+#grid.home-history .date-group-grid{display:flex!important;flex-wrap:wrap!important;gap:14px!important;width:100%!important;align-items:stretch!important}
+#grid.home-history .date-group-grid>.card{flex:0 1 286px!important;width:286px!important;min-height:382px!important;padding:13px!important;border-radius:18px!important}
+#grid.home-history .date-group-grid>.card .matchup{padding:12px 7px 10px!important}
+#grid.home-history .date-group-grid>.card .crest-wrap{width:76px!important;height:76px!important;border-radius:16px!important}
+#grid.home-history .date-group-grid>.card .crest{width:58px!important;height:58px!important}
+#grid.home-history .date-group-grid>.card .status{min-height:52px!important}
+
+#grid.home-history .archive-title{display:flex;align-items:center;gap:10px;margin:8px 0 0;padding:0 2px 11px;color:#b4aa98;font-size:.66rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.07)}
+#grid.home-history .archive-title:before{content:'ARCHIVIO';color:#f2cd61;letter-spacing:.14em}
+#grid.home-history .archive-title span{width:1px;height:14px;background:rgba(242,205,97,.25)}
+
+#grid.home-history details.date-group.archive{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;border:1px solid rgba(242,205,97,.18)!important;border-radius:16px!important;background:linear-gradient(180deg,#11100e,#0c0c0b)!important;box-shadow:0 10px 26px rgba(0,0,0,.16)!important;overflow:hidden!important}
+#grid.home-history details.date-group.archive+details.date-group.archive{margin-top:-6px!important}
+#grid.home-history details.date-group.archive>summary{min-height:68px!important;padding:0 16px!important;display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:14px!important;background:linear-gradient(90deg,rgba(218,173,61,.08),transparent 40%)!important;color:#eee7db!important;border:0!important}
+#grid.home-history details.date-group.archive>summary:hover{background:linear-gradient(90deg,rgba(218,173,61,.14),rgba(255,255,255,.012))!important}
+#grid.home-history .archive-label{display:grid!important;grid-template-columns:auto 1fr auto!important;align-items:center!important;gap:12px!important;min-width:0!important;text-transform:none!important;letter-spacing:0!important}
+#grid.home-history .archive-label:before{content:'▣'!important;width:38px!important;height:38px!important;display:grid!important;place-items:center!important;border-radius:12px!important;background:rgba(242,205,97,.10)!important;border:1px solid rgba(242,205,97,.20)!important;color:#f2cd61!important;font-size:.9rem!important}
+#grid.home-history .archive-date-text{font-size:.84rem!important;font-weight:800!important;color:#eee7db!important}
+#grid.home-history .archive-count{font-size:.62rem!important;padding:5px 9px!important;border-radius:999px!important;color:#bfb5a4!important;background:#171510!important;border:1px solid rgba(242,205,97,.13)!important;white-space:nowrap!important}
+#grid.home-history details.date-group.archive>summary:after{content:'+'!important;width:34px!important;height:34px!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:linear-gradient(180deg,#f4d66e,#c89519)!important;color:#171106!important;border:0!important;font-size:1.05rem!important;box-shadow:0 5px 14px rgba(200,149,25,.2)!important}
+#grid.home-history details.date-group.archive[open]>summary:after{content:'−'!important}
+#grid.home-history details.date-group.archive[open]>summary{border-bottom:1px solid rgba(242,205,97,.12)!important}
+#grid.home-history details.date-group.archive>.date-group-grid{padding:16px!important;background:rgba(0,0,0,.10)!important}
+
+body[data-theme="light"] #grid.home-history .date-group-head{color:#a87305!important;border-bottom-color:#dfc987!important}
+body[data-theme="light"] #grid.home-history .archive-title{color:#877b69!important;border-bottom-color:#ded5c7!important}
+body[data-theme="light"] #grid.home-history details.date-group.archive{background:linear-gradient(180deg,#fffdf9,#f8f3e9)!important;border-color:#dec995!important;box-shadow:0 10px 24px rgba(100,76,24,.07)!important}
+body[data-theme="light"] #grid.home-history details.date-group.archive>summary{background:linear-gradient(90deg,rgba(215,172,57,.11),transparent 44%)!important;color:#28231b!important}
+body[data-theme="light"] #grid.home-history .archive-label:before{background:#fff8e7!important;border-color:#ead6a4!important;color:#b57d09!important}
+body[data-theme="light"] #grid.home-history .archive-date-text{color:#2b261e!important}
+body[data-theme="light"] #grid.home-history .archive-count{background:#f5ecda!important;border-color:#e1d2b1!important;color:#746850!important}
+body[data-theme="light"] #grid.home-history details.date-group.archive>.date-group-grid{background:#fbf8f1!important}
+
+@media(max-width:900px){#grid.home-history .date-group-grid>.card{flex:1 1 230px!important;width:auto!important}}
+@media(max-width:560px){#grid.home-history{gap:14px!important}#grid.home-history .date-group-grid{display:grid!important;grid-template-columns:1fr!important}#grid.home-history .date-group-grid>.card{width:100%!important;min-height:390px!important}#grid.home-history details.date-group.archive>summary{min-height:62px!important;padding:0 12px!important}#grid.home-history .archive-label{grid-template-columns:auto 1fr!important}.archive-count{grid-column:2!important;justify-self:start!important}.archive-date-text{font-size:.78rem!important}}
+</style>
 </head>
 <body>
 <div class="page-shell">
@@ -267,13 +311,23 @@ body[data-theme="light"] .empty,body[data-theme="light"] .stats-empty{color:#756
   function renderFinishedByDate(list,grid){
     var groups={};
     list.slice().sort(function(a,b){return Number(b.startAt)-Number(a.startAt)}).forEach(function(m){var k=dayKey(m);(groups[k]||(groups[k]=[])).push(m)});
-    var keys=Object.keys(groups).sort().reverse();
     var now=new Date(),today=localDayKey(now),yd=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1),yesterday=localDayKey(yd);
     var html='';
-    [today,yesterday].forEach(function(k){if(!groups[k])return;html+='<section class="date-group"><div class="date-group-head">'+relativeDateLabel(k)+'</div><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></section>';delete groups[k]});
+    [today,yesterday].forEach(function(k){
+      if(!groups[k])return;
+      html+='<section class="date-group recent"><div class="date-group-head">'+relativeDateLabel(k)+'</div><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></section>';
+      delete groups[k];
+    });
     var archiveKeys=Object.keys(groups).sort().reverse();
-    if(archiveKeys.length){html+='<div class="date-group-head" style="margin-top:24px">Archivio per data</div>';archiveKeys.forEach(function(k){var count=groups[k].length;html+='<details class="date-group archive"><summary><span class="archive-label">'+esc(dateLabelFromKey(k))+' <span class="archive-count">'+count+' '+(count===1?'partita':'partite')+'</span></span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>'})}
-    grid.classList.add('home-history');grid.innerHTML=html||'<div class="empty">Nessuna partita terminata disponibile.</div>';
+    if(archiveKeys.length){
+      html+='<div class="archive-title"><span></span>partite precedenti divise per data</div>';
+      archiveKeys.forEach(function(k){
+        var count=groups[k].length;
+        html+='<details class="date-group archive"><summary><span class="archive-label"><span class="archive-date-text">'+esc(dateLabelFromKey(k))+'</span><span class="archive-count">'+count+' '+(count===1?'partita':'partite')+'</span></span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
+      });
+    }
+    grid.classList.add('home-history');
+    grid.innerHTML=html||'<div class="empty">Nessuna partita terminata disponibile.</div>';
   }
   function render(){
     updateViewUI();
