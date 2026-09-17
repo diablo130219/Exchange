@@ -10,3 +10,10 @@ services:
         sync: false
       - key: NODE_VERSION
         value: 20.11.0
+
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: PUBLIC_SITE_URL
+        sync: false

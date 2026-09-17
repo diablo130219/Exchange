@@ -503,7 +503,7 @@ body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data
     if(currentView==='statistiche'){renderStats();return}
     if(currentView==='strategie'){renderStrategies();return}
     if(currentView==='consigli'){renderAdvice();return}
-    dash.classList.remove('show');dash.innerHTML='';grid.style.display='grid';grid.classList.remove('home-history','pronostici-detail-mode');
+    dash.classList.remove('show');dash.innerHTML='';grid.style.display='grid';grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode');
     var list=matches.filter(matchesView).filter(function(m){return currentView==='home'?matchesOutcomeFilter(m):true});
     if(!list.length){
       var empty=currentView==='pronostici'?'Nessun pronostico programmato.':currentView==='live'?'Nessuna partita live in questo momento.':'Nessuna partita terminata disponibile.';

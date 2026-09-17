@@ -197,11 +197,21 @@ async function broadcast(text) {
 
 async function broadcastAlert(match, minutesLeft) {
   const { rows } = await pool.query('SELECT chat_id FROM subscribers');
-  const card = await createAlertCard(match, minutesLeft);
-  for (const row of rows) {
-    await sendPhoto(row.chat_id, card);
+  if (!rows.length) {
+    console.warn('Telegram alert: nessun iscritto presente nella tabella subscribers.');
+    return 0;
   }
-  return rows.length;
+  if (!API_BASE) {
+    console.error('Telegram alert: TELEGRAM_BOT_TOKEN non configurato.');
+    return 0;
+  }
+  const card = await createAlertCard(match, minutesLeft);
+  let sent = 0;
+  for (const row of rows) {
+    const result = await sendPhoto(row.chat_id, card);
+    if (result && result.ok) sent++;
+  }
+  return sent;
 }
 
 async function upsertSubscriber(chatId, username) {

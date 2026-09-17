@@ -155,6 +155,10 @@ app.patch('/api/casse/:id', async (req, res) => {
       sets.push('saldo_iniziale = $' + (i++)); vals.push(s);
     }
     if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
+    if (shouldRearmPrematch) {
+      sets.push('notified = $' + (i++)); vals.push(false);
+      sets.push('notify_minutes = $' + (i++)); vals.push(10);
+    }
     vals.push(id);
     const { rows } = await pool.query(
       'UPDATE casse SET ' + sets.join(', ') + ' WHERE id = $' + i + ' RETURNING *',
@@ -281,7 +285,7 @@ app.post('/api/matches', async (req, res) => {
     if (!b.startAt || isNaN(Number(b.startAt))) return res.status(400).json({ error: 'Data/ora non valida.' });
     const id = newId();
     const createdAt = Date.now();
-    const notifyMinutes = isNaN(parseInt(b.notifyMinutes, 10)) ? 10 : parseInt(b.notifyMinutes, 10);
+    const notifyMinutes = 10;
     const botEnabled = b.botEnabled === false ? false : true;
     const { rows } = await pool.query(
       `INSERT INTO matches (id, data, ora, campionato, casa, trasferta, tipo_giocata, start_at, notify_minutes, notified, created_at, quota_ingresso, esito_manuale, bot_enabled)
@@ -306,12 +310,19 @@ app.patch('/api/matches/:id', async (req, res) => {
       sets.push('tipo_giocata = $' + (i++)); vals.push(String(fields.tipoGiocata || ''));
     }
     if (Object.prototype.hasOwnProperty.call(fields, 'notifyMinutes')) {
-      const nm = parseInt(fields.notifyMinutes, 10);
-      sets.push('notify_minutes = $' + (i++)); vals.push(isNaN(nm) ? 10 : nm);
+      sets.push('notify_minutes = $' + (i++)); vals.push(10);
     }
     if (Object.prototype.hasOwnProperty.call(fields, 'notified')) {
       sets.push('notified = $' + (i++)); vals.push(!!fields.notified);
     }
+    const shouldRearmPrematch =
+      !Object.prototype.hasOwnProperty.call(fields, 'notified') &&
+      (
+        Object.prototype.hasOwnProperty.call(fields, 'startAt') ||
+        Object.prototype.hasOwnProperty.call(fields, 'data') ||
+        Object.prototype.hasOwnProperty.call(fields, 'ora') ||
+        (Object.prototype.hasOwnProperty.call(fields, 'botEnabled') && fields.botEnabled === true)
+      );
     if (Object.prototype.hasOwnProperty.call(fields, 'liveStrategy')) {
       const v = String(fields.liveStrategy || '').trim();
       sets.push('live_strategy = $' + (i++)); vals.push(v && liveStrategie.STRATEGIE[v] ? v : null);
@@ -548,12 +559,9 @@ app.get('/api/team-crest', async (req, res) => {
 
 app.put('/api/alert-settings', async (req, res) => {
   try {
-    const { notifyMinutes } = req.body || {};
-    const nm = parseInt(notifyMinutes, 10);
-    if (isNaN(nm) || nm < 1) return res.status(400).json({ error: 'Minuti non validi.' });
     const { rows } = await pool.query(
       "UPDATE alert_settings SET notify_minutes = $1 WHERE id='main' RETURNING *",
-      [nm]
+      [10]
     );
     res.json(alertSettingsOut(rows[0]));
   } catch (err) {

@@ -18,3 +18,7 @@ Lo stesso layout viene applicato a tutte le strategie. Il colore della barra cen
 - altre strategie: oro EasyBet
 
 Le icone dentro la card sono disegnate direttamente in SVG, evitando emoji che su alcuni server potevano comparire come quadratini o simboli strani.
+
+## Timing
+- Ogni alert pre-match viene inviato automaticamente **10 minuti prima** dell'orario di inizio.
+- Se l'invio Telegram fallisce, la partita non viene marcata come notificata e il sistema ritenta.

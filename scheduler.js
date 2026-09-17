@@ -2,6 +2,7 @@ const { pool } = require('./db');
 const { broadcastAlert } = require('./telegram');
 
 const CHECK_INTERVAL_MS = 30 * 1000;
+const FIXED_NOTIFY_MINUTES = 10;
 const STALE_GRACE_MS = 5 * 60 * 1000; // matches missed by more than this are skipped silently, not alerted late
 
 function escapeHtml(s) {
@@ -25,18 +26,20 @@ async function checkOnce() {
   const { rows: pending } = await pool.query(`SELECT * FROM matches WHERE notified = false AND bot_enabled = true ORDER BY start_at ASC`);
   for (const m of pending) {
     const startAt = Number(m.start_at);
-    const windowMs = Number(m.notify_minutes) * 60000;
-    const dueAt = startAt - windowMs;
-    if (now < dueAt) continue; // not yet time
+    const dueAt = startAt - (FIXED_NOTIFY_MINUTES * 60000);
+    if (now < dueAt) continue; // not yet time: alert is fixed at 10 minutes before kickoff
     if (startAt - now < -STALE_GRACE_MS) {
       // missed the window by too long (e.g. server was down) — skip silently
       await pool.query('UPDATE matches SET notified = true WHERE id = $1', [m.id]);
       continue;
     }
-    const minutesLeft = Math.max(0, Math.round((startAt - now) / 60000));
-    const sentTo = await broadcastAlert(m, minutesLeft);
-    await pool.query('UPDATE matches SET notified = true WHERE id = $1', [m.id]);
-    console.log(`Avviso inviato per ${m.casa} - ${m.trasferta} a ${sentTo} destinatari.`);
+    const sentTo = await broadcastAlert(m, FIXED_NOTIFY_MINUTES);
+    if (sentTo > 0) {
+      await pool.query('UPDATE matches SET notified = true WHERE id = $1', [m.id]);
+      console.log(`Avviso 10 minuti inviato per ${m.casa} - ${m.trasferta} a ${sentTo} destinatari.`);
+    } else {
+      console.warn(`Avviso NON inviato per ${m.casa} - ${m.trasferta}: nessun invio Telegram riuscito. Verrà ritentato.`);
+    }
   }
 }
 
