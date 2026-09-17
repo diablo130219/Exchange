@@ -370,6 +370,14 @@ app.patch('/api/matches/:id', async (req, res) => {
     if (Object.prototype.hasOwnProperty.call(fields, 'botEnabled')) {
       sets.push('bot_enabled = $' + (i++)); vals.push(!!fields.botEnabled);
     }
+
+    // If kickoff date/time is edited (or Telegram is explicitly re-enabled),
+    // re-arm the 10-minute pre-match notification.
+    if (shouldRearmPrematch) {
+      sets.push('notified = $' + (i++)); vals.push(false);
+      sets.push('notify_minutes = $' + (i++)); vals.push(10);
+    }
+
     if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
     vals.push(id);
     const { rows } = await pool.query(
@@ -377,6 +385,16 @@ app.patch('/api/matches/:id', async (req, res) => {
       vals
     );
     if (!rows.length) return res.status(404).json({ error: 'Partita non trovata.' });
+
+    // Run an immediate check after changing kickoff time. If the match is
+    // already in the 10-minute window, the Telegram alert can leave now
+    // instead of waiting for the next scheduler loop.
+    if (shouldRearmPrematch) {
+      scheduler.checkOnce().catch(function(err){
+        console.error('Errore controllo immediato Telegram dopo modifica orario:', err.message);
+      });
+    }
+
     res.json(matchOut(rows[0]));
   } catch (err) {
     console.error(err);

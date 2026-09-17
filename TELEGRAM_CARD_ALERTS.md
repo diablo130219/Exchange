@@ -22,3 +22,8 @@ Le icone dentro la card sono disegnate direttamente in SVG, evitando emoji che s
 ## Timing
 - Ogni alert pre-match viene inviato automaticamente **10 minuti prima** dell'orario di inizio.
 - Se l'invio Telegram fallisce, la partita non viene marcata come notificata e il sistema ritenta.
+
+## Fix modifica orario
+Quando data/orario di una partita vengono modificati, `notified` viene ora rimesso a `false`
+e l'alert viene riarmato automaticamente a 10 minuti dal nuovo calcio d'inizio.
+Se il nuovo orario è già nella finestra dei 10 minuti, viene eseguito anche un controllo immediato.
