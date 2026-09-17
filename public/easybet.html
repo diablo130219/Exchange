@@ -58,7 +58,7 @@ body[data-theme="light"] .league small,body[data-theme="light"] .role,body[data-
 body[data-theme="light"] .matchup{background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(246,242,233,.9));border-color:#ddd6c7}body[data-theme="light"] .crest-wrap{background:#fff;border-color:#ddd5c6;box-shadow:0 5px 15px rgba(56,45,21,.06)}
 body[data-theme="light"] .info-grid{border-top-color:rgba(153,115,21,.35)}body[data-theme="light"] .info + .info{border-left-color:rgba(153,115,21,.28)}
 
-.pronostici-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:stretch}
+.pronostici-summary-grid{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(320px,360px);grid-template-columns:none;gap:18px;align-items:stretch;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;padding-bottom:6px}.pronostici-summary-grid>.pstrategy-card{scroll-snap-align:start}.grid.pronostici-summary-mode{display:block}
 .pstrategy-card{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:16px;min-height:320px;padding:20px;border-radius:24px;border:1px solid rgba(214,170,58,.28);background:linear-gradient(180deg,#fdfbf6,#f7f2e8);box-shadow:0 16px 30px rgba(95,76,40,.08)}
 .pstrategy-card:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(222,185,84,.16),transparent 30%),linear-gradient(180deg,rgba(255,255,255,.55),transparent 36%);pointer-events:none}
 .pstrategy-head,.pstrategy-list,.pstrategy-foot,.pstrategy-btn{position:relative;z-index:1}
@@ -76,38 +76,22 @@ body[data-theme="light"] .info-grid{border-top-color:rgba(153,115,21,.35)}body[d
 .pronostici-detail-top h3{margin:0;font-size:1.12rem;color:#201b15}.pronostici-detail-top p{margin:5px 0 0;color:#7a6e5b;font-size:.86rem}.pronostici-detail-top .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.pronostici-detail-top .meta-badge{padding:7px 11px;border-radius:999px;background:#f6ebce;border:1px solid #e1cea0;color:#83610b;font-size:.8rem;font-weight:800}
 .pronostici-back{display:inline-flex;align-items:center;gap:8px;border:1px solid #dfd2b7;background:#fff;border-radius:14px;padding:10px 14px;color:#241e16;font-weight:700;cursor:pointer}
 .grid.pronostici-detail-mode{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));justify-content:stretch;align-items:stretch}.grid.pronostici-detail-mode>.card{width:100%;max-width:none}
-@media(max-width:900px){.pronostici-summary-grid{grid-template-columns:1fr}.pronostici-detail-top{flex-direction:column;align-items:flex-start}.pronostici-detail-top .meta{width:100%;justify-content:space-between}}
+body[data-theme="dark"] .pstrategy-card{background:linear-gradient(180deg,#141310,#0c0c0a);border-color:rgba(214,170,58,.26);box-shadow:0 16px 30px rgba(0,0,0,.28),0 0 0 1px rgba(214,170,58,.06) inset}
+body[data-theme="dark"] .pstrategy-card:before{background:radial-gradient(circle at 72% 22%,rgba(214,170,58,.18),transparent 22%),radial-gradient(circle at 50% 48%,rgba(32,159,67,.18),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.03),transparent 28%)}
+body[data-theme="dark"] .pstrategy-head h3,body[data-theme="dark"] .pstrategy-row,body[data-theme="dark"] .pstrategy-metric strong{color:#f2ede3}
+body[data-theme="dark"] .pstrategy-head p,body[data-theme="dark"] .pstrategy-row time,body[data-theme="dark"] .pstrategy-more,body[data-theme="dark"] .pstrategy-metric span{color:#b4a58d}
+body[data-theme="dark"] .pstrategy-icon{background:linear-gradient(180deg,rgba(243,210,113,.12),rgba(216,173,61,.08));border-color:rgba(214,170,58,.25);color:#f2c95f;box-shadow:0 8px 18px rgba(0,0,0,.18)}
+body[data-theme="dark"] .pstrategy-list,body[data-theme="dark"] .pstrategy-metric{background:rgba(255,255,255,.03);border-color:rgba(214,170,58,.18)}
+body[data-theme="dark"] .pronostici-detail-top{background:linear-gradient(180deg,#151410,#0d0c0a);border-color:rgba(214,170,58,.2)}
+body[data-theme="dark"] .pronostici-detail-top h3{color:#f1eadf}
+body[data-theme="dark"] .pronostici-detail-top p{color:#b7a78e}
+body[data-theme="dark"] .pronostici-detail-top .meta-badge{background:rgba(216,173,61,.14);border-color:rgba(216,173,61,.24);color:#f2c95f}
+body[data-theme="dark"] .pronostici-back{background:rgba(255,255,255,.02);border-color:rgba(214,170,58,.24);color:#f1eadf}
+@media(max-width:760px){.pronostici-summary-grid{grid-auto-columns:minmax(300px,86vw)}.pstrategy-card{min-height:auto;padding:16px 16px 18px;border-radius:22px}.pstrategy-head{flex-direction:row!important;align-items:flex-start!important;gap:12px}.pstrategy-titlebox{display:grid;grid-template-columns:58px 1fr;align-items:flex-start;gap:12px;flex:1;min-width:0}.pstrategy-icon{width:58px;height:58px;flex:0 0 58px;border-radius:16px}.pstrategy-icon svg{width:30px;height:30px}.pstrategy-head h3{font-size:1.12rem;line-height:1.05;margin:0}.pstrategy-head p{margin:4px 0 0;font-size:.81rem;line-height:1.32}.pstrategy-badge{align-self:flex-start;white-space:nowrap;padding:8px 11px}.pstrategy-list{min-height:auto;padding:12px 13px}.pstrategy-row{font-size:.9rem}.pstrategy-foot{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.pronostici-summary-grid{grid-auto-columns:minmax(286px,88vw)}.pstrategy-card{padding:15px 15px 16px;border-radius:20px}.pstrategy-head{flex-direction:row!important;align-items:flex-start!important}.pstrategy-titlebox{grid-template-columns:54px 1fr;gap:10px}.pstrategy-icon{width:54px;height:54px;flex-basis:54px}.pstrategy-icon svg{width:28px;height:28px}.pstrategy-head h3{font-size:1.05rem;white-space:normal}.pstrategy-head p{font-size:.79rem}.pstrategy-badge{align-self:flex-start;font-size:.74rem}.pstrategy-foot{grid-template-columns:1fr 1fr}.pronostici-detail-top{padding:12px 13px}.pronostici-detail-top .left{align-items:flex-start}.pronostici-back{width:100%;justify-content:center}}
+@media(max-width:900px){.pronostici-detail-top{flex-direction:column;align-items:flex-start}.pronostici-detail-top .meta{width:100%;justify-content:space-between}.pronostici-summary-grid{grid-auto-columns:minmax(300px,82vw)}}
 @media(max-width:560px){.pstrategy-card{padding:16px;border-radius:20px}.pstrategy-foot{grid-template-columns:1fr}.pstrategy-head{flex-direction:column}.pstrategy-badge{align-self:flex-start}.pronostici-detail-top{padding:12px 13px}.pronostici-detail-top .left{align-items:flex-start}.pronostici-back{width:100%;justify-content:center}}
 
-@media(max-width:760px){
-  .pronostici-summary-grid{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(320px,86vw);grid-template-columns:none;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;padding-bottom:6px}
-  .pronostici-summary-grid>.pstrategy-card{scroll-snap-align:start}
-  .pstrategy-card{min-height:auto;padding:16px 16px 18px;border-radius:22px}
-  .pstrategy-head{flex-direction:row!important;align-items:flex-start!important;gap:12px}
-  .pstrategy-titlebox{display:grid;grid-template-columns:58px 1fr;align-items:flex-start;gap:12px;flex:1;min-width:0}
-  .pstrategy-icon{width:58px;height:58px;flex:0 0 58px;border-radius:16px}
-  .pstrategy-icon svg{width:30px;height:30px}
-  .pstrategy-head h3{font-size:1.12rem;line-height:1.05;margin:0}
-  .pstrategy-head p{margin:4px 0 0;font-size:.81rem;line-height:1.32}
-  .pstrategy-badge{align-self:flex-start;white-space:nowrap;padding:8px 11px}
-  .pstrategy-list{min-height:auto;padding:12px 13px}
-  .pstrategy-row{font-size:.9rem}
-  .pstrategy-foot{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:560px){
-  .pstrategy-card{padding:15px 15px 16px;border-radius:20px}
-  .pstrategy-head{flex-direction:row!important;align-items:flex-start!important}
-  .pstrategy-titlebox{grid-template-columns:54px 1fr;gap:10px}
-  .pstrategy-icon{width:54px;height:54px;flex-basis:54px}
-  .pstrategy-icon svg{width:28px;height:28px}
-  .pstrategy-head h3{font-size:1.05rem;white-space:normal}
-  .pstrategy-head p{font-size:.79rem}
-  .pstrategy-badge{align-self:flex-start;font-size:.74rem}
-  .pstrategy-foot{grid-template-columns:1fr 1fr}
-  .pronostici-detail-top{padding:12px 13px}
-  .pronostici-detail-top .left{align-items:flex-start}
-  .pronostici-back{width:100%;justify-content:center}
-}
 
 body[data-theme="light"] .strategies-intro,body[data-theme="light"] .strategy-card,body[data-theme="light"] .advice-hero,body[data-theme="light"] .advice-card,body[data-theme="light"] .five-rules,body[data-theme="light"] .stat-box,body[data-theme="light"] .chart-box{background:linear-gradient(180deg,#fff,#f5f1e8);color:#1c1a16;box-shadow:0 14px 30px rgba(67,52,20,.08)}
 body[data-theme="light"] .strategy-intro,body[data-theme="light"] .strategies-intro,body[data-theme="light"] .advice-hero p,body[data-theme="light"] .advice-card p,body[data-theme="light"] .advice-card ul,body[data-theme="light"] .strategy-notes ul,body[data-theme="light"] .traffic-copy,body[data-theme="light"] .strategy-footer,body[data-theme="light"] .responsible,body[data-theme="light"] .chart-sub{color:#6f6657}
@@ -325,6 +309,7 @@ body[data-theme="dark"] #grid.home-history details.history-archive>.date-group-g
   }
   function renderPronosticiSummary(list,grid){
     grid.classList.remove('pronostici-detail-mode');
+    grid.classList.add('pronostici-summary-mode');
     var groups=summarizeByStrategy(list);
     var html='<div class="pronostici-summary-grid">'+groups.map(function(g){
       var preview=g.matches.slice(0,3).map(function(m){return '<div class="pstrategy-row"><b>'+esc((m.casa||'')+' - '+(m.trasferta||''))+'</b><time>'+esc(fmtTime(m))+'</time></div>'}).join('');
@@ -338,6 +323,7 @@ body[data-theme="dark"] #grid.home-history details.history-archive>.date-group-g
   function renderPronosticiStrategyDetail(list,grid){
     var groups=summarizeByStrategy(list),group=groups.find(function(g){return g.meta.key===currentPronosticiStrategy});
     if(!group){currentPronosticiStrategy=null;renderPronosticiSummary(list,grid);return}
+    grid.classList.remove('pronostici-summary-mode');
     grid.classList.add('pronostici-detail-mode');
     var top='<div class="pronostici-detail-top"><div class="left"><div class="pstrategy-icon">'+group.meta.icon+'</div><div><h3>'+esc(group.meta.name)+'</h3><p>'+esc(group.meta.desc)+'</p></div></div><div class="meta"><span class="meta-badge">'+group.count+' '+(group.count===1?'partita':'partite')+'</span><button class="pronostici-back js-back-pronostici">← Torna alle strategie</button></div></div>';
     grid.innerHTML=top+group.matches.map(renderMatchCard).join('');
