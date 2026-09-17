@@ -195,6 +195,22 @@ body[data-theme="dark"] #grid.home-history details.history-archive>.date-group-g
 @media(max-width:700px){#grid.home-history .history-section-head{flex-wrap:wrap!important;align-items:flex-start!important}#grid.home-history .history-section-line{display:none!important}#grid.home-history .history-section-date{width:100%!important;padding-left:40px!important;margin-top:-6px!important}#grid.home-history details.history-archive>summary{grid-template-columns:1fr 48px!important;align-items:start!important;gap:12px!important}#grid.home-history .archive-main{grid-template-columns:42px minmax(0,1fr)!important;gap:12px!important}#grid.home-history .archive-icon{width:42px!important;height:42px!important}#grid.home-history .archive-copy strong{font-size:.95rem!important}#grid.home-history .archive-meta{padding-left:0!important;border-left:0!important;margin-left:54px!important;margin-top:6px!important}#grid.home-history details.history-archive>summary:before{right:68px!important;width:150px!important}#grid.home-history details.history-archive>summary:after{width:40px!important;height:40px!important}}
 @media(max-width:560px){#grid.home-history{gap:18px!important}#grid.home-history .history-section .date-group-grid{grid-template-columns:1fr!important}#grid.home-history .history-section .date-group-grid>.card,#grid.home-history details.history-archive .date-group-grid>.card{width:100%!important;min-height:390px!important}#grid.home-history .history-section-badge{font-size:.95rem!important}#grid.home-history .history-section-date{padding-left:40px!important;font-size:.9rem!important}#grid.home-history details.history-archive>summary{min-height:84px!important}#grid.home-history .archive-meta{margin-left:54px!important}#grid.home-history .archive-copy small{font-size:.68rem!important;letter-spacing:.18em!important}#grid.home-history .archive-copy strong{font-size:.88rem!important}}
 </style>
+
+<style id="pronostici-hard-fix">
+/* Authoritative layout for Pronostici strategy cards */
+#grid.pronostici-summary-mode{display:block!important;width:100%!important;max-width:none!important}
+#grid.pronostici-summary-mode>.pronostici-summary-grid{display:grid!important;width:100%!important;max-width:none!important;grid-template-columns:repeat(4,minmax(260px,1fr))!important;grid-auto-flow:row!important;grid-auto-columns:auto!important;gap:18px!important;overflow:visible!important}
+#grid.pronostici-summary-mode .pstrategy-card{width:100%!important;min-width:0!important;max-width:none!important}
+#grid.pronostici-summary-mode .pstrategy-titlebox{min-width:0!important}
+#grid.pronostici-summary-mode .pstrategy-row b{min-width:0!important;overflow-wrap:anywhere!important}
+body[data-theme="dark"] #grid.pronostici-summary-mode .pstrategy-card{background:linear-gradient(180deg,#151410,#0b0c0a)!important;border-color:rgba(214,170,58,.28)!important;color:#f3eee4!important}
+body[data-theme="dark"] #grid.pronostici-summary-mode .pstrategy-list,body[data-theme="dark"] #grid.pronostici-summary-mode .pstrategy-metric{background:rgba(255,255,255,.025)!important;border-color:rgba(214,170,58,.18)!important}
+body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-card{background:linear-gradient(180deg,#fffdf8,#f6f0e5)!important;border-color:#ddc98f!important;color:#211b13!important}
+body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-metric{background:rgba(255,255,255,.78)!important;border-color:#e2d5bb!important}
+@media(max-width:1450px){#grid.pronostici-summary-mode>.pronostici-summary-grid{grid-template-columns:repeat(3,minmax(260px,1fr))!important}}
+@media(max-width:1050px){#grid.pronostici-summary-mode>.pronostici-summary-grid{grid-template-columns:repeat(2,minmax(260px,1fr))!important}}
+@media(max-width:650px){#grid.pronostici-summary-mode>.pronostici-summary-grid{grid-template-columns:1fr!important}}
+</style>
 </head>
 <body>
 <div class="page-shell">
@@ -308,6 +324,7 @@ body[data-theme="dark"] #grid.home-history details.history-archive>.date-group-g
   }
   function renderPronosticiSummary(list,grid){
     grid.classList.remove('pronostici-detail-mode');
+    grid.style.display='block';grid.style.width='100%';
     grid.classList.add('pronostici-summary-mode');
     var groups=summarizeByStrategy(list);
     var html='<div class="pronostici-summary-grid">'+groups.map(function(g){
@@ -320,6 +337,7 @@ body[data-theme="dark"] #grid.home-history details.history-archive>.date-group-g
     grid.innerHTML=html;
   }
   function renderPronosticiStrategyDetail(list,grid){
+    grid.style.display='grid';grid.style.width='100%';
     var groups=summarizeByStrategy(list),group=groups.find(function(g){return g.meta.key===currentPronosticiStrategy});
     if(!group){currentPronosticiStrategy=null;renderPronosticiSummary(list,grid);return}
     grid.classList.remove('pronostici-summary-mode');
