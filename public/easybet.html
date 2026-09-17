@@ -57,6 +57,41 @@ body[data-theme="light"] .card{background:linear-gradient(180deg,#fff,#f4f0e7);b
 body[data-theme="light"] .league small,body[data-theme="light"] .role,body[data-theme="light"] .info label{color:#746b5c}body[data-theme="light"] .date{color:#817767}body[data-theme="light"] .time{background:rgba(255,255,255,.75);border-color:#ddd6c8}
 body[data-theme="light"] .matchup{background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(246,242,233,.9));border-color:#ddd6c7}body[data-theme="light"] .crest-wrap{background:#fff;border-color:#ddd5c6;box-shadow:0 5px 15px rgba(56,45,21,.06)}
 body[data-theme="light"] .info-grid{border-top-color:rgba(153,115,21,.35)}body[data-theme="light"] .info + .info{border-left-color:rgba(153,115,21,.28)}
+
+.pronostici-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;align-items:stretch;width:100%;overflow:visible}.grid.pronostici-summary-mode{display:block;width:100%}
+.pstrategy-card{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:16px;min-height:320px;width:100%;padding:20px;border-radius:24px;border:1px solid rgba(214,170,58,.28);background:linear-gradient(180deg,#fdfbf6,#f7f2e8);box-shadow:0 16px 30px rgba(95,76,40,.08)}
+.pstrategy-card:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(222,185,84,.16),transparent 30%),linear-gradient(180deg,rgba(255,255,255,.55),transparent 36%);pointer-events:none}
+.pstrategy-head,.pstrategy-list,.pstrategy-foot,.pstrategy-btn{position:relative;z-index:1}
+.pstrategy-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.pstrategy-titlebox{display:flex;align-items:center;gap:14px;min-width:0}
+.pstrategy-icon{width:54px;height:54px;flex:0 0 54px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(180deg,#fff6da,#f0ddb0);border:1px solid rgba(212,174,69,.34);color:#ae7f10;box-shadow:0 8px 18px rgba(215,172,57,.14)}
+.pstrategy-icon svg{width:28px;height:28px;display:block}.pstrategy-head h3{margin:0;font-size:1.05rem;line-height:1.1;color:#1e1a14}.pstrategy-head p{margin:6px 0 0;font-size:.86rem;line-height:1.45;color:#766a57}
+.pstrategy-badge{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:999px;background:linear-gradient(180deg,#f4d76f,#c89519);color:#1e1505;font-weight:800;font-size:.78rem;white-space:nowrap;box-shadow:0 10px 18px rgba(200,149,25,.18)}
+.pstrategy-list{border:1px solid #e2d5bb;border-radius:16px;background:rgba(255,255,255,.7);padding:12px 14px;min-height:90px}
+.pstrategy-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;font-size:.93rem;color:#2d261d}.pstrategy-row+.pstrategy-row{margin-top:8px}.pstrategy-row b{font-weight:600}.pstrategy-row time{font-family:'IBM Plex Mono',monospace;color:#6d6255;font-size:.82rem}.pstrategy-more{margin-top:8px;text-align:center;color:#7a6a4c;font-size:.82rem}
+.pstrategy-foot{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pstrategy-metric{padding:12px 14px;border:1px solid #e2d5bb;border-radius:15px;background:rgba(255,255,255,.75)}
+.pstrategy-metric span{display:block;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:#91846f;margin-bottom:7px}.pstrategy-metric strong{display:block;font-size:1rem;color:#1d1913}
+.pstrategy-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;border:none;border-radius:14px;background:linear-gradient(180deg,#cba12a,#a67d08);color:#fff6d5;font-weight:800;font-size:.96rem;cursor:pointer;box-shadow:0 12px 22px rgba(200,149,25,.18)}.pstrategy-btn:hover{filter:brightness(1.03)}
+.pronostici-detail-top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:2px;padding:14px 16px;border:1px solid #dfd2b7;border-radius:20px;background:linear-gradient(180deg,#fffdfa,#f7f2e8)}
+.pronostici-detail-top .left{display:flex;align-items:center;gap:12px;min-width:0}.pronostici-detail-top .left .pstrategy-icon{width:48px;height:48px;flex-basis:48px}
+.pronostici-detail-top h3{margin:0;font-size:1.12rem;color:#201b15}.pronostici-detail-top p{margin:5px 0 0;color:#7a6e5b;font-size:.86rem}.pronostici-detail-top .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.pronostici-detail-top .meta-badge{padding:7px 11px;border-radius:999px;background:#f6ebce;border:1px solid #e1cea0;color:#83610b;font-size:.8rem;font-weight:800}
+.pronostici-back{display:inline-flex;align-items:center;gap:8px;border:1px solid #dfd2b7;background:#fff;border-radius:14px;padding:10px 14px;color:#241e16;font-weight:700;cursor:pointer}
+.grid.pronostici-detail-mode{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));justify-content:stretch;align-items:stretch}.grid.pronostici-detail-mode>.card{width:100%;max-width:none}
+body[data-theme="dark"] .pstrategy-card{background:linear-gradient(180deg,#141310,#0c0c0a);border-color:rgba(214,170,58,.26);box-shadow:0 16px 30px rgba(0,0,0,.28),0 0 0 1px rgba(214,170,58,.06) inset}
+body[data-theme="dark"] .pstrategy-card:before{background:radial-gradient(circle at 72% 22%,rgba(214,170,58,.18),transparent 22%),radial-gradient(circle at 50% 48%,rgba(32,159,67,.18),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.03),transparent 28%)}
+body[data-theme="dark"] .pstrategy-head h3,body[data-theme="dark"] .pstrategy-row,body[data-theme="dark"] .pstrategy-metric strong{color:#f2ede3}
+body[data-theme="dark"] .pstrategy-head p,body[data-theme="dark"] .pstrategy-row time,body[data-theme="dark"] .pstrategy-more,body[data-theme="dark"] .pstrategy-metric span{color:#b4a58d}
+body[data-theme="dark"] .pstrategy-icon{background:linear-gradient(180deg,rgba(243,210,113,.12),rgba(216,173,61,.08));border-color:rgba(214,170,58,.25);color:#f2c95f;box-shadow:0 8px 18px rgba(0,0,0,.18)}
+body[data-theme="dark"] .pstrategy-list,body[data-theme="dark"] .pstrategy-metric{background:rgba(255,255,255,.03);border-color:rgba(214,170,58,.18)}
+body[data-theme="dark"] .pronostici-detail-top{background:linear-gradient(180deg,#151410,#0d0c0a);border-color:rgba(214,170,58,.2)}
+body[data-theme="dark"] .pronostici-detail-top h3{color:#f1eadf}
+body[data-theme="dark"] .pronostici-detail-top p{color:#b7a78e}
+body[data-theme="dark"] .pronostici-detail-top .meta-badge{background:rgba(216,173,61,.14);border-color:rgba(216,173,61,.24);color:#f2c95f}
+body[data-theme="dark"] .pronostici-back{background:rgba(255,255,255,.02);border-color:rgba(214,170,58,.24);color:#f1eadf}
+@media(max-width:760px){.pstrategy-card{min-height:auto;padding:16px 16px 18px;border-radius:22px}.pstrategy-head{flex-direction:row!important;align-items:flex-start!important;gap:12px}.pstrategy-titlebox{display:grid;grid-template-columns:58px 1fr;align-items:flex-start;gap:12px;flex:1;min-width:0}.pstrategy-icon{width:58px;height:58px;flex:0 0 58px;border-radius:16px}.pstrategy-icon svg{width:30px;height:30px}.pstrategy-head h3{font-size:1.12rem;line-height:1.05;margin:0}.pstrategy-head p{margin:4px 0 0;font-size:.81rem;line-height:1.32}.pstrategy-badge{align-self:flex-start;white-space:nowrap;padding:8px 11px}.pstrategy-list{min-height:auto;padding:12px 13px}.pstrategy-row{font-size:.9rem}.pstrategy-foot{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.pstrategy-card{padding:15px 15px 16px;border-radius:20px}.pstrategy-head{flex-direction:row!important;align-items:flex-start!important}.pstrategy-titlebox{grid-template-columns:54px 1fr;gap:10px}.pstrategy-icon{width:54px;height:54px;flex-basis:54px}.pstrategy-icon svg{width:28px;height:28px}.pstrategy-head h3{font-size:1.05rem;white-space:normal}.pstrategy-head p{font-size:.79rem}.pstrategy-badge{align-self:flex-start;font-size:.74rem}.pstrategy-foot{grid-template-columns:1fr 1fr}.pronostici-detail-top{padding:12px 13px}.pronostici-detail-top .left{align-items:flex-start}.pronostici-back{width:100%;justify-content:center}}.pstrategy-head{flex-direction:row!important;align-items:flex-start!important}.pstrategy-titlebox{grid-template-columns:54px 1fr;gap:10px}.pstrategy-icon{width:54px;height:54px;flex-basis:54px}.pstrategy-icon svg{width:28px;height:28px}.pstrategy-head h3{font-size:1.05rem;white-space:normal}.pstrategy-head p{font-size:.79rem}.pstrategy-badge{align-self:flex-start;font-size:.74rem}.pstrategy-foot{grid-template-columns:1fr 1fr}.pronostici-detail-top{padding:12px 13px}.pronostici-detail-top .left{align-items:flex-start}.pronostici-back{width:100%;justify-content:center}}
+@media(max-width:1500px){.pronostici-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:1100px){.pronostici-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pronostici-detail-top{flex-direction:column;align-items:flex-start}.pronostici-detail-top .meta{width:100%;justify-content:space-between}}@media(max-width:720px){.pronostici-summary-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.pstrategy-card{padding:16px;border-radius:20px}.pstrategy-foot{grid-template-columns:1fr}.pstrategy-head{flex-direction:column}.pstrategy-badge{align-self:flex-start}.pronostici-detail-top{padding:12px 13px}.pronostici-detail-top .left{align-items:flex-start}.pronostici-back{width:100%;justify-content:center}}
+
+
 body[data-theme="light"] .strategies-intro,body[data-theme="light"] .strategy-card,body[data-theme="light"] .advice-hero,body[data-theme="light"] .advice-card,body[data-theme="light"] .five-rules,body[data-theme="light"] .stat-box,body[data-theme="light"] .chart-box{background:linear-gradient(180deg,#fff,#f5f1e8);color:#1c1a16;box-shadow:0 14px 30px rgba(67,52,20,.08)}
 body[data-theme="light"] .strategy-intro,body[data-theme="light"] .strategies-intro,body[data-theme="light"] .advice-hero p,body[data-theme="light"] .advice-card p,body[data-theme="light"] .advice-card ul,body[data-theme="light"] .strategy-notes ul,body[data-theme="light"] .traffic-copy,body[data-theme="light"] .strategy-footer,body[data-theme="light"] .responsible,body[data-theme="light"] .chart-sub{color:#6f6657}
 body[data-theme="light"] .metric-chip,body[data-theme="light"] .rule-item,body[data-theme="light"] .strategy-window,body[data-theme="light"] .advice-score span{background:#fff;border-color:#ded5c5;color:#211d16}
@@ -114,6 +149,68 @@ body[data-theme="light"] #grid.home-history details.date-group.archive>.date-gro
 
 @media(max-width:900px){#grid.home-history .date-group-grid>.card{flex:1 1 230px!important;width:auto!important}}
 @media(max-width:560px){#grid.home-history{gap:14px!important}#grid.home-history .date-group-grid{display:grid!important;grid-template-columns:1fr!important}#grid.home-history .date-group-grid>.card{width:100%!important;min-height:390px!important}#grid.home-history details.date-group.archive>summary{min-height:62px!important;padding:0 12px!important}#grid.home-history .archive-label{grid-template-columns:auto 1fr!important}.archive-count{grid-column:2!important;justify-self:start!important}.archive-date-text{font-size:.78rem!important}}
+
+/* ===== Partite terminate redesign requested ===== */
+#grid.home-history{display:flex!important;flex-direction:column!important;gap:24px!important}
+#grid.home-history .history-section{margin:0!important;padding:0!important;border:none!important;background:none!important;box-shadow:none!important}
+#grid.home-history .history-section-head{display:flex!important;align-items:center!important;gap:14px!important;margin:0 0 16px!important}
+#grid.home-history .history-section-badge{display:inline-flex!important;align-items:center!important;gap:10px!important;color:#d8ad3d!important;font-size:1.05rem!important;font-weight:900!important;letter-spacing:.08em!important;text-transform:uppercase!important;white-space:nowrap!important}
+#grid.home-history .history-section-badge:before{content:'📅'!important;display:grid!important;place-items:center!important;width:30px!important;height:30px!important;border-radius:10px!important;background:rgba(242,205,97,.12)!important;border:1px solid rgba(242,205,97,.24)!important;font-size:.9rem!important}
+#grid.home-history .history-section-line{flex:1!important;height:1px!important;background:linear-gradient(90deg,rgba(216,173,61,.55),rgba(216,173,61,.18))!important}
+#grid.home-history .history-section-date{font-size:1rem!important;color:#c3b79f!important;letter-spacing:.02em!important;white-space:nowrap!important}
+#grid.home-history .history-section .date-group-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(250px,290px))!important;justify-content:flex-start!important;gap:16px!important}
+#grid.home-history details.history-archive{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;border:1px solid rgba(216,173,61,.24)!important;border-radius:20px!important;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008))!important;box-shadow:0 10px 24px rgba(0,0,0,.12)!important;overflow:hidden!important;position:relative!important}
+#grid.home-history details.history-archive+details.history-archive{margin-top:-8px!important}
+#grid.home-history details.history-archive>summary{list-style:none!important;cursor:pointer!important;display:grid!important;grid-template-columns:minmax(0,1.55fr) auto minmax(170px,.8fr) 40px!important;align-items:center!important;gap:14px!important;min-height:60px!important;padding:8px 16px!important;position:relative!important;color:#262117!important;background:linear-gradient(90deg,rgba(242,205,97,.08),rgba(255,255,255,.0) 48%,rgba(242,205,97,.06))!important}
+#grid.home-history details.history-archive>summary::-webkit-details-marker{display:none!important}
+#grid.home-history details.history-archive>summary:before{content:''!important;position:absolute!important;right:74px!important;top:5px!important;bottom:5px!important;width:180px!important;background:radial-gradient(circle at 68% 50%,rgba(216,173,61,.16),transparent 44%)!important;opacity:.68!important;pointer-events:none!important}
+#grid.home-history details.history-archive>summary:after{content:'+'!important;display:grid!important;place-items:center!important;width:36px!important;height:36px!important;border-radius:50%!important;background:linear-gradient(180deg,#f6db7f,#d7ad39)!important;color:#2b2007!important;font-size:1.35rem!important;font-weight:700!important;box-shadow:0 8px 18px rgba(216,173,61,.18)!important;position:relative!important;z-index:2!important}
+#grid.home-history details.history-archive[open]>summary:after{content:'−'!important}
+#grid.home-history details.history-archive[open]>summary{border-bottom:1px solid rgba(216,173,61,.18)!important}
+#grid.home-history details.history-archive>.date-group-grid{padding:18px!important;background:rgba(0,0,0,.03)!important}
+#grid.home-history .archive-main{display:grid!important;grid-template-columns:40px minmax(0,1fr)!important;align-items:center!important;gap:12px!important;min-width:0!important}
+#grid.home-history .archive-icon{width:40px!important;height:40px!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:linear-gradient(180deg,rgba(246,219,127,.28),rgba(216,173,61,.08))!important;border:1px solid rgba(216,173,61,.24)!important;box-shadow:0 8px 18px rgba(216,173,61,.08)!important}
+#grid.home-history .archive-icon:before{content:'🗂'!important;font-size:.95rem!important}
+#grid.home-history .archive-copy{display:flex!important;flex-direction:column!important;gap:2px!important;min-width:0!important}
+#grid.home-history .archive-copy small{font-size:.64rem!important;font-weight:800!important;letter-spacing:.22em!important;text-transform:uppercase!important;color:#8d7b58!important}
+#grid.home-history .archive-copy strong{font-size:1.08rem!important;line-height:1.04!important;color:#241f17!important;font-weight:800!important}
+#grid.home-history .archive-meta{display:flex!important;align-items:center!important;gap:8px!important;padding-left:14px!important;border-left:1px solid rgba(216,173,61,.35)!important;color:#322a1f!important;position:relative!important;z-index:2!important}
+#grid.home-history .archive-meta b{font-size:1.12rem!important;line-height:1!important}
+#grid.home-history .archive-meta span{font-size:.82rem!important;color:#6a5b40!important}
+#grid.home-history .archive-story{justify-self:end!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;text-align:right!important;font-size:.72rem!important;line-height:1.02!important;font-weight:700!important;letter-spacing:.16em!important;text-transform:uppercase!important;color:#7f7158!important;padding-right:4px!important;position:relative!important;z-index:2!important}
+#grid.home-history .archive-story:before{content:'⚽'!important;display:grid!important;place-items:center!important;width:42px!important;height:42px!important;border-radius:50%!important;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.10),rgba(216,173,61,.18)),linear-gradient(180deg,rgba(246,219,127,.18),rgba(216,173,61,.06))!important;border:1px solid rgba(216,173,61,.24)!important;box-shadow:0 8px 18px rgba(216,173,61,.12)!important;font-size:1.15rem!important;letter-spacing:0!important;flex:0 0 auto!important}
+#grid.home-history .archive-story:after{content:''!important;display:block!important;position:absolute!important;right:4px!important;bottom:-2px!important;width:28px!important;height:2px!important;background:linear-gradient(90deg,transparent,#d8ad3d)!important;border-radius:999px!important}
+body[data-theme="light"] #grid.home-history .history-section-date{color:#6e6251!important}
+body[data-theme="light"] #grid.home-history .history-section-line{background:linear-gradient(90deg,#dcc27a,rgba(220,194,122,.25))!important}
+body[data-theme="light"] #grid.home-history details.history-archive{background:linear-gradient(180deg,#fffcf7,#f8f3ea)!important;border-color:#dec995!important;box-shadow:0 14px 30px rgba(115,90,34,.08)!important}
+body[data-theme="light"] #grid.home-history details.history-archive>summary{color:#262117!important;background:linear-gradient(90deg,rgba(242,205,97,.12),rgba(255,255,255,.9) 48%,rgba(242,205,97,.10))!important}
+body[data-theme="light"] #grid.home-history details.history-archive>.date-group-grid{background:#fcf8f1!important}
+body[data-theme="dark"] #grid.home-history .history-section-date{color:#baa98b!important}
+body[data-theme="dark"] #grid.home-history details.history-archive{background:linear-gradient(180deg,#141310,#0d0c0a)!important;border-color:rgba(216,173,61,.22)!important;box-shadow:0 18px 32px rgba(0,0,0,.22)!important}
+body[data-theme="dark"] #grid.home-history details.history-archive>summary{color:#eee6d9!important;background:linear-gradient(90deg,rgba(216,173,61,.10),rgba(255,255,255,.01) 45%,rgba(216,173,61,.07))!important}
+body[data-theme="dark"] #grid.home-history .archive-copy strong{color:#f1eadf!important}
+body[data-theme="dark"] #grid.home-history .archive-meta{color:#f3ecde!important;border-left-color:rgba(216,173,61,.24)!important}
+body[data-theme="dark"] #grid.home-history .archive-meta span,body[data-theme="dark"] #grid.home-history .archive-story,body[data-theme="dark"] #grid.home-history .archive-copy small{color:#b4a48a!important}
+body[data-theme="dark"] #grid.home-history details.history-archive>.date-group-grid{background:rgba(255,255,255,.01)!important}
+@media(max-width:980px){#grid.home-history details.history-archive>summary{grid-template-columns:minmax(0,1fr) auto 40px!important;gap:12px!important;padding:8px 14px!important;min-height:56px!important}#grid.home-history .archive-story{display:none!important}}
+@media(max-width:700px){#grid.home-history .history-section-head{flex-wrap:wrap!important;align-items:flex-start!important}#grid.home-history .history-section-line{display:none!important}#grid.home-history .history-section-date{width:100%!important;padding-left:40px!important;margin-top:-6px!important}#grid.home-history details.history-archive>summary{grid-template-columns:1fr 48px!important;align-items:start!important;gap:12px!important}#grid.home-history .archive-main{grid-template-columns:42px minmax(0,1fr)!important;gap:12px!important}#grid.home-history .archive-icon{width:42px!important;height:42px!important}#grid.home-history .archive-copy strong{font-size:.95rem!important}#grid.home-history .archive-meta{padding-left:0!important;border-left:0!important;margin-left:54px!important;margin-top:6px!important}#grid.home-history details.history-archive>summary:before{right:68px!important;width:150px!important}#grid.home-history details.history-archive>summary:after{width:40px!important;height:40px!important}}
+@media(max-width:560px){#grid.home-history{gap:18px!important}#grid.home-history .history-section .date-group-grid{grid-template-columns:1fr!important}#grid.home-history .history-section .date-group-grid>.card,#grid.home-history details.history-archive .date-group-grid>.card{width:100%!important;min-height:390px!important}#grid.home-history .history-section-badge{font-size:.95rem!important}#grid.home-history .history-section-date{padding-left:40px!important;font-size:.9rem!important}#grid.home-history details.history-archive>summary{min-height:58px!important;padding-top:8px!important;padding-bottom:8px!important}#grid.home-history .archive-meta{margin-left:48px!important}#grid.home-history .archive-copy small{font-size:.62rem!important;letter-spacing:.16em!important}#grid.home-history .archive-copy strong{font-size:.9rem!important}}
+</style>
+
+<style id="pronostici-hard-fix">
+/* Authoritative layout for Pronostici strategy cards */
+#grid.pronostici-summary-mode{display:block!important;width:100%!important;max-width:none!important}
+#grid.pronostici-summary-mode>.pronostici-summary-grid{display:grid!important;width:100%!important;max-width:none!important;grid-template-columns:repeat(4,minmax(260px,1fr))!important;grid-auto-flow:row!important;grid-auto-columns:auto!important;gap:18px!important;overflow:visible!important}
+#grid.pronostici-summary-mode .pstrategy-card{width:100%!important;min-width:0!important;max-width:none!important}
+#grid.pronostici-summary-mode .pstrategy-titlebox{min-width:0!important}
+#grid.pronostici-summary-mode .pstrategy-row b{min-width:0!important;overflow-wrap:anywhere!important}
+body[data-theme="dark"] #grid.pronostici-summary-mode .pstrategy-card{background:linear-gradient(180deg,#151410,#0b0c0a)!important;border-color:rgba(214,170,58,.28)!important;color:#f3eee4!important}
+body[data-theme="dark"] #grid.pronostici-summary-mode .pstrategy-list,body[data-theme="dark"] #grid.pronostici-summary-mode .pstrategy-metric{background:rgba(255,255,255,.025)!important;border-color:rgba(214,170,58,.18)!important}
+body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-card{background:linear-gradient(180deg,#fffdf8,#f6f0e5)!important;border-color:#ddc98f!important;color:#211b13!important}
+body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-metric{background:rgba(255,255,255,.78)!important;border-color:#e2d5bb!important}
+@media(max-width:1450px){#grid.pronostici-summary-mode>.pronostici-summary-grid{grid-template-columns:repeat(3,minmax(260px,1fr))!important}}
+@media(max-width:1050px){#grid.pronostici-summary-mode>.pronostici-summary-grid{grid-template-columns:repeat(2,minmax(260px,1fr))!important}}
+@media(max-width:650px){#grid.pronostici-summary-mode>.pronostici-summary-grid{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
@@ -177,6 +274,78 @@ body[data-theme="light"] #grid.home-history details.date-group.archive>.date-gro
   var ESITO_LABEL={entrata_vinta:'Entrati • Vinta',entrata_persa:'Entrati • Persa',non_entrata:'Non entrati'};var ESITO_ICON={entrata_vinta:'🏆',entrata_persa:'✖',non_entrata:'−'};
   var crestCache={},matches=[],currentFilter='tutte',currentView='home';
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+  var currentPronosticiStrategy=null;
+  function strategyKey(raw){
+    var s=String(raw||'').trim().toUpperCase();
+    if(/OVER\s*1[\.,]?5/.test(s)) return 'over15';
+    if(/OVER\s*0[\.,]?5\s*HT/.test(s)||/OVER\s*0[\.,]?5\s*1T/.test(s)) return 'over05';
+    if(/BANCA\s*LA\s*X/.test(s)) return 'banca';
+    if(/SEGNA\s*LA\s*FAVORITA/.test(s)||/FAVORITA/.test(s)) return 'favorita';
+    return s.toLowerCase().replace(/[^a-z0-9]+/g,'-')||'custom';
+  }
+  function strategyIcon(key){
+    var map={
+      over15:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 5.7l2.1 1.55-.8 2.55h-2.6l-.8-2.55L12 5.7zm-4.85 3.3l2.5.14.8 2.45-2.1 1.55-2.05-1.45.85-2.69zm9.7 0l2.65.67.85 2.02-2.05 1.45-2.1-1.55.8-2.45zm-6.75 5.05h3.8l1.18 3.52L12 19.65l-3.08-2.01 1.18-3.52zm5.02-.06l2.1 1.55-.78 2.41-2.46.17-.82-2.56 1.96-1.57zm-6.26 0l1.96 1.57-.82 2.56-2.46-.17-.78-2.41 2.1-1.55z" fill="currentColor" opacity=".94"/></svg>',
+      over05:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 7.1v4.7l3 1.85" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.2 4.9l1.3 1.3M16.8 4.9l-1.3 1.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 18.2h10.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+      banca:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8.2 8.2l7.6 7.6M15.8 8.2l-7.6 7.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.25" fill="currentColor" opacity=".92"/></svg>',
+      favorita:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 17.8h11.6l-1-6.2-2.8 2.15-2-4.1-2 4.1-2.8-2.15-1 6.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8.3 19.2h7.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
+      custom:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 8h8M8 12h8M8 16h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'
+    };
+    return map[key]||map.custom;
+  }
+  function strategyMeta(raw){
+    var name=String(raw||'Da definire').trim().toUpperCase();
+    var key=strategyKey(raw);
+    var map={
+      over15:{name:'OVER 1.5 FT',desc:'Almeno 2 gol nella partita.'},
+      over05:{name:'OVER 0.5 HT',desc:'Almeno 1 gol nel primo tempo.'},
+      banca:{name:'BANCA LA X',desc:'Strategia sul pareggio 0-0 / 1-1 HT.'},
+      favorita:{name:'SEGNA LA FAVORITA',desc:'La favorita deve trovare il gol.'}
+    };
+    var base=map[key]||{name:name,desc:'Pronostici raggruppati per questa strategia.'};
+    return {key:key,name:base.name,desc:base.desc,icon:strategyIcon(key)};
+  }
+  function summarizeByStrategy(list){
+    var groups={};
+    list.forEach(function(m){
+      var meta=strategyMeta(m.tipoGiocata), key=meta.key;
+      if(!groups[key]) groups[key]={meta:meta,matches:[]};
+      groups[key].matches.push(m);
+    });
+    return Object.keys(groups).map(function(k){
+      var g=groups[k];
+      g.matches.sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});
+      var quotas=g.matches.map(function(m){return parseFloat(String(m.quotaIngresso).replace(',','.'))}).filter(function(n){return !isNaN(n)});
+      g.next=g.matches[0]||null;
+      g.count=g.matches.length;
+      g.avgQuota=quotas.length?(quotas.reduce(function(a,b){return a+b},0)/quotas.length):null;
+      return g;
+    }).sort(function(a,b){return Number(a.next&&a.next.startAt||0)-Number(b.next&&b.next.startAt||0)});
+  }
+  function renderPronosticiSummary(list,grid){
+    grid.classList.remove('pronostici-detail-mode');
+    grid.style.display='block';grid.style.width='100%';
+    grid.classList.add('pronostici-summary-mode');
+    var groups=summarizeByStrategy(list);
+    var html='<div class="pronostici-summary-grid">'+groups.map(function(g){
+      var preview=g.matches.slice(0,3).map(function(m){return '<div class="pstrategy-row"><b>'+esc((m.casa||'')+' - '+(m.trasferta||''))+'</b><time>'+esc(fmtTime(m))+'</time></div>'}).join('');
+      var more=g.count>3?'<div class="pstrategy-more">+'+(g.count-3)+' altre partite</div>':'';
+      var nextTime=g.next?fmtTime(g.next):'—';
+      var avg=g.avgQuota!=null?String((Math.round(g.avgQuota*100)/100).toFixed(2)).replace('.',','):'—';
+      return '<article class="pstrategy-card"><div class="pstrategy-head"><div class="pstrategy-titlebox"><div class="pstrategy-icon">'+g.meta.icon+'</div><div><h3>'+esc(g.meta.name)+'</h3><p>'+esc(g.meta.desc)+'</p></div></div><span class="pstrategy-badge">'+g.count+' '+(g.count===1?'partita':'partite')+'</span></div><div class="pstrategy-list">'+preview+more+'</div><div class="pstrategy-foot"><div class="pstrategy-metric"><span>Prossima partita</span><strong>'+esc(nextTime)+'</strong></div><div class="pstrategy-metric"><span>Quota media</span><strong>'+esc(avg)+'</strong></div></div><button class="pstrategy-btn js-open-strategy" data-strategy="'+escAttr(g.meta.key)+'">VEDI '+g.count+' '+(g.count===1?'PARTITA':'PARTITE')+' →</button></article>';
+    }).join('')+'</div>';
+    grid.innerHTML=html;
+  }
+  function renderPronosticiStrategyDetail(list,grid){
+    grid.style.display='grid';grid.style.width='100%';
+    var groups=summarizeByStrategy(list),group=groups.find(function(g){return g.meta.key===currentPronosticiStrategy});
+    if(!group){currentPronosticiStrategy=null;renderPronosticiSummary(list,grid);return}
+    grid.classList.remove('pronostici-summary-mode');
+    grid.classList.add('pronostici-detail-mode');
+    var top='<div class="pronostici-detail-top"><div class="left"><div class="pstrategy-icon">'+group.meta.icon+'</div><div><h3>'+esc(group.meta.name)+'</h3><p>'+esc(group.meta.desc)+'</p></div></div><div class="meta"><span class="meta-badge">'+group.count+' '+(group.count===1?'partita':'partite')+'</span><button class="pronostici-back js-back-pronostici">← Torna alle strategie</button></div></div>';
+    grid.innerHTML=top+group.matches.map(renderMatchCard).join('');
+  }
   function initials(name){var p=String(name||'').trim().split(/\s+/);return (((p[0]||'')[0]||'?')+((p[1]||'')[0]||'')).toUpperCase()}
   function crestImg(name,campionato){var id='crest-'+Math.random().toString(36).slice(2);setTimeout(function(){loadCrest(name,campionato,id)},0);return '<span class="crest-wrap"><span class="crest placeholder" id="'+id+'">'+esc(initials(name))+'</span></span>'}
   function loadCrest(name,campionato,id){if(!String(name||'').trim())return;var key=String(name||'').trim().toLowerCase()+'|'+String(campionato||'').trim().toLowerCase();if(crestCache[key]!==undefined){applyCrest(id,crestCache[key]);return}var url='/api/team-crest?name='+encodeURIComponent(name)+(campionato?'&country='+encodeURIComponent(campionato):'');fetch(url).then(r=>r.json()).then(function(d){crestCache[key]=d&&d.url?d.url:null;applyCrest(id,crestCache[key])}).catch(function(){crestCache[key]=null})}
@@ -187,6 +356,7 @@ body[data-theme="light"] #grid.home-history details.date-group.archive>.date-gro
   function dayKey(m){var d=dt(m.startAt);if(!d)return 'senza-data';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
   function localDayKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
   function dateLabelFromKey(key){if(key==='senza-data')return 'Data non disponibile';var parts=key.split('-'),d=new Date(Number(parts[0]),Number(parts[1])-1,Number(parts[2]));return d.toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}
+  function shortDateLabelFromKey(key){if(key==='senza-data')return 'Data non disponibile';var parts=key.split('-'),d=new Date(Number(parts[0]),Number(parts[1])-1,Number(parts[2]));return d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}
   function relativeDateLabel(key){var now=new Date(),today=localDayKey(now),yd=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1),yesterday=localDayKey(yd);if(key===today)return 'Oggi';if(key===yesterday)return 'Ieri';return dateLabelFromKey(key)}
   function isFinished(m){return !!String(m.esitoManuale||'').trim()}
   function isUpcoming(m){return !isFinished(m) && Number(m.startAt)>Date.now()}
@@ -315,17 +485,14 @@ body[data-theme="light"] #grid.home-history details.date-group.archive>.date-gro
     var html='';
     [today,yesterday].forEach(function(k){
       if(!groups[k])return;
-      html+='<section class="date-group recent"><div class="date-group-head">'+relativeDateLabel(k)+'</div><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></section>';
+      html+='<section class="history-section recent"><div class="history-section-head"><div class="history-section-badge">'+relativeDateLabel(k)+'</div><div class="history-section-line"></div><div class="history-section-date">'+esc(shortDateLabelFromKey(k))+'</div></div><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></section>';
       delete groups[k];
     });
     var archiveKeys=Object.keys(groups).sort().reverse();
-    if(archiveKeys.length){
-      html+='<div class="archive-title"><span></span>partite precedenti divise per data</div>';
-      archiveKeys.forEach(function(k){
-        var count=groups[k].length;
-        html+='<details class="date-group archive"><summary><span class="archive-label"><span class="archive-date-text">'+esc(dateLabelFromKey(k))+'</span><span class="archive-count">'+count+' '+(count===1?'partita':'partite')+'</span></span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
-      });
-    }
+    archiveKeys.forEach(function(k){
+      var count=groups[k].length;
+      html+='<details class="date-group archive history-archive"><summary><span class="archive-main"><span class="archive-icon" aria-hidden="true"></span><span class="archive-copy"><small>Archivio</small><strong>'+esc(dateLabelFromKey(k))+'</strong></span></span><span class="archive-meta"><b>'+count+'</b><span>'+(count===1?'partita':'partite')+'</span></span><span class="archive-story">OGNI PARTITA<br>UNA STORIA</span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
+    });
     grid.classList.add('home-history');
     grid.innerHTML=html||'<div class="empty">Nessuna partita terminata disponibile.</div>';
   }
@@ -336,24 +503,26 @@ body[data-theme="light"] #grid.home-history details.date-group.archive>.date-gro
     if(currentView==='statistiche'){renderStats();return}
     if(currentView==='strategie'){renderStrategies();return}
     if(currentView==='consigli'){renderAdvice();return}
-    dash.classList.remove('show');dash.innerHTML='';grid.style.display='grid';grid.classList.remove('home-history');
+    dash.classList.remove('show');dash.innerHTML='';grid.style.display='grid';grid.classList.remove('home-history','pronostici-detail-mode');
     var list=matches.filter(matchesView).filter(function(m){return currentView==='home'?matchesOutcomeFilter(m):true});
     if(!list.length){
       var empty=currentView==='pronostici'?'Nessun pronostico programmato.':currentView==='live'?'Nessuna partita live in questo momento.':'Nessuna partita terminata disponibile.';
       grid.innerHTML='<div class="empty">'+empty+'</div>';return;
     }
     if(currentView==='home'){renderFinishedByDate(list,grid);return}
+    if(currentView==='pronostici'){if(currentPronosticiStrategy){renderPronosticiStrategyDetail(list,grid)}else{renderPronosticiSummary(list,grid)}return}
     grid.innerHTML=list.map(renderMatchCard).join('')
   }
   function load(){fetch('/api/state').then(r=>r.json()).then(function(s){matches=(s.matches||[]).slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});render();document.getElementById('refreshNote').textContent='aggiornato alle '+new Date().toLocaleTimeString('it-IT')}).catch(function(){document.getElementById('refreshNote').textContent='errore di aggiornamento'})}
   function setView(view,scroll){
-    currentView=view||'home';currentFilter='tutte';
+    currentView=view||'home';currentFilter='tutte';if(currentView!=='pronostici')currentPronosticiStrategy=null;
     document.querySelectorAll('.pill').forEach(function(p){p.classList.toggle('active',p.getAttribute('data-f')==='tutte')});
     render();
     if(scroll) document.getElementById('partite').scrollIntoView({behavior:'smooth',block:'start'});
   }
   document.querySelectorAll('[data-view]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var v=a.getAttribute('data-view');if(!v)return;history.replaceState(null,'','#'+v);setView(v,true);if(mobileNav){mobileNav.classList.remove('open')}if(mobileMenuBtn){mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰'}})});
   document.getElementById('pills').addEventListener('click',function(e){var b=e.target.closest('.pill');if(!b)return;currentFilter=b.getAttribute('data-f');document.querySelectorAll('.pill').forEach(function(p){p.classList.remove('active')});b.classList.add('active');render()});
+  document.getElementById('grid').addEventListener('click',function(e){var openBtn=e.target.closest('.js-open-strategy');if(openBtn){currentPronosticiStrategy=openBtn.getAttribute('data-strategy')||null;render();return}var backBtn=e.target.closest('.js-back-pronostici');if(backBtn){currentPronosticiStrategy=null;render()}});
   var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
 })();
 </script>
