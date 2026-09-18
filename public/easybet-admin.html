@@ -131,12 +131,15 @@
   .preview-row .pv-when{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--text-faint);white-space:nowrap;}
   .preview-row .pv-match{font-weight:700;font-size:.84rem;}
   .preview-row .pv-league{font-size:.68rem;color:var(--text-faint);font-weight:500;}
-  .preview-row input.pv-tipo{grid-column:1/-1;width:100%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-size:.78rem;padding:6px 8px;border-radius:6px;font-family:inherit;}
+  .preview-fields{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(130px,.7fr);gap:8px;}
+  .preview-row input.pv-tipo,.preview-row input.pv-quota{width:100%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-size:.78rem;padding:7px 9px;border-radius:6px;font-family:inherit;}
+  .preview-row input.pv-tipo:focus,.preview-row input.pv-quota:focus{outline:none;border-color:var(--gold);}
+  .preview-row input.pv-quota{text-align:center;font-family:'IBM Plex Mono',monospace;}
   .preview-row .pv-del{background:transparent;border:none;color:var(--text-faint);cursor:pointer;font-size:.9rem;padding:2px 6px;}
   .preview-row .pv-del:hover{color:var(--rosso);}
   .import-hint{font-size:.72rem;color:var(--text-faint);margin-top:6px;}
 
-  @media(max-width:560px){ .navlinks{display:none;} .field-row{grid-template-columns:1fr;} }
+  @media(max-width:560px){ .navlinks{display:none;} .field-row{grid-template-columns:1fr;} .preview-fields{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -647,7 +650,7 @@
         matchStr = matchStr.replace(/\s*-\s*$/,'').trim();
         var tm2 = matchStr.match(/^(.+?)\s+-\s+(.+)$/);
         if (!tm2) continue;
-        out.push({data:dateStr, ora:timeStr, campionato:league, casa:tm2[1].trim(), trasferta:tm2[2].trim(), tipoGiocata:''});
+        out.push({data:dateStr, ora:timeStr, campionato:league, casa:tm2[1].trim(), trasferta:tm2[2].trim(), tipoGiocata:'', quotaIngresso:''});
       }
       return out;
     }
@@ -674,7 +677,10 @@
           '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
           '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
           '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
-          '<input class="pv-tipo" data-idx="'+idx+'" placeholder="Strategia / tipo di giocata (opzionale)" value="'+esc(m.tipoGiocata||'')+'">'+
+          '<div class="preview-fields">'+
+            '<input class="pv-tipo" data-idx="'+idx+'" placeholder="Strategia / tipo di giocata" value="'+esc(m.tipoGiocata||'')+'">'+
+            '<input class="pv-quota" data-idx="'+idx+'" inputmode="decimal" placeholder="Quota consigliata (es. 1.66)" value="'+esc(m.quotaIngresso||'')+'">'+
+          '</div>'+
         '</div>';
       }).join('');
       html += '<div class="modal-actions" style="margin-top:10px;">'+
@@ -684,6 +690,15 @@
       importPreview.innerHTML = html;
       Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-tipo'), function(inp){
         inp.addEventListener('input', function(){ importPending[+inp.getAttribute('data-idx')].tipoGiocata = inp.value; });
+      });
+      Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-quota'), function(inp){
+        inp.addEventListener('input', function(){
+          var value = inp.value.replace(',', '.').replace(/[^0-9.]/g, '');
+          var firstDot = value.indexOf('.');
+          if (firstDot !== -1) value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
+          inp.value = value;
+          importPending[+inp.getAttribute('data-idx')].quotaIngresso = value;
+        });
       });
       Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-del'), function(btn){
         btn.addEventListener('click', function(){ importPending.splice(+btn.getAttribute('data-idx'),1); renderImportPreview(); });
@@ -704,7 +719,7 @@
             body: JSON.stringify({
               campionato: m.campionato || '', casa: m.casa, trasferta: m.trasferta,
               data: m.data, ora: m.ora, startAt: startAt,
-              tipoGiocata: m.tipoGiocata || '', quotaIngresso: '', esitoManuale: '', botEnabled: true
+              tipoGiocata: m.tipoGiocata || '', quotaIngresso: m.quotaIngresso || '', esitoManuale: '', botEnabled: true
             })
           });
         });

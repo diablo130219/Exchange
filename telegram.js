@@ -117,16 +117,46 @@ async function createAlertCard(match, minutesLeft) {
       <linearGradient id="strat" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${theme.a}"/><stop offset="1" stop-color="${theme.b}"/></linearGradient>
       <radialGradient id="glowGold" cx="82%" cy="17%" r="55%"><stop offset="0" stop-color="#E1B63E" stop-opacity=".30"/><stop offset="1" stop-color="#E1B63E" stop-opacity="0"/></radialGradient>
       <radialGradient id="glowGreen" cx="82%" cy="75%" r="48%"><stop offset="0" stop-color="#16894A" stop-opacity=".23"/><stop offset="1" stop-color="#16894A" stop-opacity="0"/></radialGradient>
+      <linearGradient id="pitch" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#184B27"/><stop offset=".55" stop-color="#0A371E"/><stop offset="1" stop-color="#04170E"/></linearGradient>
+      <linearGradient id="stands" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#18211B"/><stop offset="1" stop-color="#060907"/></linearGradient>
+      <radialGradient id="stadiumLight" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF3B4" stop-opacity=".95"/><stop offset=".25" stop-color="#F5D168" stop-opacity=".62"/><stop offset="1" stop-color="#E9B637" stop-opacity="0"/></radialGradient>
       <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity=".62"/></filter>
       <filter id="softGlow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="stadiumBlur"><feGaussianBlur stdDeviation="2.5"/></filter>
     </defs>
 
     <rect width="1080" height="650" rx="38" fill="url(#bg)"/>
+    <!-- stadium background -->
+    <g opacity=".95">
+      <path d="M0 0H1080V290C920 230 740 205 540 208C332 210 148 235 0 296Z" fill="#060908"/>
+      <path d="M0 158C165 94 350 72 540 76C736 80 913 101 1080 160V350H0Z" fill="url(#stands)" opacity=".95"/>
+      <path d="M0 255C180 216 360 202 540 204C730 205 914 223 1080 260V428H0Z" fill="#0A120E" opacity=".85"/>
+      <!-- crowd lights -->
+      <g fill="#E5BD54" opacity=".38" filter="url(#stadiumBlur)">
+        <circle cx="130" cy="210" r="2.1"/><circle cx="162" cy="195" r="1.8"/><circle cx="194" cy="222" r="2.2"/><circle cx="236" cy="202" r="1.8"/><circle cx="278" cy="228" r="2.1"/><circle cx="320" cy="196" r="1.6"/><circle cx="365" cy="216" r="2.2"/><circle cx="408" cy="190" r="1.7"/><circle cx="452" cy="224" r="2.0"/><circle cx="498" cy="201" r="1.8"/><circle cx="548" cy="219" r="2.1"/><circle cx="598" cy="193" r="1.7"/><circle cx="650" cy="225" r="2.0"/><circle cx="705" cy="198" r="1.8"/><circle cx="760" cy="217" r="2.1"/><circle cx="815" cy="190" r="1.7"/><circle cx="866" cy="225" r="2"/><circle cx="916" cy="202" r="1.8"/><circle cx="970" cy="220" r="2.2"/>
+        <circle cx="115" cy="250" r="1.7"/><circle cx="180" cy="265" r="2"/><circle cx="250" cy="245" r="1.8"/><circle cx="338" cy="260" r="2.1"/><circle cx="430" cy="247" r="1.7"/><circle cx="520" cy="266" r="2.1"/><circle cx="610" cy="248" r="1.8"/><circle cx="700" cy="264" r="2.1"/><circle cx="790" cy="246" r="1.7"/><circle cx="875" cy="263" r="2"/><circle cx="954" cy="248" r="1.8"/>
+      </g>
+      <!-- floodlights -->
+      <ellipse cx="330" cy="116" rx="165" ry="82" fill="url(#stadiumLight)" opacity=".34"/>
+      <ellipse cx="748" cy="116" rx="165" ry="82" fill="url(#stadiumLight)" opacity=".34"/>
+      <g fill="#FFE99A" filter="url(#softGlow)">
+        <circle cx="282" cy="104" r="3"/><circle cx="298" cy="101" r="3"/><circle cx="314" cy="100" r="3"/><circle cx="330" cy="99" r="3"/><circle cx="346" cy="100" r="3"/><circle cx="362" cy="102" r="3"/><circle cx="378" cy="105" r="3"/>
+        <circle cx="702" cy="105" r="3"/><circle cx="718" cy="102" r="3"/><circle cx="734" cy="100" r="3"/><circle cx="750" cy="99" r="3"/><circle cx="766" cy="100" r="3"/><circle cx="782" cy="102" r="3"/><circle cx="798" cy="105" r="3"/>
+      </g>
+      <!-- pitch -->
+      <path d="M0 318C230 280 844 280 1080 318V650H0Z" fill="url(#pitch)" opacity=".90"/>
+      <path d="M540 318V650" stroke="#F4F1D8" stroke-opacity=".32" stroke-width="2"/>
+      <ellipse cx="540" cy="401" rx="94" ry="35" fill="none" stroke="#F4F1D8" stroke-opacity=".27" stroke-width="2"/>
+      <path d="M467 332H613V374H467Z" fill="none" stroke="#F4F1D8" stroke-opacity=".22" stroke-width="2"/>
+      <path d="M505 332V353H575V332" fill="none" stroke="#F4F1D8" stroke-opacity=".24" stroke-width="2"/>
+      <path d="M0 415C260 380 820 380 1080 415" fill="none" stroke="#62A96F" stroke-opacity=".12" stroke-width="1.5"/>
+    </g>
+    <!-- dark veil keeps text readable -->
+    <rect width="1080" height="650" rx="38" fill="#020806" fill-opacity=".38"/>
     <rect width="1080" height="650" rx="38" fill="url(#glowGold)"/>
     <rect width="1080" height="650" rx="38" fill="url(#glowGreen)"/>
-    <path d="M690 0 C790 115 920 125 1080 88" fill="none" stroke="#CFA83A" stroke-opacity=".28" stroke-width="2"/>
-    <path d="M0 500 C320 420 660 545 1080 405" fill="none" stroke="#1B5A38" stroke-opacity=".48" stroke-width="3"/>
-    <path d="M0 542 C340 465 680 580 1080 444" fill="none" stroke="#0E3E29" stroke-opacity=".62" stroke-width="2"/>
+    <path d="M690 0 C790 115 920 125 1080 88" fill="none" stroke="#CFA83A" stroke-opacity=".34" stroke-width="2"/>
+    <path d="M0 500 C320 420 660 545 1080 405" fill="none" stroke="#1B5A38" stroke-opacity=".34" stroke-width="3"/>
     <rect x="22" y="22" width="1036" height="606" rx="32" fill="none" stroke="url(#gold)" stroke-width="2.4"/>
     <rect x="35" y="35" width="1010" height="580" rx="26" fill="none" stroke="#F4D96E" stroke-opacity=".16" stroke-width="1"/>
 
