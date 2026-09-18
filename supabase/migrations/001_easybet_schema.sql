@@ -77,7 +77,8 @@ create table if not exists public.team_crests (
   name_norm text primary key,
   nome_originale text,
   url text,
-  fetched_at bigint not null
+  fetched_at bigint not null,
+  manual boolean not null default false
 );
 
 -- Atomically claims one pending Telegram alert so concurrent cron invocations do not duplicate it.

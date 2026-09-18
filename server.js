@@ -502,29 +502,91 @@ app.post('/api/live-stats', async (req, res) => {
   }
 });
 
-// ---------- stemmi squadre (cache, usata dalle pagine schede) ----------
+// ---------- stemmi squadre: alias + fallback + cache + override manuale ----------
 function normCrestName(s) {
-  return String(s || '').trim().toLowerCase();
+  return String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
 }
-const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;  // 30 giorni per uno stemma trovato
-const CREST_TTL_MISS_MS = 3 * 24 * 60 * 60 * 1000;  // 3 giorni prima di riprovare se non trovato
+const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;
+const CREST_TTL_MISS_MS = 12 * 60 * 60 * 1000; // riprova più rapidamente i mancanti
 
-// Nomi come "Fram" o "United" esistono in più paesi: TheSportsDB a volte restituisce
-// un solo risultato ma del club sbagliato (es. "Fram" → Fram Larvik, Norvegia, invece
-// del Fram islandese). Se sappiamo il paese/campionato della partita (dedotto dal
-// campo "campionato", tipo "Iceland: Besta deild"), scartiamo i risultati di un paese
-// diverso invece di mostrare uno stemma sbagliato — meglio nessuno stemma che quello sbagliato.
+const CREST_ALIASES = {
+  'lahti': ['FC Lahti'],
+  'sk rapid': ['Rapid Vienna', 'SK Rapid Wien', 'Rapid Wien'],
+  'waterford united': ['Waterford FC', 'Waterford'],
+  'klubi 04': ['Klubi 04', 'HJK Klubi 04'],
+  'neuchatel xamax': ['Neuchatel Xamax', 'Neuchatel Xamax FCS'],
+  'rapperswil jona': ['FC Rapperswil-Jona', 'Rapperswil-Jona'],
+  'sjk': ['SJK Seinajoki', 'Seinajoen JK'],
+  'wisla krakow': ['Wisla Krakow'],
+  'slask wroclaw': ['Slask Wroclaw'],
+  'america mineiro': ['America MG', 'America Mineiro'],
+  'vila nova': ['Vila Nova FC'],
+  'shamrock rovers': ['Shamrock Rovers FC'],
+  'wsg tirol': ['WSG Swarovski Tirol', 'WSG Tirol']
+};
+const COUNTRY_ALIASES = {
+  'republic of ireland':'ireland', 'england':'england', 'scotland':'scotland',
+  'usa':'united states', 'united states of america':'united states',
+  'south korea':'south korea', 'korea republic':'south korea',
+  'czech republic':'czechia'
+};
 function countryHintFromCampionato(campionato) {
   const s = String(campionato || '').trim();
   if (!s) return '';
   const idx = s.indexOf(':');
   return (idx === -1 ? s : s.slice(0, idx)).trim();
 }
+function normCountry(s){
+  const n=normCrestName(s);
+  return COUNTRY_ALIASES[n] || n;
+}
 function countriesMatch(a, b) {
-  const na = String(a || '').toLowerCase().trim();
-  const nb = String(b || '').toLowerCase().trim();
+  const na = normCountry(a), nb = normCountry(b);
   if (!na || !nb) return false;
   return na === nb || na.indexOf(nb) !== -1 || nb.indexOf(na) !== -1;
+}
+function crestQueries(name){
+  const raw=String(name||'').trim();
+  const key=normCrestName(raw);
+  const out=[raw].concat(CREST_ALIASES[key]||[]);
+  const stripped=raw.replace(/\b(FC|AFC|CF|SC|SK|FK|AC|AS|SSC|SV|TSV|NK|JK)\b/gi,' ').replace(/\s+/g,' ').trim();
+  if(stripped && normCrestName(stripped)!==key) out.push(stripped);
+  if(raw && !/\bFC\b/i.test(raw)) out.push(raw+' FC');
+  return [...new Set(out.filter(Boolean))];
+}
+function crestCandidateScore(team, requestedName, query, countryHint){
+  const requested=normCrestName(requestedName), q=normCrestName(query);
+  const names=[team.strTeam,team.strTeamShort,team.strAlternate].filter(Boolean).map(normCrestName);
+  let score=0;
+  if(names.includes(requested)) score+=100;
+  if(names.includes(q)) score+=80;
+  if(names.some(n=>n.includes(requested)||requested.includes(n))) score+=35;
+  if(countryHint && countriesMatch(team.strCountry,countryHint)) score+=50;
+  if(team.strSport && normCrestName(team.strSport)!=='soccer') score-=200;
+  if(team.strBadge) score+=10;
+  return score;
+}
+async function lookupCrest(name,countryHint){
+  const queries=crestQueries(name);
+  let best=null, bestScore=-Infinity;
+  for(const query of queries){
+    try{
+      const r=await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t='+encodeURIComponent(query));
+      if(!r.ok) continue;
+      const data=await r.json();
+      const teams=(data&&Array.isArray(data.teams)?data.teams:[]).filter(t=>t&&t.strBadge);
+      for(const team of teams){
+        if(countryHint && !countriesMatch(team.strCountry,countryHint)) continue;
+        const score=crestCandidateScore(team,name,query,countryHint);
+        if(score>bestScore){bestScore=score;best=team;}
+      }
+      if(bestScore>=140) break;
+    }catch(err){ console.error('Lookup stemma "'+query+'":',err.message); }
+  }
+  return best && best.strBadge ? {url:best.strBadge, matched:best.strTeam||null} : {url:null,matched:null};
 }
 
 app.get('/api/team-crest', async (req, res) => {
@@ -532,47 +594,49 @@ app.get('/api/team-crest', async (req, res) => {
     const name = String(req.query.name || '').trim();
     if (!name) return res.status(400).json({ error: 'Nome squadra mancante.' });
     const countryHint = countryHintFromCampionato(req.query.country || '');
-    const key = normCrestName(name) + (countryHint ? '|' + normCrestName(countryHint) : '');
-
+    const key = normCrestName(name) + (countryHint ? '|' + normCountry(countryHint) : '');
     const { rows } = await pool.query('SELECT * FROM team_crests WHERE name_norm = $1', [key]);
-    const cached = rows[0];
-    const now = Date.now();
-    if (cached) {
-      const age = now - Number(cached.fetched_at);
-      const fresh = cached.url ? age < CREST_TTL_HIT_MS : age < CREST_TTL_MISS_MS;
-      if (fresh) return res.json({ url: cached.url || null });
+    const cached = rows[0], now=Date.now();
+    if(cached){
+      if(cached.manual) return res.json({url:cached.url||null,manual:true,source:'manual'});
+      const age=now-Number(cached.fetched_at);
+      const fresh=cached.url ? age<CREST_TTL_HIT_MS : age<CREST_TTL_MISS_MS;
+      if(fresh) return res.json({url:cached.url||null,manual:false,source:'cache'});
     }
-
-    let url = null;
-    try {
-      const r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(name));
-      if (r.ok) {
-        const data = await r.json();
-        if (data && Array.isArray(data.teams) && data.teams.length) {
-          let candidates = data.teams;
-          if (countryHint) {
-            const filtered = candidates.filter((t) => countriesMatch(t.strCountry, countryHint));
-            // Se abbiamo un indizio sul paese ma nessun risultato lo conferma, meglio
-            // nessuno stemma che uno sicuramente sbagliato (vedi caso "Fram" sopra).
-            candidates = filtered.length ? filtered : [];
-          }
-          if (candidates.length) url = candidates[0].strBadge || null;
-        }
-      }
-    } catch (fetchErr) {
-      console.error('Errore lookup stemma per "' + name + '":', fetchErr.message);
-    }
-
+    const found=await lookupCrest(name,countryHint);
     await pool.query(
-      `INSERT INTO team_crests (name_norm, nome_originale, url, fetched_at) VALUES ($1,$2,$3,$4)
-       ON CONFLICT (name_norm) DO UPDATE SET nome_originale = EXCLUDED.nome_originale, url = EXCLUDED.url, fetched_at = EXCLUDED.fetched_at`,
-      [key, name, url, now]
+      `INSERT INTO team_crests (name_norm,nome_originale,url,fetched_at,manual) VALUES ($1,$2,$3,$4,false)
+       ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=false`,
+      [key,name,found.url,now]
     );
-    res.json({ url: url });
+    res.json({url:found.url,manual:false,source:found.url?'provider':'fallback',matched:found.matched});
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nel recupero dello stemma.' });
   }
+});
+
+// Override manuale dall'admin. URL vuoto o "AUTO" = torna alla ricerca automatica.
+app.put('/api/team-crest', async (req,res)=>{
+  try{
+    const name=String((req.body||{}).name||'').trim();
+    const campionato=String((req.body||{}).campionato||'').trim();
+    const rawUrl=String((req.body||{}).url||'').trim();
+    if(!name) return res.status(400).json({error:'Nome squadra mancante.'});
+    const countryHint=countryHintFromCampionato(campionato);
+    const key=normCrestName(name)+(countryHint?'|'+normCountry(countryHint):'');
+    if(!rawUrl || rawUrl.toUpperCase()==='AUTO'){
+      await pool.query('DELETE FROM team_crests WHERE name_norm=$1',[key]);
+      return res.json({ok:true,url:null,manual:false,reset:true});
+    }
+    if(!/^https?:\/\//i.test(rawUrl)) return res.status(400).json({error:'Inserisci un URL http/https valido.'});
+    await pool.query(
+      `INSERT INTO team_crests (name_norm,nome_originale,url,fetched_at,manual) VALUES ($1,$2,$3,$4,true)
+       ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=true`,
+      [key,name,rawUrl,Date.now()]
+    );
+    res.json({ok:true,url:rawUrl,manual:true});
+  }catch(err){ console.error(err); res.status(500).json({error:'Errore nel salvataggio dello stemma.'}); }
 });
 
 app.put('/api/alert-settings', async (req, res) => {

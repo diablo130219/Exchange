@@ -87,6 +87,7 @@
   .teams-row{display:flex;align-items:center;gap:10px;margin:14px 0 10px;}
   .crest{width:30px;height:30px;border-radius:50%;object-fit:contain;background:var(--surface-2);flex:none;}
   .crest.placeholder{display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:var(--text-faint);border:1px solid var(--border);}
+  .crest-edit-btn{margin-top:5px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);border-radius:7px;padding:4px 7px;font-size:.62rem;font-weight:700;cursor:pointer}.crest-edit-btn:hover{border-color:var(--gold);color:var(--gold-bright)}
   .teams-names{font-size:.95rem;font-weight:700;line-height:1.35;}
   .vs{color:var(--text-faint);font-weight:400;font-size:.8rem;}
   .meta-row{display:flex;flex-direction:column;gap:5px;font-size:.8rem;color:var(--text-muted);margin-bottom:12px;}
@@ -501,6 +502,20 @@
     });
 
     document.getElementById('grid').addEventListener('click', function(e){
+      var crestBtn = e.target.closest('[data-role="crest"]');
+      if (crestBtn){
+        var team=crestBtn.getAttribute('data-team')||'';
+        var league=crestBtn.getAttribute('data-league')||'';
+        var url=window.prompt('URL dello stemma per '+team+'\n\nIncolla un URL immagine http/https. Scrivi AUTO per tornare alla ricerca automatica.','');
+        if(url===null) return;
+        fetch('/api/team-crest',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:team,campionato:league,url:url})})
+          .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
+          .then(function(){
+            Object.keys(crestCache).forEach(function(k){if(k.indexOf(String(team).toLowerCase())===0) delete crestCache[k];});
+            render();
+          }).catch(function(err){window.alert(err.message||'Errore salvataggio stemma');});
+        return;
+      }
       var btn = e.target.closest('[data-role="edit"]');
       if (!btn) return;
       var id = btn.getAttribute('data-id');

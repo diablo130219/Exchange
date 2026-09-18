@@ -121,9 +121,11 @@ async function migrate() {
       name_norm TEXT PRIMARY KEY,
       nome_originale TEXT,
       url TEXT,
-      fetched_at BIGINT NOT NULL
+      fetched_at BIGINT NOT NULL,
+      manual BOOLEAN NOT NULL DEFAULT false
     );
   `);
+  await pool.query(`ALTER TABLE team_crests ADD COLUMN IF NOT EXISTS manual BOOLEAN NOT NULL DEFAULT false;`);
 }
 
 module.exports = { pool, migrate };

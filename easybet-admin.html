@@ -98,6 +98,7 @@
   .crest.placeholder{display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:var(--text-faint);border:1px solid var(--border);}
   .crest.crest-lg{width:58px;height:58px;border:2px solid var(--border-strong);}
   .crest.placeholder.crest-lg{font-size:1.05rem;font-weight:800;color:var(--text-muted);}
+  .crest-edit-btn{margin-top:5px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);border-radius:7px;padding:4px 7px;font-size:.62rem;font-weight:700;cursor:pointer}.crest-edit-btn:hover{border-color:var(--gold);color:var(--gold-bright)}
   .side-name{font-size:.8rem;font-weight:700;max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .vs-mid{display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-weight:800;font-size:.7rem;letter-spacing:.05em;padding-top:22px;}
 
@@ -475,12 +476,14 @@
               '<div class="side-label">Casa</div>'+
               crestImg(m.casa, m.campionato, 'lg')+
               '<div class="side-name">'+esc(m.casa)+'</div>'+
+              '<button type="button" class="crest-edit-btn" data-role="crest" data-team="'+esc(m.casa)+'" data-league="'+esc(m.campionato||'')+'">Stemma</button>'+
             '</div>'+
             '<div class="vs-mid">VS</div>'+
             '<div class="side">'+
               '<div class="side-label">Trasferta</div>'+
               crestImg(m.trasferta, m.campionato, 'lg')+
               '<div class="side-name">'+esc(m.trasferta)+'</div>'+
+              '<button type="button" class="crest-edit-btn" data-role="crest" data-team="'+esc(m.trasferta)+'" data-league="'+esc(m.campionato||'')+'">Stemma</button>'+
             '</div>'+
           '</div>'+
           '<div class="stats-row">'+
@@ -546,6 +549,20 @@
     });
 
     document.getElementById('grid').addEventListener('click', function(e){
+      var crestBtn = e.target.closest('[data-role="crest"]');
+      if (crestBtn){
+        var team=crestBtn.getAttribute('data-team')||'';
+        var league=crestBtn.getAttribute('data-league')||'';
+        var url=window.prompt('URL dello stemma per '+team+'\n\nIncolla un URL immagine http/https. Scrivi AUTO per tornare alla ricerca automatica.','');
+        if(url===null) return;
+        fetch('/api/team-crest',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:team,campionato:league,url:url})})
+          .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
+          .then(function(){
+            Object.keys(crestCache).forEach(function(k){if(k.indexOf(String(team).toLowerCase())===0) delete crestCache[k];});
+            render();
+          }).catch(function(err){window.alert(err.message||'Errore salvataggio stemma');});
+        return;
+      }
       var btn = e.target.closest('[data-role="edit"]');
       if (!btn) return;
       var id = btn.getAttribute('data-id');
