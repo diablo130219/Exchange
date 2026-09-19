@@ -11,3 +11,7 @@ Nel prompt admin puoi incollare un URL immagine diretto `https://...`.
 Scrivi `AUTO` per cancellare l'override e tornare alla ricerca automatica.
 
 Alias aggiunti: Várda SE → Kisvárda FC, Sirius → IK Sirius, Servette → Servette FC.
+
+
+## Ricerca admin per data
+Ogni gruppo data dell'admin include ora un campo di ricerca istantanea che filtra per squadra, campionato, strategia e quota senza uscire dal giorno selezionato.

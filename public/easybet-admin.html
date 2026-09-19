@@ -88,6 +88,16 @@
   .date-title{font-size:1rem;font-weight:800;color:var(--gold-bright);text-transform:capitalize;}
   .date-sub{display:block;font-size:.72rem;color:var(--text-faint);margin-top:3px;}
   .date-count{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:999px;padding:7px 12px;font-size:.75rem;font-weight:700;color:var(--text-muted);}
+  .date-tools{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:1;min-width:300px;}
+  .date-search-wrap{position:relative;width:min(360px,100%);}
+  .date-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:.84rem;pointer-events:none;}
+  .date-search{width:100%;height:38px;border-radius:999px;border:1px solid var(--border-strong);background:rgba(255,255,255,.025);color:var(--text);padding:0 36px 0 34px;font-family:inherit;font-size:.76rem;outline:none;transition:border-color .18s,box-shadow .18s,background .18s;}
+  .date-search::placeholder{color:var(--text-faint);}
+  .date-search:focus{border-color:var(--gold-deep);background:var(--surface-2);box-shadow:0 0 0 3px rgba(217,180,74,.09);}
+  .date-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:0;border-radius:50%;display:none;place-items:center;background:transparent;color:var(--text-faint);cursor:pointer;font-size:.9rem;}
+  .date-search-clear.show{display:grid;}
+  .date-search-clear:hover{background:rgba(255,255,255,.06);color:var(--gold-bright);}
+  .date-search-empty{grid-column:1/-1;padding:26px 10px;text-align:center;color:var(--text-faint);font-size:.8rem;border:1px dashed var(--border);border-radius:12px;display:none;}
   .date-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 18px;}
   .date-filter-label{font-size:.68rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-right:3px;}
   .date-pill{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.72rem;padding:7px 12px;border-radius:999px;cursor:pointer;font-family:inherit;}
@@ -102,7 +112,8 @@
   details.date-section>.date-grid{padding:16px;margin:0;}
   .date-grid{margin-top:0;}
   @media(max-width:1050px){.date-groups{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
-  @media(max-width:620px){.date-groups{grid-template-columns:1fr!important;}details.date-section[open]{grid-column:auto;}.date-filter-row{gap:6px}.date-pill{padding:6px 10px}.date-title{font-size:.9rem}.date-sub{display:none}details.date-section>summary{padding:13px 14px}details.date-section>.date-grid{padding:12px;}}
+  @media(max-width:760px){details.date-section>summary .date-head{align-items:flex-start}.date-tools{width:100%;min-width:100%;justify-content:flex-start}.date-search-wrap{width:100%}.date-count{white-space:nowrap}}
+  @media(max-width:620px){.date-groups{grid-template-columns:1fr!important;}details.date-section[open]{grid-column:auto;}.date-filter-row{gap:6px}.date-pill{padding:6px 10px}.date-title{font-size:.9rem}.date-sub{display:none}details.date-section>summary{padding:13px 14px}details.date-section>.date-grid{padding:12px;}.date-tools{gap:7px}.date-search{height:36px;font-size:.72rem}}
   .card{position:relative;background:radial-gradient(ellipse at 50% 115%, rgba(154,161,175,.08), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow);}
   .card.esito-entrata_vinta{border-color:var(--win);box-shadow:0 0 0 1px var(--win) inset, 0 0 26px -6px rgba(63,190,107,.55), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(63,190,107,.14), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
   .card.esito-entrata_persa{border-color:var(--rosso);box-shadow:0 0 0 1px var(--rosso) inset, 0 0 26px -6px rgba(225,92,77,.5), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(225,92,77,.13), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
@@ -542,7 +553,8 @@
       var cls = 'card' + (esito ? ' esito-'+esito : '');
       var bannerCls = esito ? esito : 'attesa';
       var bannerIcon = esito ? ICON_TROPHY : ICON_HOURGLASS;
-      return '<div class="'+cls+'" data-id="'+esc(m.id)+'">'+
+      var searchText = [m.casa,m.trasferta,m.campionato,m.tipoGiocata,m.quotaIngresso].filter(Boolean).join(' ').toLowerCase();
+      return '<div class="'+cls+'" data-id="'+esc(m.id)+'" data-search="'+esc(searchText)+'">'+
         '<div class="card-top2">'+
           '<div class="league-badge">'+ICON_SHIELD+'<span>'+esc(m.campionato||'—')+'</span></div>'+
           '<div class="kickoff">'+ICON_CLOCK+'<span>'+esc(fmtWhen(m))+'</span></div>'+
@@ -644,13 +656,68 @@
           '<summary>'+
             '<div class="date-head">'+
               '<div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span></div>'+
-              '<div class="date-count">' + esc(countLabel) + '</div>'+
+              '<div class="date-tools">'+
+                '<div class="date-search-wrap">'+
+                  '<span class="date-search-icon">⌕</span>'+
+                  '<input class="date-search" type="search" autocomplete="off" data-date-search="'+esc(group.key)+'" placeholder="Cerca squadra, campionato o strategia...">'+
+                  '<button type="button" class="date-search-clear" data-date-clear="'+esc(group.key)+'" aria-label="Cancella ricerca">×</button>'+
+                '</div>'+
+                '<div class="date-count" data-date-count="'+esc(group.key)+'" data-total="'+group.items.length+'">' + esc(countLabel) + '</div>'+
+              '</div>'+
             '</div>'+
           '</summary>'+
-          '<div class="grid date-grid">' + group.items.map(renderCard).join('') + '</div>'+
+          '<div class="grid date-grid">' + group.items.map(renderCard).join('') + '<div class="date-search-empty">Nessuna partita trovata per questa ricerca.</div></div>'+
         '</details>';
       }).join('') + '</div>';
     }
+
+    function filterDateSection(input){
+      var section = input.closest('details.date-section');
+      if (!section) return;
+      var q = String(input.value || '').trim().toLowerCase();
+      var cards = Array.prototype.slice.call(section.querySelectorAll('.date-grid > .card'));
+      var visible = 0;
+      cards.forEach(function(card){
+        var hay = String(card.getAttribute('data-search') || '').toLowerCase();
+        var show = !q || hay.indexOf(q) !== -1;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      var key = input.getAttribute('data-date-search');
+      var count = section.querySelector('[data-date-count="'+key+'"]');
+      var total = cards.length;
+      if (count){
+        count.textContent = q ? (visible + ' / ' + total + ' partite') : (total + ' ' + (total === 1 ? 'partita' : 'partite'));
+      }
+      var clear = section.querySelector('[data-date-clear="'+key+'"]');
+      if (clear) clear.classList.toggle('show', !!q);
+      var empty = section.querySelector('.date-search-empty');
+      if (empty) empty.style.display = (q && visible === 0) ? 'block' : 'none';
+      if (q) section.open = true;
+    }
+
+    document.getElementById('grid').addEventListener('input', function(e){
+      var input = e.target.closest('.date-search');
+      if (!input) return;
+      filterDateSection(input);
+    });
+
+    document.getElementById('grid').addEventListener('click', function(e){
+      var input = e.target.closest('.date-search');
+      if (input){ e.stopPropagation(); return; }
+      var clear = e.target.closest('.date-search-clear');
+      if (!clear) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var section = clear.closest('details.date-section');
+      var key = clear.getAttribute('data-date-clear');
+      var target = section && section.querySelector('[data-date-search="'+key+'"]');
+      if (target){ target.value = ''; filterDateSection(target); target.focus(); }
+    });
+
+    document.getElementById('grid').addEventListener('keydown', function(e){
+      if (e.target.closest('.date-search')) e.stopPropagation();
+    });
 
     function loadMatches(){
       return fetch('/api/state').then(function(r){ return r.json(); }).then(function(s){
