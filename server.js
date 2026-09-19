@@ -510,7 +510,7 @@ function normCrestName(s) {
     .replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
 }
 const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;
-const CREST_TTL_MISS_MS = 12 * 60 * 60 * 1000; // riprova più rapidamente i mancanti
+const CREST_TTL_MISS_MS = 5 * 60 * 1000; // riprova molto prima i mancanti per evitare placeholder persistenti
 
 const CREST_ALIASES = {
   'lahti': ['FC Lahti'],
@@ -525,7 +525,33 @@ const CREST_ALIASES = {
   'america mineiro': ['America MG', 'America Mineiro'],
   'vila nova': ['Vila Nova FC'],
   'shamrock rovers': ['Shamrock Rovers FC'],
-  'wsg tirol': ['WSG Swarovski Tirol', 'WSG Tirol']
+  'wsg tirol': ['WSG Swarovski Tirol', 'WSG Tirol'],
+  'fc tokyo': ['FC Tokyo'],
+  'nagoya grampus': ['Nagoya Grampus'],
+  'millwall': ['Millwall FC'],
+  'west ham united': ['West Ham United', 'West Ham'],
+  'barnsley': ['Barnsley FC'],
+  'leicester city': ['Leicester City FC', 'Leicester City'],
+  'tps': ['TPS Turku', 'Turun Palloseura'],
+  'ilves': ['Ilves', 'Ilves Tampere'],
+  'mp': ['Mikkelin Palloilijat', 'MP Mikkeli'],
+  'jippo': ['JIPPO', 'JIPPO Joensuu'],
+  'odddevold': ['IK Oddevold', 'Oddevold'],
+  'varnamo': ['IFK Varnamo', 'Varnamo'],
+  'ifk goteborg': ['IFK Goteborg', 'Goteborg'],
+  'brommapojkarna': ['IF Brommapojkarna', 'Brommapojkarna'],
+  'accrington stanley': ['Accrington Stanley'],
+  'newport county': ['Newport County AFC', 'Newport County'],
+  'kr reykjavik': ['KR Reykjavik', 'KR'],
+  'vikingur reykjavik': ['Vikingur Reykjavik', 'Vikingur'],
+  'lincoln city': ['Lincoln City FC', 'Lincoln City'],
+  'swansea city': ['Swansea City AFC', 'Swansea City'],
+  'mjallby': ['Mjallby AIF', 'Mjallby'],
+  'aik': ['AIK'],
+  'lokomotiv sofia 1929': ['Lokomotiv Sofia', 'Lokomotiv 1929 Sofia'],
+  'cska sofia': ['CSKA Sofia'],
+  'zalgiris': ['FK Zalgiris', 'Zalgiris Vilnius'],
+  'kauno zalgiris': ['FK Kauno Zalgiris', 'Kauno Zalgiris']
 };
 const COUNTRY_ALIASES = {
   'republic of ireland':'ireland', 'england':'england', 'scotland':'scotland',
@@ -579,11 +605,12 @@ async function lookupCrest(name,countryHint){
       const data=await r.json();
       const teams=(data&&Array.isArray(data.teams)?data.teams:[]).filter(t=>t&&t.strBadge);
       for(const team of teams){
-        if(countryHint && !countriesMatch(team.strCountry,countryHint)) continue;
         const score=crestCandidateScore(team,name,query,countryHint);
-        if(score>bestScore){bestScore=score;best=team;}
+        const passesCountry=!countryHint || countriesMatch(team.strCountry,countryHint);
+        const finalScore=score + (passesCountry ? 25 : 0);
+        if(finalScore>bestScore){bestScore=finalScore;best=team;}
       }
-      if(bestScore>=140) break;
+      if(bestScore>=150) break;
     }catch(err){ console.error('Lookup stemma "'+query+'":',err.message); }
   }
   return best && best.strBadge ? {url:best.strBadge, matched:best.strTeam||null} : {url:null,matched:null};

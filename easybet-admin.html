@@ -435,10 +435,39 @@
       return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    function normTeamKey(s){
+      return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
+    }
+
+    var CREST_ALIASES = {
+      'lahti':['FC Lahti'],'sk rapid':['Rapid Vienna','SK Rapid Wien','Rapid Wien'],'waterford united':['Waterford FC','Waterford'],
+      'klubi 04':['Klubi 04','HJK Klubi 04'],'neuchatel xamax':['Neuchatel Xamax','Neuchatel Xamax FCS'],'rapperswil jona':['FC Rapperswil-Jona','Rapperswil-Jona'],
+      'sjk':['SJK Seinajoki','Seinajoen JK'],'wisla krakow':['Wisla Krakow'],'slask wroclaw':['Slask Wroclaw'],'america mineiro':['America MG','America Mineiro'],
+      'vila nova':['Vila Nova FC'],'shamrock rovers':['Shamrock Rovers FC'],'wsg tirol':['WSG Swarovski Tirol','WSG Tirol'],
+      'fc tokyo':['FC Tokyo'],'nagoya grampus':['Nagoya Grampus'],'millwall':['Millwall FC'],'west ham united':['West Ham United','West Ham'],'barnsley':['Barnsley FC'],
+      'leicester city':['Leicester City FC','Leicester City'],'tps':['TPS Turku','Turun Palloseura'],'ilves':['Ilves','Ilves Tampere'],'mp':['Mikkelin Palloilijat','MP Mikkeli'],
+      'jippo':['JIPPO','JIPPO Joensuu'],'odddevold':['IK Oddevold','Oddevold'],'varnamo':['IFK Varnamo','Varnamo'],'ifk goteborg':['IFK Goteborg','Goteborg'],
+      'brommapojkarna':['IF Brommapojkarna','Brommapojkarna'],'accrington stanley':['Accrington Stanley'],'newport county':['Newport County AFC','Newport County'],
+      'kr reykjavik':['KR Reykjavik','KR'],'vikingur reykjavik':['Vikingur Reykjavik','Vikingur'],'lincoln city':['Lincoln City FC','Lincoln City'],'swansea city':['Swansea City AFC','Swansea City'],
+      'oddevold':['IK Oddevold','Oddevold'],'mjallby':['Mjallby AIF','Mjallby'],'aik':['AIK'],'lokomotiv sofia 1929':['Lokomotiv Sofia','Lokomotiv 1929 Sofia'],
+      'cska sofia':['CSKA Sofia'],'zalgiris':['FK Zalgiris','Zalgiris Vilnius'],'kauno zalgiris':['FK Kauno Zalgiris','Kauno Zalgiris']
+    };
+
+    function crestQueries(name){
+      var raw = String(name||'').trim();
+      var key = normTeamKey(raw);
+      var out = [raw].concat(CREST_ALIASES[key] || []);
+      var stripped = raw.replace(/\b(FC|AFC|CF|SC|SK|FK|AC|AS|SSC|SV|TSV|NK|JK|IFK|BK|IF)\b/gi,' ').replace(/\s+/g,' ').trim();
+      if (stripped && normTeamKey(stripped)!==key) out.push(stripped);
+      if (raw && !/\bFC\b/i.test(raw)) out.push(raw + ' FC');
+      return out.filter(Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; });
+    }
+
     function initials(name){
       var parts = String(name||'').trim().split(/\s+/);
-      var s = (parts[0]||'')[0] || '?';
-      return s.toUpperCase();
+      var a = (parts[0]||'')[0] || '?';
+      var b = (parts[1]||'')[0] || '';
+      return (a+b).toUpperCase();
     }
 
     function crestImg(name, campionato, size){
@@ -450,28 +479,43 @@
 
     function loadCrest(name, campionato, id){
       if (!String(name||'').trim()) return;
-      // Il campionato (es. "Iceland: Besta deild") disambigua nomi ambigui come "Fram",
-      // che esistono in più paesi — evita di mostrare lo stemma di un club omonimo sbagliato.
-      var key = String(name||'').trim().toLowerCase() + '|' + String(campionato||'').trim().toLowerCase();
+      var key = normTeamKey(name) + '|' + normTeamKey(campionato||'');
       if (crestCache[key] !== undefined){ applyCrest(id, crestCache[key]); return; }
-      var url = '/api/team-crest?name=' + encodeURIComponent(name) + (campionato ? '&country=' + encodeURIComponent(campionato) : '');
-      fetch(url)
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          crestCache[key] = d && d.url ? d.url : null;
-          applyCrest(id, crestCache[key]);
-        })
-        .catch(function(){ crestCache[key] = null; });
+      var queries = crestQueries(name);
+      (function tryNext(idx){
+        if (idx >= queries.length){ crestCache[key] = null; return; }
+        var q = queries[idx];
+        var url = '/api/team-crest?name=' + encodeURIComponent(q) + (campionato ? '&country=' + encodeURIComponent(campionato) : '');
+        fetch(url)
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){
+            if (d && d.url){
+              crestCache[key] = d.url;
+              applyCrest(id, d.url);
+            } else {
+              tryNext(idx+1);
+            }
+          })
+          .catch(function(){ tryNext(idx+1); });
+      })(0);
     }
 
     function applyCrest(id, url){
       var el = document.getElementById(id);
       if (!el || !url) return;
+      var originalClass = el.className;
+      var originalText = el.textContent;
       var img = document.createElement('img');
       img.className = el.className.replace(/\bplaceholder\b/,'').replace(/\s+/g,' ').trim();
       img.src = url;
       img.alt = '';
-      img.onerror = function(){ /* keep placeholder look on broken url */ };
+      img.onerror = function(){
+        var ph = document.createElement('span');
+        ph.className = originalClass;
+        ph.id = id;
+        ph.textContent = originalText;
+        img.replaceWith(ph);
+      };
       el.replaceWith(img);
     }
 
