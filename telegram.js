@@ -225,6 +225,46 @@ async function broadcast(text) {
   return rows.length;
 }
 
+function countryFlag(league) {
+  const country = String(league || '').split(':')[0].trim().toLowerCase();
+  const map = {
+    italy:'🇮🇹', england:'🏴', spain:'🇪🇸', france:'🇫🇷', germany:'🇩🇪', portugal:'🇵🇹',
+    netherlands:'🇳🇱', belgium:'🇧🇪', sweden:'🇸🇪', norway:'🇳🇴', denmark:'🇩🇰', finland:'🇫🇮',
+    iceland:'🇮🇸', switzerland:'🇨🇭', austria:'🇦🇹', poland:'🇵🇱', romania:'🇷🇴', greece:'🇬🇷',
+    turkey:'🇹🇷', croatia:'🇭🇷', serbia:'🇷🇸', slovenia:'🇸🇮', slovakia:'🇸🇰', czechia:'🇨🇿',
+    'czech republic':'🇨🇿', bulgaria:'🇧🇬', lithuania:'🇱🇹', china:'🇨🇳', japan:'🇯🇵', brazil:'🇧🇷',
+    argentina:'🇦🇷', mexico:'🇲🇽', usa:'🇺🇸', 'united states':'🇺🇸', ireland:'🇮🇪',
+    'republic of ireland':'🇮🇪', hungary:'🇭🇺'
+  };
+  return map[country] || '🏆';
+}
+
+function formatClassicAlert(match, minutesLeft) {
+  const mins = Math.max(0, Number(minutesLeft) || 0);
+  const league = escHtml(match.campionato || 'Campionato');
+  const home = escHtml(match.casa || 'Squadra casa');
+  const away = escHtml(match.trasferta || 'Squadra trasferta');
+  const strategy = escHtml(String(match.tipo_giocata || 'Strategia EasyBet').toUpperCase());
+  const quotaRaw = String(match.quota_ingresso == null ? '' : match.quota_ingresso).trim();
+  const quota = escHtml(quotaRaw || '—');
+  const flag = countryFlag(match.campionato);
+  return [
+    '🚨 <b>NUOVO ALERT EASYBET</b>',
+    '',
+    `⏰ <b>TRA ${mins} MINUTI</b>`,
+    '',
+    `${flag} ${league}`,
+    `⚽ <b>${home} - ${away}</b>`,
+    '',
+    '🔥 <b>STRATEGIA</b>',
+    `<b>${strategy}</b>`,
+    '',
+    `💰 <b>QUOTA: ${quota}</b>`,
+    '',
+    '✅ Attendi le condizioni live previste dalla strategia.'
+  ].join('\n');
+}
+
 async function broadcastAlert(match, minutesLeft) {
   const { rows } = await pool.query('SELECT chat_id FROM subscribers');
   if (!rows.length) {
@@ -235,10 +275,10 @@ async function broadcastAlert(match, minutesLeft) {
     console.error('Telegram alert: TELEGRAM_BOT_TOKEN non configurato.');
     return 0;
   }
-  const card = await createAlertCard(match, minutesLeft);
+  const text = formatClassicAlert(match, minutesLeft);
   let sent = 0;
   for (const row of rows) {
-    const result = await sendPhoto(row.chat_id, card);
+    const result = await sendMessage(row.chat_id, text, { disable_web_page_preview: true });
     if (result && result.ok) sent++;
   }
   return sent;
@@ -259,7 +299,7 @@ async function handleUpdate(update) {
   const text = msg.text.trim();
   if (text === '/start') {
     await upsertSubscriber(chatId, username);
-    await sendMessage(chatId, "👑 <b>EasyBet attivato</b>\n\nDa ora riceverai gli alert pre-partita con card grafiche EasyBet.\n\nScrivi /stop per disattivarli.");
+    await sendMessage(chatId, "👑 <b>EasyBet attivato</b>\n\nDa ora riceverai gli alert pre-partita EasyBet in formato testuale.\n\nScrivi /stop per disattivarli.");
   } else if (text === '/stop') {
     await removeSubscriber(chatId);
     await sendMessage(chatId, 'Avvisi disattivati. Scrivi /start per riattivarli quando vuoi.');
