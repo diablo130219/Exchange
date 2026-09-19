@@ -349,10 +349,10 @@
     <label class="checkline"><input type="checkbox" id="fBot" checked> Invia avviso pre-match su Telegram</label>
     <div class="modal-err" id="modalErr"></div>
     <div class="modal-actions">
-      <button class="btn btn-danger" id="deleteBtn" style="display:none;">Elimina</button>
+      <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;">Elimina</button>
       <div style="flex:1"></div>
-      <button class="btn btn-ghost" id="cancelBtn">Annulla</button>
-      <button class="btn btn-primary" id="saveBtn">Salva</button>
+      <button type="button" class="btn btn-ghost" id="cancelBtn">Annulla</button>
+      <button type="button" class="btn btn-primary" id="saveBtn">Salva</button>
     </div>
   </div>
 </div>
@@ -867,8 +867,15 @@
 
     function pad(n){ return n < 10 ? '0'+n : ''+n; }
 
+    function resetDeleteButton(){
+      deleteBtn.dataset.confirmDelete = '0';
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = 'Elimina';
+    }
+
     function openModal(m){
       modalErr.textContent = '';
+      resetDeleteButton();
       if (m){
         modalTitle.textContent = 'Modifica partita';
         fId.value = m.id;
@@ -901,7 +908,10 @@
       backdrop.classList.add('open');
     }
 
-    function closeModal(){ backdrop.classList.remove('open'); }
+    function closeModal(){
+      backdrop.classList.remove('open');
+      resetDeleteButton();
+    }
 
     document.getElementById('addBtn').addEventListener('click', function(){ openModal(null); });
     document.getElementById('cancelBtn').addEventListener('click', closeModal);
@@ -943,13 +953,45 @@
       });
     });
 
-    deleteBtn.addEventListener('click', function(){
-      var id = fId.value;
-      if (!id) return;
-      if (!confirm('Eliminare questa partita?')) return;
-      fetch('/api/matches/' + encodeURIComponent(id), { method:'DELETE' }).then(function(){
+    deleteBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      var id = String(fId.value || '').trim();
+      if (!id){
+        modalErr.textContent = 'Impossibile eliminare: ID partita mancante.';
+        return;
+      }
+
+      // Primo click: conferma direttamente nel pulsante, senza popup del browser.
+      if (deleteBtn.dataset.confirmDelete !== '1'){
+        deleteBtn.dataset.confirmDelete = '1';
+        deleteBtn.textContent = 'Conferma elimina';
+        modalErr.textContent = 'Premi ancora “Conferma elimina” per cancellare definitivamente la partita.';
+        return;
+      }
+
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = 'Eliminazione…';
+      modalErr.textContent = '';
+
+      fetch('/api/matches/' + encodeURIComponent(id), {
+        method:'DELETE',
+        headers:{'Accept':'application/json'}
+      }).then(function(r){
+        if (r.ok || r.status === 204) return null;
+        return r.text().then(function(t){
+          var msg = 'Errore durante l’eliminazione.';
+          try { var j = JSON.parse(t); if (j && j.error) msg = j.error; } catch(_e) { if (t) msg = t; }
+          throw new Error(msg);
+        });
+      }).then(function(){
         closeModal();
-        loadMatches();
+        return loadMatches();
+      }).catch(function(err){
+        deleteBtn.disabled = false;
+        deleteBtn.dataset.confirmDelete = '0';
+        deleteBtn.textContent = 'Elimina';
+        modalErr.textContent = err && err.message ? err.message : 'Errore durante l’eliminazione.';
       });
     });
 
