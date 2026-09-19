@@ -85,7 +85,20 @@
   .date-title{font-size:1rem;font-weight:800;color:var(--gold-bright);text-transform:capitalize;}
   .date-sub{display:block;font-size:.72rem;color:var(--text-faint);margin-top:3px;}
   .date-count{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:999px;padding:7px 12px;font-size:.75rem;font-weight:700;color:var(--text-muted);}
+  .date-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 18px;}
+  .date-filter-label{font-size:.68rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-right:3px;}
+  .date-pill{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.72rem;padding:7px 12px;border-radius:999px;cursor:pointer;font-family:inherit;}
+  .date-pill.active{background:linear-gradient(180deg,rgba(240,205,110,.16),rgba(138,109,34,.12));border-color:var(--gold-deep);color:var(--gold-bright);}
+  details.date-section{padding:0;overflow:hidden;}
+  details.date-section>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;user-select:none;}
+  details.date-section>summary::-webkit-details-marker{display:none;}
+  details.date-section>summary .date-head{margin:0;padding:0;border:0;flex:1;}
+  details.date-section>summary:after{content:'+';display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border-strong);color:var(--gold-bright);font-size:1.1rem;font-weight:800;flex:none;}
+  details.date-section[open]>summary:after{content:'−';}
+  details.date-section[open]>summary{border-bottom:1px solid var(--border);}
+  details.date-section>.date-grid{padding:16px;margin:0;}
   .date-grid{margin-top:0;}
+  @media(max-width:620px){.date-filter-row{gap:6px}.date-pill{padding:6px 10px}.date-title{font-size:.9rem}.date-sub{display:none}details.date-section>summary{padding:13px 14px}details.date-section>.date-grid{padding:12px;}}
   .card{position:relative;background:radial-gradient(ellipse at 50% 115%, rgba(154,161,175,.08), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow);}
   .card.esito-entrata_vinta{border-color:var(--win);box-shadow:0 0 0 1px var(--win) inset, 0 0 26px -6px rgba(63,190,107,.55), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(63,190,107,.14), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
   .card.esito-entrata_persa{border-color:var(--rosso);box-shadow:0 0 0 1px var(--rosso) inset, 0 0 26px -6px rgba(225,92,77,.5), var(--shadow);background:radial-gradient(ellipse at 50% 115%, rgba(225,92,77,.13), transparent 60%), linear-gradient(180deg,#17130f 0%,#0F0D0A 100%);}
@@ -218,6 +231,14 @@
       <button class="pill" data-f="entrata_persa">Perse</button>
       <button class="pill" data-f="non_entrata">Non entrate</button>
       <button class="pill" data-f="">Da impostare</button>
+    </div>
+
+    <div class="date-filter-row" id="dateFilters">
+      <span class="date-filter-label">Data</span>
+      <button class="date-pill active" data-datef="tutte">Tutte le date</button>
+      <button class="date-pill" data-datef="oggi">Oggi</button>
+      <button class="date-pill" data-datef="domani">Domani</button>
+      <button class="date-pill" data-datef="future">Future</button>
     </div>
 
     <div class="grid" id="grid"><div class="empty">Caricamento…</div></div>
@@ -397,6 +418,7 @@
     var crestCache = {};
     var matches = [];
     var currentFilter = 'tutte';
+    var currentDateFilter = 'tutte';
 
     var ICON_CLOCK = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
     var ICON_SHIELD = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"/></svg>';
@@ -515,9 +537,39 @@
       '</div>';
     }
 
+    function localDateKey(ts){
+      var d = new Date(Number(ts));
+      if (isNaN(d.getTime())) return '';
+      var y = d.getFullYear();
+      var m = String(d.getMonth()+1).padStart(2,'0');
+      var day = String(d.getDate()).padStart(2,'0');
+      return y+'-'+m+'-'+day;
+    }
+
+    function relativeDateKeys(){
+      var now = new Date();
+      var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var tomorrow = new Date(today.getTime() + 86400000);
+      var afterTomorrow = new Date(today.getTime() + 2*86400000);
+      function key(d){
+        return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      }
+      return { today:key(today), tomorrow:key(tomorrow), afterTomorrow:key(afterTomorrow) };
+    }
+
+    function matchesDateFilter(m){
+      if (currentDateFilter === 'tutte') return true;
+      var keys = relativeDateKeys();
+      var mk = localDateKey(m.startAt);
+      if (currentDateFilter === 'oggi') return mk === keys.today;
+      if (currentDateFilter === 'domani') return mk === keys.tomorrow;
+      if (currentDateFilter === 'future') return mk >= keys.afterTomorrow;
+      return true;
+    }
+
     function render(){
       var grid = document.getElementById('grid');
-      var list = matches.filter(matchesFilter);
+      var list = matches.filter(matchesFilter).filter(matchesDateFilter);
       if (!list.length){
         grid.innerHTML = '<div class="empty">Nessuna partita in questa vista.</div>';
         return;
@@ -525,7 +577,7 @@
 
       var groups = [];
       list.forEach(function(m){
-        var key = (new Date(Number(m.startAt))).toISOString().slice(0,10);
+        var key = localDateKey(m.startAt);
         var existing = groups.find(function(g){ return g.key === key; });
         if (!existing){
           existing = { key:key, label: formatSectionDate(m.startAt), items: [] };
@@ -534,15 +586,19 @@
         existing.items.push(m);
       });
 
-      grid.innerHTML = '<div class="date-groups">' + groups.map(function(group){
+      var keys = relativeDateKeys();
+      grid.innerHTML = '<div class="date-groups">' + groups.map(function(group, idx){
         var countLabel = group.items.length + ' ' + (group.items.length === 1 ? 'partita' : 'partite');
-        return '<section class="date-section">'+
-          '<div class="date-head">'+
-            '<div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span></div>'+
-            '<div class="date-count">' + esc(countLabel) + '</div>'+
-          '</div>'+
+        var shouldOpen = group.key === keys.today || group.key === keys.tomorrow || (currentDateFilter !== 'tutte' && idx === 0);
+        return '<details class="date-section"'+(shouldOpen?' open':'')+'>'+
+          '<summary>'+
+            '<div class="date-head">'+
+              '<div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span></div>'+
+              '<div class="date-count">' + esc(countLabel) + '</div>'+
+            '</div>'+
+          '</summary>'+
           '<div class="grid date-grid">' + group.items.map(renderCard).join('') + '</div>'+
-        '</section>';
+        '</details>';
       }).join('') + '</div>';
     }
 
@@ -561,6 +617,15 @@
       if (!btn) return;
       currentFilter = btn.getAttribute('data-f');
       document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      render();
+    });
+
+    document.getElementById('dateFilters').addEventListener('click', function(e){
+      var btn = e.target.closest('.date-pill');
+      if (!btn) return;
+      currentDateFilter = btn.getAttribute('data-datef') || 'tutte';
+      document.querySelectorAll('.date-pill').forEach(function(p){ p.classList.remove('active'); });
       btn.classList.add('active');
       render();
     });
