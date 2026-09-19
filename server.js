@@ -529,6 +529,20 @@ const CREST_ALIASES = {
   'varda se': ['Kisvarda FC', 'Kisvarda'],
   'sirius': ['IK Sirius'],
   'servette': ['Servette FC'],
+  'novi pazar': ['FK Novi Pazar', 'Novi Pazar'],
+  'zemun': ['FK Zemun', 'Zemun'],
+  'fk kosice': ['FC Kosice', 'Kosice', 'FK Kosice'],
+  'kosice': ['FC Kosice', 'Kosice', 'FK Kosice'],
+  'ruzomberok': ['MFK Ruzomberok', 'Ruzomberok'],
+  'villa dalmine': ['Club Villa Dalmine', 'Villa Dalmine'],
+  'ituzaingo': ['CA Ituzaingo', 'Club Atletico Ituzaingo', 'Ituzaingo'],
+  'atletico mineiro': ['Clube Atletico Mineiro', 'Atletico Mineiro', 'Atletico-MG'],
+  'chapecoense': ['Chapecoense', 'Associacao Chapecoense de Futebol', 'Chapecoense AF'],
+  'sporting cp': ['Sporting CP', 'Sporting Clube de Portugal', 'Sporting'],
+  'arouca': ['FC Arouca', 'Arouca'],
+  'nacional': ['CD Nacional', 'Nacional da Madeira', 'Nacional'],
+  'familicao': ['FC Famalicao', 'Famalicao'],
+  'famalicao': ['FC Famalicao', 'Famalicao'],
   'fc tokyo': ['FC Tokyo'],
   'nagoya grampus': ['Nagoya Grampus'],
   'millwall': ['Millwall FC'],
@@ -598,6 +612,42 @@ function crestCandidateScore(team, requestedName, query, countryHint){
   if(team.strBadge) score+=10;
   return score;
 }
+async function lookupCrestWikipedia(name,countryHint){
+  const clean=String(name||'').trim();
+  if(!clean) return {url:null,matched:null};
+  const searches=[];
+  if(countryHint) searches.push(clean+' football club '+countryHint);
+  searches.push(clean+' football club');
+  searches.push(clean+' FC');
+  for(const q of [...new Set(searches)]){
+    try{
+      const url='https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrnamespace=0&gsrlimit=6&gsrsearch='+encodeURIComponent(q)+'&prop=pageimages&pithumbsize=320&format=json&origin=*';
+      const r=await fetch(url,{headers:{'User-Agent':'EasyBet/1.0 (team crest fallback)'}});
+      if(!r.ok) continue;
+      const data=await r.json();
+      const pages=data&&data.query&&data.query.pages?Object.values(data.query.pages):[];
+      if(!pages.length) continue;
+      const requested=normCrestName(clean);
+      let best=null,bestScore=-Infinity;
+      for(const page of pages){
+        if(!page||!page.thumbnail||!page.thumbnail.source) continue;
+        const title=normCrestName(page.title||'');
+        let score=0;
+        if(title===requested) score+=120;
+        if(title.includes(requested)||requested.includes(title)) score+=70;
+        const reqTokens=requested.split(' ').filter(x=>x.length>2);
+        score+=reqTokens.filter(x=>title.includes(x)).length*15;
+        if(/football|soccer|club|fc|cf|afc|sc/.test(title)) score+=10;
+        if(score>bestScore){bestScore=score;best=page;}
+      }
+      if(best&&best.thumbnail&&bestScore>=25){
+        return {url:best.thumbnail.source,matched:best.title||null,source:'wikipedia'};
+      }
+    }catch(err){ console.error('Fallback Wikipedia stemma "'+q+'":',err.message); }
+  }
+  return {url:null,matched:null};
+}
+
 async function lookupCrest(name,countryHint){
   const queries=crestQueries(name);
   let best=null, bestScore=-Infinity;
@@ -616,7 +666,8 @@ async function lookupCrest(name,countryHint){
       if(bestScore>=150) break;
     }catch(err){ console.error('Lookup stemma "'+query+'":',err.message); }
   }
-  return best && best.strBadge ? {url:best.strBadge, matched:best.strTeam||null} : {url:null,matched:null};
+  if(best && best.strBadge) return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb'};
+  return await lookupCrestWikipedia(name,countryHint);
 }
 
 app.get('/api/team-crest', async (req, res) => {
@@ -639,7 +690,7 @@ app.get('/api/team-crest', async (req, res) => {
        ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=false`,
       [key,name,found.url,now]
     );
-    res.json({url:found.url,manual:false,source:found.url?'provider':'fallback',matched:found.matched});
+    res.json({url:found.url,manual:false,source:found.url?(found.source||'provider'):'fallback',matched:found.matched});
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nel recupero dello stemma.' });

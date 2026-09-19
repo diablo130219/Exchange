@@ -15,3 +15,6 @@ Alias aggiunti: Várda SE → Kisvárda FC, Sirius → IK Sirius, Servette → S
 
 ## Ricerca admin per data
 Ogni gruppo data dell'admin include ora un campo di ricerca istantanea che filtra per squadra, campionato, strategia e quota senza uscire dal giorno selezionato.
+
+## Fallback automatico aggiuntivo
+Se TheSportsDB non restituisce uno stemma, il server prova anche Wikipedia tramite API pubblica, cercando il club per nome e campionato/paese. Questo riduce ulteriormente i casi in cui restano le iniziali.
