@@ -9,3 +9,5 @@ Questa versione usa più livelli di recupero per ridurre al minimo i placeholder
 
 Nel prompt admin puoi incollare un URL immagine diretto `https://...`.
 Scrivi `AUTO` per cancellare l'override e tornare alla ricerca automatica.
+
+Alias aggiunti: Várda SE → Kisvárda FC, Sirius → IK Sirius, Servette → Servette FC.
