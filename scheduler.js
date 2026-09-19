@@ -28,17 +28,46 @@ async function checkOnce() {
     const startAt = Number(m.start_at);
     const dueAt = startAt - (FIXED_NOTIFY_MINUTES * 60000);
     if (now < dueAt) continue; // not yet time: alert is fixed at 10 minutes before kickoff
+
     if (startAt - now < -STALE_GRACE_MS) {
       // missed the window by too long (e.g. server was down) — skip silently
-      await pool.query('UPDATE matches SET notified = true WHERE id = $1', [m.id]);
+      await pool.query(
+        'UPDATE matches SET notified = true WHERE id = $1 AND notified = false',
+        [m.id]
+      );
       continue;
     }
-    const sentTo = await broadcastAlert(m, FIXED_NOTIFY_MINUTES);
-    if (sentTo > 0) {
-      await pool.query('UPDATE matches SET notified = true WHERE id = $1', [m.id]);
-      console.log(`Avviso 10 minuti inviato per ${m.casa} - ${m.trasferta} a ${sentTo} destinatari.`);
-    } else {
-      console.warn(`Avviso NON inviato per ${m.casa} - ${m.trasferta}: nessun invio Telegram riuscito. Verrà ritentato.`);
+
+    // IMPORTANT: claim the notification atomically BEFORE sending it.
+    // This prevents duplicate sends if the internal scheduler and the external cron
+    // run at the same time, or if multiple app instances call checkOnce concurrently.
+    const { rows: claimed } = await pool.query(
+      `UPDATE matches
+       SET notified = true
+       WHERE id = $1
+         AND notified = false
+         AND bot_enabled = true
+       RETURNING id`,
+      [m.id]
+    );
+
+    if (!claimed.length) {
+      continue; // another worker already claimed/sent this alert
+    }
+
+    try {
+      const sentTo = await broadcastAlert(m, FIXED_NOTIFY_MINUTES);
+      if (sentTo > 0) {
+        console.log(`Avviso 10 minuti inviato UNA SOLA VOLTA per ${m.casa} - ${m.trasferta} a ${sentTo} destinatari.`);
+      } else {
+        // No successful Telegram delivery: release the claim so a later check can retry.
+        await pool.query('UPDATE matches SET notified = false WHERE id = $1', [m.id]);
+        console.warn(`Avviso NON inviato per ${m.casa} - ${m.trasferta}: nessun invio Telegram riuscito. Verrà ritentato.`);
+      }
+    } catch (err) {
+      // Sending failed after claiming: allow a future retry.
+      await pool.query('UPDATE matches SET notified = false WHERE id = $1', [m.id]);
+      throw err;
     }
   }
 }

@@ -27,3 +27,9 @@ Le icone dentro la card sono disegnate direttamente in SVG, evitando emoji che s
 Quando data/orario di una partita vengono modificati, `notified` viene ora rimesso a `false`
 e l'alert viene riarmato automaticamente a 10 minuti dal nuovo calcio d'inizio.
 Se il nuovo orario è già nella finestra dei 10 minuti, viene eseguito anche un controllo immediato.
+
+## Fix notifiche duplicate
+La notifica viene ora "prenotata" nel database in modo atomico prima dell'invio.
+Questo impedisce che scheduler interno e cron esterno inviino la stessa partita due volte
+quando scattano nello stesso momento. In caso di errore Telegram la prenotazione viene
+rilasciata e l'invio può essere ritentato.
