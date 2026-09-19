@@ -33,7 +33,3 @@ La notifica viene ora "prenotata" nel database in modo atomico prima dell'invio.
 Questo impedisce che scheduler interno e cron esterno inviino la stessa partita due volte
 quando scattano nello stesso momento. In caso di errore Telegram la prenotazione viene
 rilasciata e l'invio può essere ritentato.
-
-
-## Premium Stadium v2
-La tessera Telegram è stata ridisegnata per avvicinarsi al concept approvato: stadio e campo molto più visibili, doppio bordo oro, logo più forte, LIVE SOON premium, CTA strategia più grande e footer pulito.
