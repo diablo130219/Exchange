@@ -283,6 +283,23 @@ body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data
 @media(max-width:1050px){#grid.pronostici-summary-mode>.pronostici-summary-grid{grid-template-columns:repeat(2,minmax(260px,1fr))!important}}
 @media(max-width:650px){#grid.pronostici-summary-mode>.pronostici-summary-grid{grid-template-columns:1fr!important}}
 </style>
+
+<style id="pronostici-4col-uniform-fix">
+/* Pronostici detail view — 4 uniform cards like Live/Terminate */
+#grid.pronostici-detail-mode{display:grid!important;width:100%!important;max-width:none!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;justify-content:stretch!important;align-items:stretch!important;gap:18px!important;overflow:visible!important}
+#grid.pronostici-detail-mode>.pronostici-detail-top{grid-column:1/-1!important}
+#grid.pronostici-detail-mode>.card{width:100%!important;max-width:none!important;min-width:0!important}
+#grid.pronostici-detail-mode>.card .matchup{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;gap:12px!important;padding-left:10px!important;padding-right:10px!important}
+#grid.pronostici-detail-mode>.card .league{font-size:.88rem!important}
+#grid.pronostici-detail-mode>.card .team-name{font-size:.98rem!important;line-height:1.18!important;overflow-wrap:anywhere!important;word-break:break-word!important}
+#grid.pronostici-detail-mode>.card .crest-wrap{width:78px!important;height:78px!important;border-radius:16px!important}
+#grid.pronostici-detail-mode>.card .crest{width:60px!important;height:60px!important}
+#grid.pronostici-detail-mode>.card .status{min-height:58px!important}
+@media(max-width:1450px){#grid.pronostici-detail-mode{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:1180px){#grid.pronostici-detail-mode{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:900px){#grid.pronostici-detail-mode{grid-template-columns:repeat(2,minmax(0,1fr))!important}.pronostici-detail-top{flex-direction:column!important;align-items:flex-start!important}.pronostici-detail-top .meta{width:100%!important;justify-content:space-between!important}}
+@media(max-width:620px){#grid.pronostici-detail-mode{grid-template-columns:1fr!important}}
+</style>
 </head>
 <body>
 <div class="page-shell">
