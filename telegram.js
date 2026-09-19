@@ -90,7 +90,7 @@ function barsIcon(x, y, scale = 1, color = '#F5FFF8') {
 }
 
 async function createAlertCard(match, minutesLeft) {
-  const width = 1080, height = 650;
+  const width = 1080, height = 720;
   const home = escXml(match.casa || 'Casa');
   const away = escXml(match.trasferta || 'Trasferta');
   const league = escXml(match.campionato || 'Campionato');
@@ -103,98 +103,120 @@ async function createAlertCard(match, minutesLeft) {
   const start = new Date(Number(match.start_at));
   const time = Number.isFinite(start.getTime()) ? start.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}) : '';
   const mins = Math.max(0, Number(minutesLeft) || 0);
-  const strategyIcon = theme.kind === 'over' ? barsIcon(101, 454, 1.25, theme.fg) : targetIcon(101, 454, 1.25, theme.fg);
+  const strategyIcon = theme.kind === 'over' ? barsIcon(109, 515, 1.32, theme.fg) : targetIcon(109, 515, 1.32, theme.fg);
 
   const svg = `
   <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#090B0A"/><stop offset=".48" stop-color="#0B0E0C"/><stop offset="1" stop-color="#07110C"/>
+        <stop offset="0" stop-color="#040605"/><stop offset=".5" stop-color="#07100B"/><stop offset="1" stop-color="#03110A"/>
       </linearGradient>
-      <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#FFF0A1"/><stop offset=".38" stop-color="#E0B640"/><stop offset=".7" stop-color="#AA7614"/><stop offset="1" stop-color="#F5D56D"/>
+      <linearGradient id="goldStroke" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FFF0A0"/><stop offset=".28" stop-color="#E3B83F"/><stop offset=".6" stop-color="#987016"/><stop offset="1" stop-color="#F2D266"/>
       </linearGradient>
-      <linearGradient id="strat" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${theme.a}"/><stop offset="1" stop-color="${theme.b}"/></linearGradient>
-      <radialGradient id="glowGold" cx="82%" cy="17%" r="55%"><stop offset="0" stop-color="#E1B63E" stop-opacity=".30"/><stop offset="1" stop-color="#E1B63E" stop-opacity="0"/></radialGradient>
-      <radialGradient id="glowGreen" cx="82%" cy="75%" r="48%"><stop offset="0" stop-color="#16894A" stop-opacity=".23"/><stop offset="1" stop-color="#16894A" stop-opacity="0"/></radialGradient>
-      <linearGradient id="pitch" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#184B27"/><stop offset=".55" stop-color="#0A371E"/><stop offset="1" stop-color="#04170E"/></linearGradient>
-      <linearGradient id="stands" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#18211B"/><stop offset="1" stop-color="#060907"/></linearGradient>
-      <radialGradient id="stadiumLight" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF3B4" stop-opacity=".95"/><stop offset=".25" stop-color="#F5D168" stop-opacity=".62"/><stop offset="1" stop-color="#E9B637" stop-opacity="0"/></radialGradient>
-      <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity=".62"/></filter>
-      <filter id="softGlow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <filter id="stadiumBlur"><feGaussianBlur stdDeviation="2.5"/></filter>
+      <linearGradient id="goldButton" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#2A1F09"/><stop offset=".48" stop-color="#13110B"/><stop offset="1" stop-color="#080907"/>
+      </linearGradient>
+      <linearGradient id="strat" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${theme.a}"/><stop offset=".52" stop-color="${theme.kind==='over' ? '#0FB04E' : '#DAA82B'}"/><stop offset="1" stop-color="${theme.b}"/></linearGradient>
+      <linearGradient id="stratSheen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".22"/><stop offset=".35" stop-color="#FFFFFF" stop-opacity=".03"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+      <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#236E37"/><stop offset=".35" stop-color="#14572B"/><stop offset="1" stop-color="#062013"/></linearGradient>
+      <linearGradient id="stands" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1D2119"/><stop offset="1" stop-color="#050706"/></linearGradient>
+      <radialGradient id="lightL" cx="30%" cy="20%" r="55%"><stop offset="0" stop-color="#FFF1A7" stop-opacity=".82"/><stop offset=".16" stop-color="#E9C052" stop-opacity=".42"/><stop offset="1" stop-color="#E9B637" stop-opacity="0"/></radialGradient>
+      <radialGradient id="lightR" cx="72%" cy="18%" r="55%"><stop offset="0" stop-color="#FFF1A7" stop-opacity=".78"/><stop offset=".18" stop-color="#E9C052" stop-opacity=".38"/><stop offset="1" stop-color="#E9B637" stop-opacity="0"/></radialGradient>
+      <radialGradient id="greenGlow" cx="50%" cy="75%" r="58%"><stop offset="0" stop-color="#20C968" stop-opacity=".22"/><stop offset="1" stop-color="#20C968" stop-opacity="0"/></radialGradient>
+      <filter id="goldGlow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="softShadow"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".72"/></filter>
+      <filter id="textShadow"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000" flood-opacity=".92"/></filter>
+      <filter id="blur4"><feGaussianBlur stdDeviation="4"/></filter>
+      <clipPath id="round"><rect width="1080" height="720" rx="40"/></clipPath>
     </defs>
 
-    <rect width="1080" height="650" rx="38" fill="url(#bg)"/>
-    <!-- stadium background -->
-    <g opacity=".95">
-      <path d="M0 0H1080V290C920 230 740 205 540 208C332 210 148 235 0 296Z" fill="#060908"/>
-      <path d="M0 158C165 94 350 72 540 76C736 80 913 101 1080 160V350H0Z" fill="url(#stands)" opacity=".95"/>
-      <path d="M0 255C180 216 360 202 540 204C730 205 914 223 1080 260V428H0Z" fill="#0A120E" opacity=".85"/>
-      <!-- crowd lights -->
-      <g fill="#E5BD54" opacity=".38" filter="url(#stadiumBlur)">
-        <circle cx="130" cy="210" r="2.1"/><circle cx="162" cy="195" r="1.8"/><circle cx="194" cy="222" r="2.2"/><circle cx="236" cy="202" r="1.8"/><circle cx="278" cy="228" r="2.1"/><circle cx="320" cy="196" r="1.6"/><circle cx="365" cy="216" r="2.2"/><circle cx="408" cy="190" r="1.7"/><circle cx="452" cy="224" r="2.0"/><circle cx="498" cy="201" r="1.8"/><circle cx="548" cy="219" r="2.1"/><circle cx="598" cy="193" r="1.7"/><circle cx="650" cy="225" r="2.0"/><circle cx="705" cy="198" r="1.8"/><circle cx="760" cy="217" r="2.1"/><circle cx="815" cy="190" r="1.7"/><circle cx="866" cy="225" r="2"/><circle cx="916" cy="202" r="1.8"/><circle cx="970" cy="220" r="2.2"/>
-        <circle cx="115" cy="250" r="1.7"/><circle cx="180" cy="265" r="2"/><circle cx="250" cy="245" r="1.8"/><circle cx="338" cy="260" r="2.1"/><circle cx="430" cy="247" r="1.7"/><circle cx="520" cy="266" r="2.1"/><circle cx="610" cy="248" r="1.8"/><circle cx="700" cy="264" r="2.1"/><circle cx="790" cy="246" r="1.7"/><circle cx="875" cy="263" r="2"/><circle cx="954" cy="248" r="1.8"/>
+    <g clip-path="url(#round)">
+      <rect width="1080" height="720" fill="url(#bg)"/>
+
+      <!-- CINEMATIC STADIUM: large and clearly visible -->
+      <g>
+        <path d="M0 95C170 30 350 14 540 18C740 21 914 40 1080 101V326H0Z" fill="url(#stands)"/>
+        <path d="M0 224C190 170 360 153 540 155C727 157 910 177 1080 230V380H0Z" fill="#09100C" opacity=".82"/>
+        <g fill="#E8BE4F" opacity=".5" filter="url(#blur4)">
+          <circle cx="92" cy="180" r="2.4"/><circle cx="130" cy="202" r="2"/><circle cx="170" cy="183" r="2.3"/><circle cx="212" cy="213" r="2.1"/><circle cx="260" cy="187" r="2.5"/><circle cx="310" cy="220" r="2.1"/><circle cx="356" cy="190" r="2.3"/><circle cx="404" cy="215" r="2.2"/><circle cx="454" cy="186" r="2.3"/><circle cx="505" cy="216" r="2.1"/><circle cx="555" cy="190" r="2.4"/><circle cx="610" cy="214" r="2.1"/><circle cx="660" cy="188" r="2.3"/><circle cx="710" cy="220" r="2.1"/><circle cx="760" cy="190" r="2.4"/><circle cx="810" cy="214" r="2"/><circle cx="860" cy="188" r="2.3"/><circle cx="910" cy="216" r="2.2"/><circle cx="958" cy="189" r="2.4"/><circle cx="1006" cy="212" r="2.2"/>
+        </g>
+        <ellipse cx="310" cy="74" rx="245" ry="125" fill="url(#lightL)"/>
+        <ellipse cx="778" cy="70" rx="250" ry="128" fill="url(#lightR)"/>
+        <g fill="#FFF1A2" filter="url(#goldGlow)">
+          <circle cx="226" cy="100" r="3.2"/><circle cx="246" cy="96" r="3.2"/><circle cx="266" cy="93" r="3.2"/><circle cx="286" cy="91" r="3.2"/><circle cx="306" cy="90" r="3.2"/><circle cx="326" cy="91" r="3.2"/><circle cx="346" cy="93" r="3.2"/><circle cx="366" cy="96" r="3.2"/><circle cx="386" cy="100" r="3.2"/>
+          <circle cx="694" cy="100" r="3.2"/><circle cx="714" cy="96" r="3.2"/><circle cx="734" cy="93" r="3.2"/><circle cx="754" cy="91" r="3.2"/><circle cx="774" cy="90" r="3.2"/><circle cx="794" cy="91" r="3.2"/><circle cx="814" cy="93" r="3.2"/><circle cx="834" cy="96" r="3.2"/><circle cx="854" cy="100" r="3.2"/>
+        </g>
+
+        <!-- pitch perspective -->
+        <path d="M0 296C248 260 832 260 1080 296V720H0Z" fill="url(#grass)"/>
+        <path d="M540 296V720" stroke="#EBE8CD" stroke-opacity=".34" stroke-width="2"/>
+        <ellipse cx="540" cy="405" rx="122" ry="44" fill="none" stroke="#EBE8CD" stroke-opacity=".35" stroke-width="2.2"/>
+        <path d="M424 296H656V370H424Z" fill="none" stroke="#EBE8CD" stroke-opacity=".28" stroke-width="2"/>
+        <path d="M482 296V334H598V296" fill="none" stroke="#EBE8CD" stroke-opacity=".28" stroke-width="2"/>
+        <path d="M0 456C270 412 810 412 1080 456" fill="none" stroke="#7BCB85" stroke-opacity=".13" stroke-width="2"/>
+        <rect width="1080" height="720" fill="url(#greenGlow)"/>
       </g>
-      <!-- floodlights -->
-      <ellipse cx="330" cy="116" rx="165" ry="82" fill="url(#stadiumLight)" opacity=".34"/>
-      <ellipse cx="748" cy="116" rx="165" ry="82" fill="url(#stadiumLight)" opacity=".34"/>
-      <g fill="#FFE99A" filter="url(#softGlow)">
-        <circle cx="282" cy="104" r="3"/><circle cx="298" cy="101" r="3"/><circle cx="314" cy="100" r="3"/><circle cx="330" cy="99" r="3"/><circle cx="346" cy="100" r="3"/><circle cx="362" cy="102" r="3"/><circle cx="378" cy="105" r="3"/>
-        <circle cx="702" cy="105" r="3"/><circle cx="718" cy="102" r="3"/><circle cx="734" cy="100" r="3"/><circle cx="750" cy="99" r="3"/><circle cx="766" cy="100" r="3"/><circle cx="782" cy="102" r="3"/><circle cx="798" cy="105" r="3"/>
+
+      <!-- readability overlays -->
+      <rect width="1080" height="720" fill="#020604" fill-opacity=".30"/>
+      <path d="M0 0H1080V235C835 210 255 210 0 238Z" fill="#050706" fill-opacity=".34"/>
+      <rect y="565" width="1080" height="155" fill="#020604" fill-opacity=".42"/>
+
+      <!-- decorative gold curves -->
+      <path d="M660 0C785 108 940 94 1080 60" fill="none" stroke="#D0A83A" stroke-opacity=".42" stroke-width="2"/>
+      <path d="M0 530C320 465 680 575 1080 448" fill="none" stroke="#2A9A54" stroke-opacity=".33" stroke-width="2.5"/>
+
+      <!-- double frame -->
+      <rect x="18" y="18" width="1044" height="684" rx="34" fill="none" stroke="url(#goldStroke)" stroke-width="3" filter="url(#goldGlow)"/>
+      <rect x="31" y="31" width="1018" height="658" rx="27" fill="none" stroke="#F2D166" stroke-opacity=".24" stroke-width="1"/>
+
+      <!-- brand -->
+      <g transform="translate(58 48)">
+        <rect x="0" y="0" width="84" height="84" rx="20" fill="#0C0D0A" stroke="#DEB33E" stroke-width="2.6" filter="url(#goldGlow)"/>
+        <text x="42" y="54" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="31" fill="#F3D25E">EB</text>
+        <text x="110" y="36" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="48" fill="#FFFFFF">Easy<tspan fill="#E2B43D">Bet</tspan></text>
+        <text x="111" y="69" font-family="Arial,Helvetica,sans-serif" font-size="18" letter-spacing="6" fill="#B0AA9F">PLAY SMARTER</text>
       </g>
-      <!-- pitch -->
-      <path d="M0 318C230 280 844 280 1080 318V650H0Z" fill="url(#pitch)" opacity=".90"/>
-      <path d="M540 318V650" stroke="#F4F1D8" stroke-opacity=".32" stroke-width="2"/>
-      <ellipse cx="540" cy="401" rx="94" ry="35" fill="none" stroke="#F4F1D8" stroke-opacity=".27" stroke-width="2"/>
-      <path d="M467 332H613V374H467Z" fill="none" stroke="#F4F1D8" stroke-opacity=".22" stroke-width="2"/>
-      <path d="M505 332V353H575V332" fill="none" stroke="#F4F1D8" stroke-opacity=".24" stroke-width="2"/>
-      <path d="M0 415C260 380 820 380 1080 415" fill="none" stroke="#62A96F" stroke-opacity=".12" stroke-width="1.5"/>
+
+      <!-- LIVE SOON -->
+      <rect x="744" y="56" width="278" height="78" rx="33" fill="url(#goldButton)" stroke="#E5B944" stroke-width="2.5" filter="url(#goldGlow)"/>
+      ${broadcastIcon(772,78,1.08,'#F4D56A')}
+      <text x="850" y="106" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="30" fill="#F7DB73">LIVE SOON</text>
+
+      <!-- 10 min pill -->
+      <rect x="58" y="162" width="286" height="78" rx="22" fill="#11120E" fill-opacity=".92" stroke="#E2B841" stroke-width="2.4" filter="url(#goldGlow)"/>
+      ${clockIcon(78,183,1.08,'#F4D56A')}
+      <text x="136" y="213" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="32" fill="#F7DB73">Tra ${mins} min</text>
+
+      <!-- league -->
+      <g transform="translate(58 282)">
+        <rect x="0" y="-31" width="66" height="44" rx="12" fill="#11130F" stroke="#D8B047" stroke-opacity=".56"/>
+        <text x="33" y="-2" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="20" fill="#E9DFAE">${code}</text>
+        <line x1="82" y1="-24" x2="82" y2="6" stroke="#DAB23D" stroke-opacity=".65"/>
+        <text x="104" y="0" font-family="Arial,Helvetica,sans-serif" font-size="31" fill="#D3CEC2">${league}</text>
+      </g>
+
+      <!-- teams -->
+      <text x="58" y="385" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="${teamSize}" fill="#FFFFFF" filter="url(#textShadow)">${home} - ${away}</text>
+
+      <!-- strategy CTA -->
+      <rect x="58" y="462" width="964" height="128" rx="32" fill="url(#strat)" stroke="${theme.accent}" stroke-width="2.6" filter="url(#goldGlow)"/>
+      <rect x="58" y="462" width="158" height="128" rx="32" fill="#071009" fill-opacity=".34"/>
+      <rect x="58" y="462" width="964" height="128" rx="32" fill="url(#stratSheen)"/>
+      ${strategyIcon}
+      <line x1="215" y1="486" x2="215" y2="566" stroke="${theme.fg}" stroke-opacity=".28" stroke-width="2"/>
+      <text x="254" y="539" font-family="Arial,Helvetica,sans-serif" font-size="${strategySize}" font-weight="900" fill="${theme.fg}" filter="url(#textShadow)">${strategy}</text>
+      <line x1="926" y1="488" x2="926" y2="564" stroke="${theme.fg}" stroke-opacity=".30" stroke-width="2"/>
+      <path d="M952 503l22 22-22 22M984 503l22 22-22 22" fill="none" stroke="${theme.fg}" stroke-opacity=".72" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- footer -->
+      <line x1="58" y1="627" x2="1022" y2="627" stroke="#D7B041" stroke-opacity=".48"/>
+      ${bellIcon(58,646,.82,'#D4A928')}
+      <text x="105" y="673" font-family="Arial,Helvetica,sans-serif" font-size="25" fill="#D2D0C9">Nuovo alert EasyBet</text>
+      ${clockIcon(858,646,.77,'#C9C9BF')}
+      <text x="918" y="673" font-family="Arial,Helvetica,sans-serif" font-size="28" fill="#E1E1D8">${escXml(time)}</text>
     </g>
-    <!-- dark veil keeps text readable -->
-    <rect width="1080" height="650" rx="38" fill="#020806" fill-opacity=".38"/>
-    <rect width="1080" height="650" rx="38" fill="url(#glowGold)"/>
-    <rect width="1080" height="650" rx="38" fill="url(#glowGreen)"/>
-    <path d="M690 0 C790 115 920 125 1080 88" fill="none" stroke="#CFA83A" stroke-opacity=".34" stroke-width="2"/>
-    <path d="M0 500 C320 420 660 545 1080 405" fill="none" stroke="#1B5A38" stroke-opacity=".34" stroke-width="3"/>
-    <rect x="22" y="22" width="1036" height="606" rx="32" fill="none" stroke="url(#gold)" stroke-width="2.4"/>
-    <rect x="35" y="35" width="1010" height="580" rx="26" fill="none" stroke="#F4D96E" stroke-opacity=".16" stroke-width="1"/>
-
-    <g transform="translate(58 50)">
-      <rect x="0" y="0" width="82" height="82" rx="20" fill="#17130A" stroke="#DAB13D" stroke-width="2.4" filter="url(#softGlow)"/>
-      <text x="41" y="53" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="31" fill="#F3D25E">EB</text>
-      <text x="105" y="35" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="46" fill="#FFFFFF">Easy<tspan fill="#E2B43D">Bet</tspan></text>
-      <text x="107" y="66" font-family="Arial,Helvetica,sans-serif" font-size="18" letter-spacing="6" fill="#A8A08F">PLAY SMARTER</text>
-    </g>
-
-    <rect x="750" y="58" width="260" height="72" rx="30" fill="#12130F" stroke="#E2B841" stroke-width="2.2" filter="url(#softGlow)"/>
-    ${broadcastIcon(776,76,1.0,'#F3D25E')}
-    <text x="848" y="103" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="28" fill="#F6D96E">LIVE SOON</text>
-
-    <rect x="58" y="168" width="270" height="72" rx="20" fill="#17130A" stroke="#E2B841" stroke-width="2.2"/>
-    ${clockIcon(77,186,1.0,'#F3D25E')}
-    <text x="130" y="213" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="31" fill="#F6D96E">Tra ${mins} min</text>
-
-    <g transform="translate(58 276)">
-      <rect x="0" y="-30" width="64" height="42" rx="12" fill="#141713" stroke="#D6B447" stroke-opacity=".42"/>
-      <text x="32" y="-2" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="20" fill="#E8DDAE">${code}</text>
-      <text x="82" y="0" font-family="Arial,Helvetica,sans-serif" font-size="30" fill="#BEB9AD">${league}</text>
-    </g>
-
-    <text x="58" y="368" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="${teamSize}" fill="#FFFFFF" filter="url(#shadow)">${home} - ${away}</text>
-
-    <rect x="58" y="420" width="964" height="120" rx="30" fill="url(#strat)" stroke="${theme.accent}" stroke-width="2.3" filter="url(#softGlow)"/>
-    <rect x="58" y="420" width="150" height="120" rx="30" fill="#090B09" fill-opacity=".34"/>
-    ${strategyIcon}
-    <line x1="205" y1="443" x2="205" y2="517" stroke="${theme.fg}" stroke-opacity=".24" stroke-width="2"/>
-    <text x="244" y="493" font-family="Arial,Helvetica,sans-serif" font-size="${strategySize}" font-weight="900" fill="${theme.fg}">${strategy}</text>
-    <path d="M945 462l18 18-18 18M972 462l18 18-18 18" fill="none" stroke="${theme.fg}" stroke-opacity=".62" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-
-    <line x1="58" y1="572" x2="1022" y2="572" stroke="#D7B041" stroke-opacity=".28"/>
-    ${bellIcon(58,587,.8,'#8E9088')}
-    <text x="103" y="611" font-family="Arial,Helvetica,sans-serif" font-size="24" fill="#A8A69E">Nuovo alert EasyBet</text>
-    ${clockIcon(858,586,.75,'#9C9F96')}
-    <text x="915" y="611" font-family="Arial,Helvetica,sans-serif" font-size="27" fill="#BDBFB8">${escXml(time)}</text>
   </svg>`;
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
