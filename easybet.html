@@ -222,6 +222,52 @@ body[data-theme="dark"] #grid.home-history details.history-archive>.date-group-g
 @media(max-width:640px){.grid.live-mode{grid-template-columns:1fr}}
 </style>
 
+<style id="finished-wide-fix">
+/* Partite terminate: 4 tessere larghe che riempiono i margini */
+#grid.home-history .history-section .date-group-grid,
+#grid.home-history details.history-archive .date-group-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  justify-content:stretch!important;
+  width:100%!important;
+  gap:18px!important;
+}
+#grid.home-history .history-section .date-group-grid>.card,
+#grid.home-history details.history-archive .date-group-grid>.card{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+#grid.home-history .card .matchup{
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+  gap:12px!important;
+  padding-left:10px!important;
+  padding-right:10px!important;
+}
+#grid.home-history .card .team-name{
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  line-height:1.18!important;
+  min-height:2.35em!important;
+}
+#grid.home-history .card .league{overflow-wrap:anywhere!important;word-break:break-word!important;}
+@media(max-width:1200px){
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive .date-group-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+}
+@media(max-width:900px){
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive .date-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+}
+@media(max-width:640px){
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive .date-group-grid{grid-template-columns:1fr!important;}
+}
+</style>
+
 <style id="pronostici-hard-fix">
 /* Authoritative layout for Pronostici strategy cards */
 #grid.pronostici-summary-mode{display:block!important;width:100%!important;max-width:none!important}
