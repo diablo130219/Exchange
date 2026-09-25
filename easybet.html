@@ -255,6 +255,131 @@ body[data-theme="light"] .la-live-section-title .left{color:#c18a0b}body:not([da
 @media(max-width:820px){.la-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}.la-summary .strategy-focus{grid-column:1/-1!important}.la-signal{grid-template-columns:40px minmax(0,1fr) 105px!important}.la-signal-score{grid-column:3}.la-signal-more{display:none}.la-parsed-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:560px){.la-summary{grid-template-columns:1fr 1fr!important}.la-summary .strategy-focus{grid-column:1/-1!important}.la-signal{grid-template-columns:38px 1fr!important}.la-signal-score{grid-column:2}.la-parsed-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.la-summary .strategy-focus .strategy-note{display:none}}
 
+
+/* ===== EasyBet Live Analyzer FINAL UI refinement ===== */
+.live-analyzer-modal{width:min(1600px,98.5vw)!important;max-height:95vh!important}
+.la-body{grid-template-columns:.88fr 1.12fr!important;gap:20px!important;padding:18px!important}
+
+/* Strategia pre-match: compatta e premium */
+.la-summary .strategy-focus{
+  grid-column:1/-1!important;
+  min-height:108px!important;
+  padding:16px 20px!important;
+  display:grid!important;
+  grid-template-columns:36px minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:14px!important;
+}
+.la-summary .strategy-focus:before{
+  width:30px!important;height:30px!important;flex:0 0 30px!important;
+  font-size:.92rem!important;align-self:center!important;
+}
+.la-summary .strategy-focus .strategy-copy{min-width:0!important}
+.la-summary .strategy-focus .strategy-copy small{font-size:.64rem!important;margin-bottom:4px!important}
+.la-summary .strategy-focus .strategy-copy strong{
+  font-size:1.05rem!important;line-height:1.18!important;word-break:break-word!important;
+}
+.la-summary .strategy-focus .strategy-note{
+  padding:6px 10px!important;font-size:.58rem!important;white-space:nowrap!important;
+}
+
+/* Titolo Segnali live */
+.la-live-section-title{margin:14px 0 9px!important;padding:0 3px!important}
+.la-live-section-title .left{font-size:1rem!important}
+.la-live-section-title .hint{font-size:.62rem!important}
+
+/* Segnali live: righe pulite con motivo leggibile */
+.la-signals{gap:10px!important}
+.la-signal{
+  display:grid!important;
+  grid-template-columns:50px minmax(180px,1.2fr) 138px minmax(190px,.92fr) 26px!important;
+  align-items:center!important;
+  gap:12px!important;
+  min-height:82px!important;
+  padding:11px 14px!important;
+  border-radius:15px!important;
+  overflow:hidden!important;
+}
+.la-signal-icon{width:42px!important;height:42px!important;font-size:1.18rem!important}
+.la-signal-main{min-width:0!important}
+.la-signal-head{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important}
+.la-signal h5{font-size:.92rem!important;line-height:1.1!important}
+.la-signal-main p{font-size:.67rem!important;line-height:1.35!important;margin:4px 0 0!important}
+.la-signal-badge{margin-left:0!important;padding:4px 8px!important;font-size:.55rem!important;white-space:nowrap!important}
+.la-signal-score{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;text-align:center!important;min-width:0!important}
+.la-signal-score .la-signal-count{order:1!important;margin:0!important;font-size:.60rem!important;font-weight:800!important}
+.la-signal-score .la-criterion-dots{order:2!important;margin:0!important;justify-content:center!important;gap:4px!important;flex-wrap:nowrap!important}
+.la-signal-score .la-pill{order:3!important;min-width:86px!important;padding:6px 9px!important;font-size:.59rem!important}
+.la-signal-message{
+  min-width:0!important;
+  border-radius:11px!important;
+  padding:10px 12px!important;
+  font-size:.66rem!important;
+  line-height:1.4!important;
+  overflow-wrap:anywhere!important;
+}
+body[data-theme="light"] .la-signal.yellow .la-signal-message{background:#fff8e7;border:1px solid #ead89a;color:#6a5725}
+body[data-theme="light"] .la-signal.red .la-signal-message{background:#fff2f3;border:1px solid #e8c2c5;color:#75444a}
+body[data-theme="light"] .la-signal.blue .la-signal-message{background:#f1f6fd;border:1px solid #cad8ea;color:#3f5674}
+body[data-theme="light"] .la-signal.green .la-signal-message{background:#eef8f0;border:1px solid #bdd9c4;color:#315742}
+body:not([data-theme="light"]) .la-signal-message{background:#111c24;border:1px solid #344651;color:#dbe4ea}
+.la-signal-more{display:grid!important;place-items:center!important;width:24px!important;height:38px!important;font-size:1.15rem!important;opacity:.62!important}
+
+/* Dati riconosciuti: 5 colonne, nessun overflow */
+.la-parsed{margin-top:12px!important}
+.la-parsed-grid{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:10px!important;
+  width:100%!important;
+  align-items:stretch!important;
+}
+.la-mini{
+  min-width:0!important;
+  width:100%!important;
+  min-height:96px!important;
+  padding:9px 10px 14px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.la-mini .la-mini-label,
+.la-mini span{white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;line-height:1.15!important}
+.la-mini-pair{grid-column:1/-1!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:6px!important;margin-top:6px!important;min-width:0!important}
+.la-mini-side{min-width:0!important;overflow:hidden!important}
+.la-mini-side small{font-size:.46rem!important;white-space:nowrap!important}
+.la-mini-side b{font-size:.68rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.la-mini-side:first-child{padding-right:6px!important}
+.la-mini-bar{left:10px!important;right:10px!important;bottom:7px!important}
+.la-parsed-head .la-side-legend{margin-left:auto!important;font-size:.58rem!important}
+
+/* desktop intermedi */
+@media(max-width:1450px){
+  .live-analyzer-modal{width:min(1540px,98vw)!important}
+  .la-body{grid-template-columns:.9fr 1.1fr!important;gap:16px!important}
+  .la-signal{grid-template-columns:46px minmax(170px,1fr) 120px minmax(170px,.9fr) 22px!important;gap:10px!important}
+  .la-parsed-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+}
+@media(max-width:1180px){
+  .la-body{grid-template-columns:1fr!important}
+  .la-signal{grid-template-columns:44px minmax(0,1fr) 110px!important}
+  .la-signal-message{grid-column:2/-1!important}
+  .la-signal-more{display:none!important}
+  .la-parsed-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:820px){
+  .la-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .la-summary .strategy-focus{grid-template-columns:30px minmax(0,1fr)!important}
+  .la-summary .strategy-focus .strategy-note{grid-column:2!important;justify-self:start!important}
+  .la-signal{grid-template-columns:42px 1fr!important}
+  .la-signal-score{grid-column:2!important;align-items:flex-start!important}
+  .la-signal-message{grid-column:1/-1!important}
+  .la-parsed-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:560px){
+  .la-parsed-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .la-summary .strategy-focus .strategy-note{display:inline-flex!important}
+}
+
 </style>
 
 <style id="history-polish">
@@ -1225,7 +1350,7 @@ body[data-theme="light"] .la-live-section-title .left{color:#c18a0b}body:not([da
   function laStrategySignalName(name){var t=laNorm(name).replace(/\./g,'');if(!t)return '';if(t.indexOf('over 0 5')!==-1||t.indexOf('over 05')!==-1||t.indexOf('over 0,5')!==-1){if(t.indexOf('ht')!==-1||t.indexOf('1 tempo')!==-1||t.indexOf('primo tempo')!==-1)return 'Over 0.5 HT'}if(t.indexOf('over 1 5')!==-1||t.indexOf('over 15')!==-1||t.indexOf('over 1,5')!==-1){if(t.indexOf('ft')!==-1||t.indexOf('full time')!==-1||t.indexOf('finale')!==-1)return 'Over 1.5 FT'}if(t.indexOf('banca')!==-1&&t.indexOf('x')!==-1)return 'Banca X';if(t.indexOf('favorita')!==-1)return 'Segna favorita';return name||''}
   function openLiveAnalyzer(m){laAutoManualOnly=false;laSetMode('auto');liveAnalyzerCurrentKey=liveAnalyzerMatchKey(m);var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{};var selectedStrategy=st.strategy||m.tipoGiocata||'';liveAnalyzerState[liveAnalyzerCurrentKey]=Object.assign({},st,{strategy:selectedStrategy});document.getElementById('laHome').value=m.casa||'';document.getElementById('laAway').value=m.trasferta||'';document.getElementById('laMinute').value=st.minute||'';document.getElementById('laScore').value=st.score||'';document.getElementById('laFavorite').value=st.favorite||'none';document.getElementById('laRaw').value=st.raw||'';document.getElementById('liveAnalyzerOverlay').classList.add('open');document.getElementById('liveAnalyzerOverlay').setAttribute('aria-hidden','false');if(st.raw)renderLiveAnalyzer();else{var sum=document.getElementById('laSummary');if(sum)sum.innerHTML='<div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div><div class="la-stat strategy-focus"><small>Strategia pre-match</small><strong>'+esc(selectedStrategy||'Non definita')+'</strong></div>';var sig=document.getElementById('laSignals');if(sig&&selectedStrategy){sig.innerHTML='<div class="la-pre-banner"><span>★</span><div><small>Strategia selezionata pre-match</small><br><b>'+esc(selectedStrategy)+'</b> — il relativo segnale verrà evidenziato appena analizzi il live.</div></div>'}}laStartAuto()}
   function closeLiveAnalyzer(){laStopAuto();var ov=document.getElementById('liveAnalyzerOverlay');ov.classList.remove('open');ov.setAttribute('aria-hidden','true')}
-  function renderLiveAnalyzer(){if(!liveAnalyzerCurrentKey)return;var homeEl=document.getElementById('laHome'),awayEl=document.getElementById('laAway'),minEl=document.getElementById('laMinute'),scoreEl=document.getElementById('laScore'),favEl=document.getElementById('laFavorite'),rawEl=document.getElementById('laRaw');var prev=liveAnalyzerState[liveAnalyzerCurrentKey]||{},preStrategy=prev.strategy||'';liveAnalyzerState[liveAnalyzerCurrentKey]={minute:minEl.value,score:scoreEl.value,favorite:favEl.value,raw:rawEl.value,strategy:preStrategy};var m=laParse(rawEl.value),arr=laAnalyzeStats(m,minEl.value,scoreEl.value,favEl.value,homeEl.value,awayEl.value),sum=document.getElementById('laSummary'),sig=document.getElementById('laSignals'),par=document.getElementById('laParsed'),txg=laSum(m.xg),tsot=laSum(m.sot),tshots=laSum(m.shots),priority=laStrategySignalName(preStrategy),pretty=laPrettyStrategy(preStrategy);if(priority){arr.sort(function(a,b){return (a.name===priority?-1:0)-(b.name===priority?-1:0)})}sum.innerHTML='<div class="la-stat"><small>Partita</small><strong>'+esc(homeEl.value)+' – '+esc(awayEl.value)+'</strong></div><div class="la-stat"><small>Minuto / risultato</small><strong>'+(minEl.value?esc(minEl.value)+"'":'N/D')+' • '+esc(scoreEl.value||'N/D')+'</strong></div><div class="la-stat"><small>xG totale</small><strong>'+(txg==null?'N/D':laR(txg))+'</strong></div><div class="la-stat"><small>SOT / Tiri</small><strong>'+(tsot??'N/D')+' / '+(tshots??'N/D')+'</strong></div>'+(pretty?'<div class="la-stat strategy-focus"><div class="strategy-copy"><small>Strategia pre-match selezionata</small><strong>'+esc(pretty)+'</strong></div><span class="strategy-note">STRATEGIA ATTIVA</span></div>':'');var title='<div class="la-live-section-title"><div class="left"><span>⚡</span><span>Segnali live</span></div><span class="hint">Ordinati per priorità in base alla strategia pre-match</span></div>';sig.innerHTML=title+arr.map(function(x){var icons={'Over 0.5 HT':'⚽','Over 1.5 FT':'▥','Banca X':'◆','Segna favorita':'◎'},cc=(x.criteria||[]),okc=cc.filter(function(c){return c[1]}).length,total=cc.length||0,dots=cc.length?'<div class="la-criterion-dots">'+cc.map(function(c){return '<span class="la-dot '+(c[1]?'ok':'')+'"></span>'}).join('')+'</div>':'',isPriority=priority&&x.name===priority,confirmed=isPriority&&x.state==='VERDE',badge=isPriority?('<span class="la-signal-badge'+(confirmed?' confirmed':'')+'">'+(confirmed?'★ PRIORITÀ 1 ✓ CONFERMATA':'★ PRIORITÀ 1')+'</span>'):'',displayState=laDisplayState(x),pillClass=displayState==='NO BET ORA'?' no-bet-now':'';return '<article class="la-signal '+laClass(x.state)+(isPriority?' is-pre-match':'')+(confirmed?' confirmed':'')+'"><div class="la-signal-icon">'+(icons[x.name]||'•')+'</div><div class="la-signal-main"><div class="la-signal-head"><h5>'+esc(x.name)+'</h5>'+badge+'</div><p>'+esc(x.reason)+'</p></div><div class="la-signal-score">'+(total?'<div class="la-signal-count">'+okc+'/'+total+' criteri</div>':'')+dots+'<span class="la-pill'+pillClass+'">'+esc(displayState)+'</span></div><div class="la-signal-more">›</div></article>'}).join('');var rows=[['xG',laFmt(m.xg)],['xGOT',laFmt(m.xgot)],['Possesso',laFmt(m.possession,'%')],['Tiri',laFmt(m.shots)],['Tiri in porta',laFmt(m.sot)],['Big chances',laFmt(m.big)],['Corner',laFmt(m.corners)],['Tiri in area',laFmt(m.boxshots)],['Tocchi area',laFmt(m.touches)],['xA',laFmt(m.xa)],['Tiri bloccati',laFmt(m.blocked)],['Parate',laFmt(m.saves)]];par.innerHTML=rows.map(function(r){return laMetricPairMarkup(r[0],r[1])}).join('');var head=document.querySelector('.la-parsed-head');if(head&&!head.querySelector('.la-side-legend'))head.insertAdjacentHTML('beforeend','<span class="la-side-legend">CASA / OSPITE</span>')}
+  function renderLiveAnalyzer(){if(!liveAnalyzerCurrentKey)return;var homeEl=document.getElementById('laHome'),awayEl=document.getElementById('laAway'),minEl=document.getElementById('laMinute'),scoreEl=document.getElementById('laScore'),favEl=document.getElementById('laFavorite'),rawEl=document.getElementById('laRaw');var prev=liveAnalyzerState[liveAnalyzerCurrentKey]||{},preStrategy=prev.strategy||'';liveAnalyzerState[liveAnalyzerCurrentKey]={minute:minEl.value,score:scoreEl.value,favorite:favEl.value,raw:rawEl.value,strategy:preStrategy};var m=laParse(rawEl.value),arr=laAnalyzeStats(m,minEl.value,scoreEl.value,favEl.value,homeEl.value,awayEl.value),sum=document.getElementById('laSummary'),sig=document.getElementById('laSignals'),par=document.getElementById('laParsed'),txg=laSum(m.xg),tsot=laSum(m.sot),tshots=laSum(m.shots),priority=laStrategySignalName(preStrategy),pretty=laPrettyStrategy(preStrategy);if(priority){arr.sort(function(a,b){return (a.name===priority?-1:0)-(b.name===priority?-1:0)})}sum.innerHTML='<div class="la-stat"><small>Partita</small><strong>'+esc(homeEl.value)+' – '+esc(awayEl.value)+'</strong></div><div class="la-stat"><small>Minuto / risultato</small><strong>'+(minEl.value?esc(minEl.value)+"'":'N/D')+' • '+esc(scoreEl.value||'N/D')+'</strong></div><div class="la-stat"><small>xG totale</small><strong>'+(txg==null?'N/D':laR(txg))+'</strong></div><div class="la-stat"><small>SOT / Tiri</small><strong>'+(tsot??'N/D')+' / '+(tshots??'N/D')+'</strong></div>'+(pretty?'<div class="la-stat strategy-focus"><div class="strategy-copy"><small>Strategia pre-match selezionata</small><strong>'+esc(pretty)+'</strong></div><span class="strategy-note">STRATEGIA ATTIVA</span></div>':'');var title='<div class="la-live-section-title"><div class="left"><span>⚡</span><span>Segnali live</span></div><span class="hint">Ordinati per priorità in base alla strategia pre-match</span></div>';sig.innerHTML=title+arr.map(function(x){var icons={'Over 0.5 HT':'⚽','Over 1.5 FT':'▥','Banca X':'◆','Segna favorita':'◎'},cc=(x.criteria||[]),okc=cc.filter(function(c){return c[1]}).length,total=cc.length||0,dots=cc.length?'<div class="la-criterion-dots">'+cc.map(function(c){return '<span class="la-dot '+(c[1]?'ok':'')+'"></span>'}).join('')+'</div>':'',isPriority=priority&&x.name===priority,confirmed=isPriority&&x.state==='VERDE',badge=isPriority?('<span class="la-signal-badge'+(confirmed?' confirmed':'')+'">'+(confirmed?'★ PRIORITÀ 1 ✓ CONFERMATA':'★ PRIORITÀ 1')+'</span>'):'',displayState=laDisplayState(x),pillClass=displayState==='NO BET ORA'?' no-bet-now':'';return '<article class="la-signal '+laClass(x.state)+(isPriority?' is-pre-match':'')+(confirmed?' confirmed':'')+'"><div class="la-signal-icon">'+(icons[x.name]||'•')+'</div><div class="la-signal-main"><div class="la-signal-head"><h5>'+esc(x.name)+'</h5>'+badge+'</div><p>'+esc(x.reason)+'</p></div><div class="la-signal-score">'+(total?'<div class="la-signal-count">'+okc+'/'+total+' criteri</div>':'')+dots+'<span class="la-pill'+pillClass+'">'+esc(displayState)+'</span></div><div class="la-signal-message">'+esc(x.why||'')+'</div><div class="la-signal-more">›</div></article>'}).join('');var rows=[['xG',laFmt(m.xg)],['xGOT',laFmt(m.xgot)],['Possesso',laFmt(m.possession,'%')],['Tiri',laFmt(m.shots)],['Tiri in porta',laFmt(m.sot)],['Big chances',laFmt(m.big)],['Corner',laFmt(m.corners)],['Tiri in area',laFmt(m.boxshots)],['Tocchi area',laFmt(m.touches)],['xA',laFmt(m.xa)],['Tiri bloccati',laFmt(m.blocked)],['Parate',laFmt(m.saves)]];par.innerHTML=rows.map(function(r){return laMetricPairMarkup(r[0],r[1])}).join('');var head=document.querySelector('.la-parsed-head');if(head&&!head.querySelector('.la-side-legend'))head.insertAdjacentHTML('beforeend','<span class="la-side-legend">CASA / OSPITE</span>')}
   var laAutoTimer=null,laAutoBusy=false,laAutoManualOnly=false;
   function laPairHasAny(p){return p&&((p[0]!==null&&p[0]!==undefined)||(p[1]!==null&&p[1]!==undefined))}
   function laAutoRaw(data){
