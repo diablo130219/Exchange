@@ -845,7 +845,7 @@ body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data
       var r=await fetch('/api/goaldir/live-stats?home='+encodeURIComponent(h)+'&away='+encodeURIComponent(a),{cache:'no-store'});
       var d=await r.json().catch(function(){return{}});
       if(!r.ok){
-        if(d&&d.code==='MATCH_NOT_FOUND'){laAutoManualOnly=true;laStopAuto();laSetAutoStatus('NON COPERTA DA GOALDIR • usa il riquadro qui sopra e incolla le statistiche manualmente.','manual');return}
+        if(d&&d.code==='MATCH_NOT_FOUND'){laAutoManualOnly=true;laStopAuto();laSetAutoStatus('PARTITA NON TROVATA NEL FEED GOALDIR • possibile campionato non coperto oppure nomi squadre differenti. Usa il riquadro qui sopra e incolla le statistiche manualmente.','manual');return}
         if(d&&d.code==='NO_GOALDIR_KEY'){laAutoManualOnly=true;laStopAuto();laSetAutoStatus('AUTO NON CONFIGURATO • puoi continuare con inserimento manuale.','manual');return}
         throw new Error(d&&d.error?d.error:'Statistiche live non disponibili.');
       }
@@ -886,7 +886,7 @@ body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data
         <div class="la-field"><label>Risultato</label><input id="laScore" placeholder="0-0"></div>
         <div class="la-field la-favorite"><label>Favorita pre-match</label><select id="laFavorite"><option value="none">Non so / Nessuna</option><option value="home">Casa</option><option value="away">Ospite</option></select></div>
       </div><div class="la-field"><label>Statistiche live — AUTO se coperta, altrimenti incolla manualmente tutto il blocco</label><textarea class="la-textarea" id="laRaw" placeholder="Statistiche Top\n1.93\nGoal previsti (xG)\n0.85\n61%\nPossesso palla\n39%\n..."></textarea></div>
-      <div class="la-actions"><button class="la-btn primary" id="laAnalyze" type="button">ANALIZZA / AGGIORNA</button><button class="la-btn live-auto" id="laAutoFetch" type="button">↻ DATI LIVE AUTO</button><button class="la-btn secondary" id="laClear" type="button">SVUOTA DATI</button><span class="la-auto-status" id="laAutoStatus">AUTO: prova GoalDir • se non coperta passa automaticamente a MANUALE</span></div></section>
+      <div class="la-actions"><button class="la-btn primary" id="laAnalyze" type="button">ANALIZZA / AGGIORNA</button><button class="la-btn live-auto" id="laAutoFetch" type="button">↻ DATI LIVE AUTO</button><button class="la-btn secondary" id="laClear" type="button">SVUOTA DATI</button><span class="la-auto-status" id="laAutoStatus">AUTO: cerca la partita nel feed GoalDir • se non la trova passa automaticamente a MANUALE</span></div></section>
       <section class="la-panel"><h4>Situazione EasyBet</h4><div class="la-summary" id="laSummary"><div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div></div><div class="la-signals" id="laSignals"></div><div class="la-parsed"><h4>Dati riconosciuti</h4><div class="la-parsed-grid" id="laParsed"></div></div></section>
     </div>
   </div>

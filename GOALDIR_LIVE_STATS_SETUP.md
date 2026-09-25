@@ -11,4 +11,4 @@ Questa versione usa SOLO le statistiche live REST di GoalDir/BSD. Non usa quote 
 
 Nel popup **Analizza Live** il pulsante **DATI LIVE AUTO** tenta di associare la partita EasyBet al feed GoalDir. Se la competizione è coperta, aggiorna minuto, risultato e statistiche. Finché il popup resta aperto riprova ogni 60 secondi.
 
-Se GoalDir non copre la partita o una metrica non è disponibile, EasyBet lascia `N/D` e puoi continuare a usare il copia/incolla manuale.
+Se EasyBet non trova la partita nel feed GoalDir, il popup indica che può trattarsi di un campionato non coperto oppure di nomi squadra differenti. In quel caso passa alla modalità manuale. Le metriche non disponibili restano `N/D`.
