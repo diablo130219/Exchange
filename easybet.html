@@ -987,6 +987,56 @@ body:not([data-theme="light"]) .la-signal-note{color:#b7aa7a!important}
 body[data-theme="light"] .la-mini .la-mini-label{color:#445066!important}
 body:not([data-theme="light"]) .la-mini .la-mini-label{color:#f2ead7!important}
 
+
+/* FIX valori CASA/OSPITE e percentuali sempre visibili nei Dati riconosciuti */
+.la-mini .la-mini-pair{
+  grid-area:pair!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+.la-mini .la-mini-side{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:0!important;
+  overflow:visible!important;
+  text-align:center!important;
+}
+.la-mini .la-mini-side small{
+  display:block!important;
+  grid-column:auto!important;
+  margin:0 0 3px!important;
+  color:#8a93a2!important;
+  font-size:.50rem!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:.02em!important;
+  white-space:nowrap!important;
+  opacity:1!important;
+}
+.la-mini .la-mini-side b{
+  display:block!important;
+  grid-column:auto!important;
+  margin:0!important;
+  color:#142742!important;
+  font-size:.90rem!important;
+  line-height:1.05!important;
+  font-weight:950!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+body:not([data-theme="light"]) .la-mini .la-mini-side b{color:#fff!important}
+body:not([data-theme="light"]) .la-mini .la-mini-side small{color:#aeb8c4!important}
+.la-mini.is-na .la-mini-side b{color:#9a8151!important;font-style:italic!important}
+body:not([data-theme="light"]) .la-mini.is-na .la-mini-side b{color:#cbb77c!important}
+
 </style>
 
 </head>
