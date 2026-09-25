@@ -1569,7 +1569,7 @@ body:not([data-theme="light"]) .strategy-target{background:#302711;color:#f3d271
       line('Quota Lay X',layOdds,layOdds!=null&&layOdds>=1.70&&layOdds<=2.50,0.7)
     ]),lay;
     if(isHT){
-      if(!sm||sm[1]!==sm[2]||!((sm[1]===0&&sm[2]===0)||(sm[1]===1&&sm[2]===1)))lay=laSig('Banca X','NON ATTIVA','Intervallo raggiunto, ma il risultato non è 0-0 o 1-1.','La strategia Banca X viene preparata a HT solo se il pareggio è 0-0 o 1-1.');
+      if(!sm||Number(sm[1])!==Number(sm[2])||!((Number(sm[1])===0&&Number(sm[2])===0)||(Number(sm[1])===1&&Number(sm[2])===1)))lay=laSig('Banca X','NON ATTIVA','Intervallo raggiunto, ma il risultato non è 0-0 o 1-1.','La strategia Banca X viene preparata a HT solo se il pareggio è 0-0 o 1-1.');
       else if(layDyn.available<2)lay=laSig('Banca X','DATI','Intervallo: dati insufficienti per misurare la fragilità del pareggio.','Servono almeno 2 indicatori comparativi disponibili prima di preparare l’ingresso nel secondo tempo.',layDyn.checks);
       else if(layDyn.score>=0.55)lay=laSig('Banca X','ATTENDI FORTE','Pareggio fragile: strategia idonea per il secondo tempo.','Attendi la ripresa e la quota Lay X a 2.00 o inferiore. Punteggio adattivo '+Math.round(layDyn.score*100)+'%'+oddText(layOdds)+'.',layDyn.checks);
       else if(layDyn.score>=0.40)lay=laSig('Banca X','ATTENDI','Pareggio interessante ma ancora da confermare.','La strategia resta osservata nel secondo tempo; attendi maggiore squilibrio e quota Lay X ≤ 2.00.',layDyn.checks);
@@ -1577,7 +1577,7 @@ body:not([data-theme="light"]) .strategy-target{background:#302711;color:#f3d271
     }else if(minuteN!=null&&minuteN<45)lay=laSig('Banca X','VALUTA A HT','Strategia da valutare all’intervallo.','Prima dell’HT non viene emesso un NO BET: la lettura parte sullo 0-0 o 1-1 e l’ingresso avviene nel secondo tempo.');
     else if(minuteN===45)lay=laSig('Banca X','ATTENDI HT','Attendo la fine effettiva del primo tempo.','Il 45° può includere recupero. In manuale, quando è davvero intervallo scrivi HT nel campo Minuto.');
     else if(minuteN!=null&&minuteN>45){
-      if(!sm||!((sm[1]===0&&sm[2]===0)||(sm[1]===1&&sm[2]===1)))lay=laSig('Banca X','NON ATTIVA','Il risultato non è più 0-0 o 1-1.','Il pareggio target della strategia non è più presente, quindi non si apre un nuovo Lay X.');
+      if(!sm||!((Number(sm[1])===0&&Number(sm[2])===0)||(Number(sm[1])===1&&Number(sm[2])===1)))lay=laSig('Banca X','NON ATTIVA','Il risultato non è 0-0 o 1-1.','Il pareggio target della strategia non è più presente, quindi non si apre un nuovo Lay X.');
       else if(layDyn.available<2)lay=laSig('Banca X','DATI','Secondo tempo: dati insufficienti per valutare il Lay X.','Servono almeno 2 indicatori comparativi disponibili.',layDyn.checks);
       else if(layDyn.score>=0.55)lay=laSig('Banca X','VERDE','Pareggio fragile nel secondo tempo.','Condizioni live compatibili: attendi/controlla la quota Lay X, che deve essere 2.00 o inferiore per l’ingresso.',layDyn.checks);
       else if(layDyn.score>=0.40)lay=laSig('Banca X','ATTENDI FORTE','Pareggio sotto pressione nel secondo tempo.','Vicino all’ingresso: serve ulteriore conferma e quota Lay X ≤ 2.00.',layDyn.checks);
