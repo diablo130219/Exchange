@@ -640,6 +640,55 @@ body[data-theme="light"] .la-mini-bar i{display:block;height:100%;border-radius:
   body[data-theme="light"] .la-crown{width:34px;height:34px;font-size:24px}
 }
 
+
+/* FIX Dati riconosciuti: etichette e valori sempre ben visibili */
+body[data-theme="light"] .la-parsed-grid{gap:10px!important}
+body[data-theme="light"] .la-mini{
+  min-height:86px!important;
+  padding:11px 11px 18px!important;
+  background:#fffdfa!important;
+  border:1px solid #ddcfb1!important;
+  box-shadow:0 7px 16px rgba(95,74,28,.07)!important;
+}
+body[data-theme="light"] .la-mini span{
+  display:block!important;
+  color:#526078!important;
+  font-size:.62rem!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  opacity:1!important;
+  text-transform:none!important;
+  white-space:normal!important;
+}
+body[data-theme="light"] .la-mini b{
+  display:block!important;
+  margin-top:6px!important;
+  color:#142742!important;
+  font-size:.86rem!important;
+  font-weight:950!important;
+  line-height:1.12!important;
+  opacity:1!important;
+  min-height:1.05em!important;
+  white-space:nowrap!important;
+}
+body[data-theme="light"] .la-mini.is-na b{
+  color:#9a8151!important;
+  font-style:italic!important;
+}
+body[data-theme="light"] .la-mini-bar{
+  left:11px!important;right:11px!important;bottom:8px!important;height:5px!important;
+  background:#eadfca!important;
+}
+body[data-theme="light"] .la-mini.is-na .la-mini-bar i{width:0!important}
+body[data-theme="light"] .la-parsed-head h4{font-size:1rem!important;color:#c88d0e!important}
+body[data-theme="light"] .la-parsed-head:after{
+  content:'valori letti dal blocco statistiche';
+  margin-left:auto;
+  color:#7b8494;
+  font-size:.61rem;
+  font-weight:700;
+}
+
 </style>
 
 </head>
@@ -1054,7 +1103,7 @@ body[data-theme="light"] .la-mini-bar i{display:block;height:100%;border-radius:
   function laClass(s){return s==='VERDE'?'green':s==='NO BET'?'red':s==='ATTENDI'?'yellow':'blue'}
   function openLiveAnalyzer(m){laAutoManualOnly=false;liveAnalyzerCurrentKey=liveAnalyzerMatchKey(m);var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{};document.getElementById('laHome').value=m.casa||'';document.getElementById('laAway').value=m.trasferta||'';document.getElementById('laMinute').value=st.minute||'';document.getElementById('laScore').value=st.score||'';document.getElementById('laFavorite').value=st.favorite||'none';document.getElementById('laRaw').value=st.raw||'';document.getElementById('liveAnalyzerOverlay').classList.add('open');document.getElementById('liveAnalyzerOverlay').setAttribute('aria-hidden','false');if(st.raw)renderLiveAnalyzer();laStartAuto()}
   function closeLiveAnalyzer(){laStopAuto();var ov=document.getElementById('liveAnalyzerOverlay');ov.classList.remove('open');ov.setAttribute('aria-hidden','true')}
-  function renderLiveAnalyzer(){if(!liveAnalyzerCurrentKey)return;var homeEl=document.getElementById('laHome'),awayEl=document.getElementById('laAway'),minEl=document.getElementById('laMinute'),scoreEl=document.getElementById('laScore'),favEl=document.getElementById('laFavorite'),rawEl=document.getElementById('laRaw');liveAnalyzerState[liveAnalyzerCurrentKey]={minute:minEl.value,score:scoreEl.value,favorite:favEl.value,raw:rawEl.value};var m=laParse(rawEl.value),arr=laAnalyzeStats(m,minEl.value,scoreEl.value,favEl.value,homeEl.value,awayEl.value),sum=document.getElementById('laSummary'),sig=document.getElementById('laSignals'),par=document.getElementById('laParsed'),txg=laSum(m.xg),tsot=laSum(m.sot),tshots=laSum(m.shots);sum.innerHTML='<div class="la-stat"><small>Partita</small><strong>'+esc(homeEl.value)+' – '+esc(awayEl.value)+'</strong></div><div class="la-stat"><small>Minuto / risultato</small><strong>'+(minEl.value?esc(minEl.value)+"'":'N/D')+' • '+esc(scoreEl.value||'N/D')+'</strong></div><div class="la-stat"><small>xG totale</small><strong>'+(txg==null?'N/D':laR(txg))+'</strong></div><div class="la-stat"><small>SOT / Tiri</small><strong>'+(tsot??'N/D')+' / '+(tshots??'N/D')+'</strong></div>';sig.innerHTML=arr.map(function(x){var icons={'Over 0.5 HT':'⚽','Over 1.5 FT':'↗','Banca X':'◈','Segna favorita':'◎'},cc=(x.criteria||[]),okc=cc.filter(function(c){return c[1]}).length,total=cc.length||0,dots=cc.length?'<div class="la-criterion-dots">'+cc.map(function(c){return '<span class="la-dot '+(c[1]?'ok':'')+'"></span>'}).join('')+'</div>':'';return '<article class="la-signal '+laClass(x.state)+'"><div class="la-signal-icon">'+(icons[x.name]||'•')+'</div><div class="la-signal-main"><div class="la-signal-head"><h5>'+esc(x.name)+'</h5></div><p>'+esc(x.reason)+'</p></div><div class="la-signal-score"><span class="la-pill">'+esc(x.state)+'</span>'+dots+(total?'<div class="la-signal-count">'+okc+'/'+total+' criteri</div>':'')+'</div><div class="la-signal-detail">'+esc(x.why)+'</div></article>'}).join('');var rows=[['xG',laFmt(m.xg)],['xGOT',laFmt(m.xgot)],['Possesso',laFmt(m.possession,'%')],['Tiri',laFmt(m.shots)],['Tiri in porta',laFmt(m.sot)],['Big chances',laFmt(m.big)],['Corner',laFmt(m.corners)],['Tiri in area',laFmt(m.boxshots)],['Tocchi area',laFmt(m.touches)],['xA',laFmt(m.xa)],['Tiri bloccati',laFmt(m.blocked)],['Parate',laFmt(m.saves)]];par.innerHTML=rows.map(function(r){var mm=String(r[1]||'').match(/(-?\d+(?:\.\d+)?).*?[–-].*?(-?\d+(?:\.\d+)?)/),pct=45;if(mm){var a=Math.abs(Number(mm[1])),b=Math.abs(Number(mm[2])),tot=a+b;pct=tot>0?Math.max(10,Math.min(95,Math.round(a/tot*100))):50}return '<div class="la-mini"><span>'+esc(r[0])+'</span><b>'+esc(r[1])+'</b><div class="la-mini-bar"><i style="width:'+pct+'%"></i></div></div>'}).join('')}
+  function renderLiveAnalyzer(){if(!liveAnalyzerCurrentKey)return;var homeEl=document.getElementById('laHome'),awayEl=document.getElementById('laAway'),minEl=document.getElementById('laMinute'),scoreEl=document.getElementById('laScore'),favEl=document.getElementById('laFavorite'),rawEl=document.getElementById('laRaw');liveAnalyzerState[liveAnalyzerCurrentKey]={minute:minEl.value,score:scoreEl.value,favorite:favEl.value,raw:rawEl.value};var m=laParse(rawEl.value),arr=laAnalyzeStats(m,minEl.value,scoreEl.value,favEl.value,homeEl.value,awayEl.value),sum=document.getElementById('laSummary'),sig=document.getElementById('laSignals'),par=document.getElementById('laParsed'),txg=laSum(m.xg),tsot=laSum(m.sot),tshots=laSum(m.shots);sum.innerHTML='<div class="la-stat"><small>Partita</small><strong>'+esc(homeEl.value)+' – '+esc(awayEl.value)+'</strong></div><div class="la-stat"><small>Minuto / risultato</small><strong>'+(minEl.value?esc(minEl.value)+"'":'N/D')+' • '+esc(scoreEl.value||'N/D')+'</strong></div><div class="la-stat"><small>xG totale</small><strong>'+(txg==null?'N/D':laR(txg))+'</strong></div><div class="la-stat"><small>SOT / Tiri</small><strong>'+(tsot??'N/D')+' / '+(tshots??'N/D')+'</strong></div>';sig.innerHTML=arr.map(function(x){var icons={'Over 0.5 HT':'⚽','Over 1.5 FT':'↗','Banca X':'◈','Segna favorita':'◎'},cc=(x.criteria||[]),okc=cc.filter(function(c){return c[1]}).length,total=cc.length||0,dots=cc.length?'<div class="la-criterion-dots">'+cc.map(function(c){return '<span class="la-dot '+(c[1]?'ok':'')+'"></span>'}).join('')+'</div>':'';return '<article class="la-signal '+laClass(x.state)+'"><div class="la-signal-icon">'+(icons[x.name]||'•')+'</div><div class="la-signal-main"><div class="la-signal-head"><h5>'+esc(x.name)+'</h5></div><p>'+esc(x.reason)+'</p></div><div class="la-signal-score"><span class="la-pill">'+esc(x.state)+'</span>'+dots+(total?'<div class="la-signal-count">'+okc+'/'+total+' criteri</div>':'')+'</div><div class="la-signal-detail">'+esc(x.why)+'</div></article>'}).join('');var rows=[['xG',laFmt(m.xg)],['xGOT',laFmt(m.xgot)],['Possesso',laFmt(m.possession,'%')],['Tiri',laFmt(m.shots)],['Tiri in porta',laFmt(m.sot)],['Big chances',laFmt(m.big)],['Corner',laFmt(m.corners)],['Tiri in area',laFmt(m.boxshots)],['Tocchi area',laFmt(m.touches)],['xA',laFmt(m.xa)],['Tiri bloccati',laFmt(m.blocked)],['Parate',laFmt(m.saves)]];par.innerHTML=rows.map(function(r){var mm=String(r[1]||'').match(/(-?\d+(?:\.\d+)?).*?[–-].*?(-?\d+(?:\.\d+)?)/),pct=45;if(mm){var a=Math.abs(Number(mm[1])),b=Math.abs(Number(mm[2])),tot=a+b;pct=tot>0?Math.max(10,Math.min(95,Math.round(a/tot*100))):50}var isNA=String(r[1]||'').trim()==='N/D';return '<div class="la-mini '+(isNA?'is-na':'')+'"><span>'+esc(r[0])+'</span><b>'+esc(r[1]||'N/D')+'</b><div class="la-mini-bar"><i style="width:'+(isNA?0:pct)+'%"></i></div></div>'}).join('')}
   var laAutoTimer=null,laAutoBusy=false,laAutoManualOnly=false;
   function laPairHasAny(p){return p&&((p[0]!==null&&p[0]!==undefined)||(p[1]!==null&&p[1]!==undefined))}
   function laAutoRaw(data){
