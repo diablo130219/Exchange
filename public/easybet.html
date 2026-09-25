@@ -1491,7 +1491,8 @@ body:not([data-theme="light"]) .la-mini-ico{background:linear-gradient(180deg,#2
     else if(q.ratio>=0.40||coreHT)ht=laSig('Over 0.5 HT','ATTENDI','Segnali presenti: '+q.passed+'/'+q.available+' criteri disponibili.','Le metriche mancanti non vengono conteggiate come negative; attendo ulteriore conferma.',q.checks);
     else ht=laSig('Over 0.5 HT','NO BET','Gli indicatori disponibili sono sotto soglia.','Valutazione basata solo sui '+q.available+' dati effettivamente presenti.',q.checks);
 
-    if(minuteN!=null&&minuteN<20)ft=laSig('Over 1.5 FT','ATTENDI','Match ancora presto per il filtro principale.','Finestra indicativa 20’–40’.');
+    if(minuteN!=null&&minuteN<25&&goals>0)ft=laSig('Over 1.5 FT','INGIOCABILE','Gol arrivato troppo presto.','Regola EasyBet: se c’è già almeno un gol prima del 25°, il mercato Over 1.5 FT viene escluso perché la quota tende a comprimersi troppo.');
+    else if(minuteN!=null&&minuteN<20)ft=laSig('Over 1.5 FT','ATTENDI','Match ancora presto per il filtro principale.','Finestra indicativa 20’–40’.');
     else if(minuteN!=null&&minuteN>70&&goals<1)ft=laSig('Over 1.5 FT','NO BET','Tempo residuo ridotto.','Evita di inseguire il mercato solo perché la quota sale.');
     else if(goals>=2)ft=laSig('Over 1.5 FT','CHIUSA','Sono già stati segnati almeno 2 gol.','La condizione Over 1.5 è raggiunta.');
     else if(s.available<2)ft=laSig('Over 1.5 FT','DATI','Dati live insufficienti per una lettura affidabile.','Servono almeno 2 indicatori disponibili; le metriche mancanti non valgono come esito negativo.',s.checks);
@@ -1539,7 +1540,7 @@ body:not([data-theme="light"]) .la-mini-ico{background:linear-gradient(180deg,#2
     }
     return [ht,ft,lay,fav]
   }
-  function laClass(s){return s==='VERDE'?'green':s==='NO BET'?'red':s==='ATTENDI'?'yellow':'blue'}
+  function laClass(s){return s==='VERDE'?'green':(s==='NO BET'||s==='INGIOCABILE')?'red':s==='ATTENDI'?'yellow':'blue'}
 
 
   function laSetMode(mode){var a=document.getElementById('laModeAuto'),m=document.getElementById('laModeManual');if(a)a.classList.toggle('active',mode==='auto');if(m)m.classList.toggle('active',mode==='manual')}
