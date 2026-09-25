@@ -1704,17 +1704,40 @@ body:not([data-theme="light"]) .la-history-row{background:#11171e;border:1px sol
     finally{laAutoBusy=false;if(btn)btn.disabled=false}
   }
   async function laStartAuto(){laStopAuto();laAutoManualOnly=false;await laFetchAuto(false);if(laAutoManualOnly)return;laAutoTimer=setInterval(function(){var ov=document.getElementById('liveAnalyzerOverlay');if(ov&&ov.classList.contains('open'))laFetchAuto(true);},60000)}
-  function initLiveAnalyzerUI(){
-    var closeBtn=document.getElementById('liveAnalyzerClose'),overlay=document.getElementById('liveAnalyzerOverlay'),analyzeBtn=document.getElementById('laAnalyze'),clearBtn=document.getElementById('laClear'),autoBtn=document.getElementById('laAutoFetch');
-    if(!closeBtn||!overlay||!analyzeBtn||!clearBtn)return;
-    closeBtn.addEventListener('click',closeLiveAnalyzer);
-    overlay.addEventListener('click',function(e){if(e.target===this)closeLiveAnalyzer()});
-    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLiveAnalyzer()});
-    analyzeBtn.addEventListener('click',function(){var mm=document.getElementById('laModeManual');if(mm&&mm.classList.contains('active'))laSetMode('manual');renderLiveAnalyzer()});
-    if(autoBtn)autoBtn.addEventListener('click',function(){laAutoManualOnly=false;laFetchAuto(false)});
-    clearBtn.addEventListener('click',function(){var st=liveAnalyzerCurrentKey?(liveAnalyzerState[liveAnalyzerCurrentKey]||{}):{};document.getElementById('laRaw').value='';['laOddHT','laOddFT','laOddLay','laOddFav'].forEach(function(id){var el=document.getElementById(id);if(el)el.value=''});var fgClear=document.getElementById('laFirstGoal');if(fgClear)fgClear.value='';document.getElementById('laSummary').innerHTML='<div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div>'+(st.strategy?'<div class="la-stat strategy-focus"><small>Strategia pre-match</small><strong>'+esc(st.strategy)+'</strong></div>':'');document.getElementById('laSignals').innerHTML=st.strategy?'<div class="la-pre-banner"><span>★</span><div><small>Strategia selezionata pre-match</small><br><b>'+esc(st.strategy)+'</b> — il relativo segnale verrà evidenziato appena analizzi il live.</div></div>':'';document.getElementById('laParsed').innerHTML='';if(liveAnalyzerCurrentKey){laHistoryClear(liveAnalyzerCurrentKey);var hh=document.getElementById('laHistory');if(hh)hh.innerHTML='';liveAnalyzerState[liveAnalyzerCurrentKey]={strategy:st.strategy||'',targetQuota:st.targetQuota||'',favorite:st.favorite||'none',minute:'',score:'',raw:'',odds:{},sourceMode:st.sourceMode||'manual',firstGoalObservedMinute:null,earlyGoalBefore25:false}}});
+  function laClearAnalyzerData(){
+    var st=liveAnalyzerCurrentKey?(liveAnalyzerState[liveAnalyzerCurrentKey]||{}):{};
+    var raw=document.getElementById('laRaw');if(raw)raw.value='';
+    ['laOddHT','laOddFT','laOddLay','laOddFav'].forEach(function(id){var el=document.getElementById(id);if(el)el.value=''});
+    var fgClear=document.getElementById('laFirstGoal');if(fgClear)fgClear.value='';
+    var sum=document.getElementById('laSummary');if(sum)sum.innerHTML='<div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div>'+(st.strategy?'<div class="la-stat strategy-focus"><small>Strategia pre-match</small><strong>'+esc(st.strategy)+'</strong></div>':'');
+    var sig=document.getElementById('laSignals');if(sig)sig.innerHTML=st.strategy?'<div class="la-pre-banner"><span>★</span><div><small>Strategia selezionata pre-match</small><br><b>'+esc(st.strategy)+'</b> — il relativo segnale verrà evidenziato appena analizzi il live.</div></div>':'';
+    var parsed=document.getElementById('laParsed');if(parsed)parsed.innerHTML='';
+    if(liveAnalyzerCurrentKey){
+      laHistoryClear(liveAnalyzerCurrentKey);var hh=document.getElementById('laHistory');if(hh)hh.innerHTML='';
+      liveAnalyzerState[liveAnalyzerCurrentKey]={strategy:st.strategy||'',targetQuota:st.targetQuota||'',favorite:st.favorite||'none',minute:'',score:'',raw:'',odds:{},sourceMode:st.sourceMode||'manual',firstGoalObservedMinute:null,earlyGoalBefore25:false};
+    }
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initLiveAnalyzerUI);else initLiveAnalyzerUI();
+  function initLiveAnalyzerUI(){
+    if(document.documentElement.dataset.laDelegated==='1')return;
+    document.documentElement.dataset.laDelegated='1';
+    document.addEventListener('click',function(e){
+      var analyzeBtn=e.target.closest('#laAnalyze');
+      if(analyzeBtn){e.preventDefault();laSetMode('manual');renderLiveAnalyzer();return;}
+      var autoBtn=e.target.closest('#laAutoFetch');
+      if(autoBtn){e.preventDefault();laAutoManualOnly=false;laFetchAuto(false);return;}
+      var clearBtn=e.target.closest('#laClear');
+      if(clearBtn){e.preventDefault();laClearAnalyzerData();return;}
+      var closeBtn=e.target.closest('#liveAnalyzerClose');
+      if(closeBtn){e.preventDefault();closeLiveAnalyzer();return;}
+      var manualMode=e.target.closest('#laModeManual');
+      if(manualMode){e.preventDefault();laSetMode('manual');return;}
+      var autoMode=e.target.closest('#laModeAuto');
+      if(autoMode){e.preventDefault();laAutoManualOnly=false;laSetMode('auto');return;}
+    });
+    document.addEventListener('click',function(e){var ov=document.getElementById('liveAnalyzerOverlay');if(ov&&e.target===ov)closeLiveAnalyzer()});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLiveAnalyzer()});
+  }
+  initLiveAnalyzerUI();
 
   var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
 })();
