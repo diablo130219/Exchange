@@ -912,7 +912,7 @@ body:not([data-theme="light"]) .la-mode-chip.auto:not(.active){opacity:.55}
 body[data-theme="light"] .la-summary .la-stat:nth-child(2){background:#fff9e8;border-color:#e6d49d}
 .la-signal{min-height:78px!important}.la-signal-main p{line-height:1.25!important}.la-signal-detail{min-height:46px!important;padding-top:8px!important;padding-bottom:8px!important}
 .la-mini{display:grid!important;grid-template-columns:28px minmax(0,1fr)!important;column-gap:8px!important;align-items:start!important}.la-mini-ico{grid-row:1/3;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:.78rem;font-weight:900}.la-mini span,.la-mini b{grid-column:2}.la-mini-bar{grid-column:1/-1!important}
-body[data-theme="light"] .la-mini-ico{background:#fff5d8;color:#b98409;border:1px solid #ead493}body:not([data-theme="light"]) .la-mini-ico{background:#182533;color:#f3d271;border:1px solid #31475a}
+body[data-theme="light"] .la-mini-ico{background:linear-gradient(180deg,#fffaf0 0%,#f9efcf 100%);color:#8b6400;border:1px solid #e1ca86;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 4px 10px rgba(176,134,31,.10);border-radius:10px;font-size:.54rem;font-weight:900;letter-spacing:.04em;padding:0 2px;line-height:1;text-transform:uppercase}body:not([data-theme="light"]) .la-mini-ico{background:linear-gradient(180deg,#1d2d44 0%,#132133 100%);color:#f3d271;border:1px solid #38506c;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 4px 10px rgba(0,0,0,.22);border-radius:10px;font-size:.54rem;font-weight:900;letter-spacing:.04em;padding:0 2px;line-height:1;text-transform:uppercase}
 .la-signal.is-pre-match.confirmed{box-shadow:0 0 0 2px rgba(45,181,100,.35),0 14px 30px rgba(34,140,78,.15)!important}
 body[data-theme="light"] .la-signal.is-pre-match.confirmed{background:linear-gradient(180deg,#f0fbf3,#fffaf0)!important;border-color:#83c79b!important}
 body:not([data-theme="light"]) .la-signal.is-pre-match.confirmed{background:linear-gradient(180deg,rgba(40,125,72,.25),rgba(20,65,42,.16))!important;border-color:rgba(88,205,127,.58)!important}
@@ -958,7 +958,7 @@ body:not([data-theme="light"]) .la-signal-note{color:#b7aa7a!important}
 .la-parsed{margin-top:10px!important}
 .la-parsed-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important}
 .la-mini{min-width:0!important;min-height:92px!important;padding:10px 10px 14px!important;overflow:hidden!important;display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;align-items:start!important}
-.la-mini-ico{width:24px!important;height:24px!important;font-size:.72rem!important}
+.la-mini-ico{width:28px!important;height:28px!important;font-size:.54rem!important;display:grid!important;place-items:center!important}
 .la-mini-label{font-size:.63rem!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.15!important}
 .la-mini-pair{grid-column:1/-1!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:6px!important;margin-top:7px!important}
 .la-mini-side{min-width:0!important;text-align:center!important}
@@ -1392,7 +1392,7 @@ body:not([data-theme="light"]) .la-signal-note{color:#b7aa7a!important}
 
 
   function laSetMode(mode){var a=document.getElementById('laModeAuto'),m=document.getElementById('laModeManual');if(a)a.classList.toggle('active',mode==='auto');if(m)m.classList.toggle('active',mode==='manual')}
-  function laMiniIcon(label){var map={'xG':'↗','xGOT':'◎','Possesso':'◔','Tiri':'▥','Tiri in porta':'◉','Big chances':'★','Corner':'⚑','Tiri in area':'▣','Tocchi area':'☝','xA':'↗','Tiri bloccati':'▦','Parate':'◒'};return map[label]||'•'}
+  function laMiniIcon(label){var map={'xG':'xG','xGOT':'xGT','Possesso':'POS','Tiri':'TIR','Tiri in porta':'SOT','Big chances':'BIG','Corner':'CRN','Tiri in area':'BOX','Tocchi area':'TCH','xA':'xA','Tiri bloccati':'BLK','Parate':'SV'};return map[label]||'ST'}
 
   function laPrettyStrategy(name){var s=String(name||'').trim();if(!s)return '';return s.replace(/0\.5HT/ig,'0.5 HT').replace(/1\.5FT/ig,'1.5 FT').replace(/\s+/g,' ')}
   function laDisplayState(x){if(x.state!=='NO BET')return x.state;var r=laNorm(x.reason+' '+x.why);if(r.indexOf('finestra operativa superata')!==-1||r.indexOf('tempo residuo ridotto')!==-1)return 'NO BET';return 'NO BET ORA'}
