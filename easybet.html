@@ -643,7 +643,26 @@ body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data
     if(currentView==='live'){grid.classList.add('live-mode')}
     grid.innerHTML=list.map(renderMatchCard).join('')
   }
-  function load(){fetch('/api/state').then(r=>r.json()).then(function(s){matches=(s.matches||[]).slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});render();document.getElementById('refreshNote').textContent='aggiornato alle '+new Date().toLocaleTimeString('it-IT')}).catch(function(){document.getElementById('refreshNote').textContent='errore di aggiornamento'})}
+  function load(){
+    var note=document.getElementById('refreshNote'),grid=document.getElementById('grid');
+    if(note) note.textContent='aggiornamento…';
+    var ctrl=window.AbortController?new AbortController():null;
+    var timer=setTimeout(function(){if(ctrl)ctrl.abort()},10000);
+    fetch('/api/matches',{signal:ctrl?ctrl.signal:undefined,cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+      .then(function(s){
+        clearTimeout(timer);
+        matches=(s.matches||[]).slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});
+        render();
+        if(note)note.textContent='aggiornato alle '+new Date().toLocaleTimeString('it-IT');
+      })
+      .catch(function(err){
+        clearTimeout(timer);
+        console.error('EasyBet load:',err);
+        if(note)note.textContent='errore di aggiornamento';
+        if(grid && (!matches||!matches.length))grid.innerHTML='<div class="empty">Impossibile caricare le partite. Riprovo automaticamente tra pochi secondi.</div>';
+      })
+  }
   function setView(view,scroll){
     currentView=view||'home';currentFilter='tutte';if(currentView!=='pronostici')currentPronosticiStrategy=null;
     document.querySelectorAll('.pill').forEach(function(p){p.classList.toggle('active',p.getAttribute('data-f')==='tutte')});

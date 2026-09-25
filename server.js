@@ -95,6 +95,17 @@ function alertSettingsOut(row) {
   return { notifyMinutes: Number(row.notify_minutes) || 10 };
 }
 
+// ---------- public matches feed (lightweight: used by EasyBet public page) ----------
+app.get('/api/matches', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM matches ORDER BY start_at ASC');
+    res.json({ matches: rows.map(matchOut) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nel caricamento delle partite.' });
+  }
+});
+
 // ---------- combined state (used for initial load + polling sync) ----------
 app.get('/api/state', async (req, res) => {
   try {
