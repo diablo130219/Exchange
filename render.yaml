@@ -17,3 +17,5 @@ services:
         sync: false
       - key: PUBLIC_SITE_URL
         sync: false
+      - key: GOALDIR_API_KEY
+        sync: false

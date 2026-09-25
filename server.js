@@ -132,6 +132,176 @@ app.get('/api/state', async (req, res) => {
   }
 });
 
+
+// ---------- GoalDir / BSD live statistics (free REST API) ----------
+const GOALDIR_API_KEY = String(process.env.GOALDIR_API_KEY || process.env.BSD_API_KEY || '').trim();
+const GOALDIR_BASE = 'https://sports.bzzoiro.com/api/v2';
+
+function gdNormName(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\b(fc|cf|afc|sc|ac|club|calcio|football|futbol|fk|sk|u19|u20|u21|u23)\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function gdTokens(s) { return gdNormName(s).split(' ').filter(Boolean); }
+function gdNameScore(a, b) {
+  const na = gdNormName(a), nb = gdNormName(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  if (na.includes(nb) || nb.includes(na)) return 0.92;
+  const aa = new Set(gdTokens(a)), bb = new Set(gdTokens(b));
+  let inter = 0;
+  aa.forEach(x => { if (bb.has(x)) inter++; });
+  const denom = Math.max(aa.size, bb.size, 1);
+  return inter / denom;
+}
+function gdEventTeamName(ev, side) {
+  const direct = ev && ev[side];
+  if (typeof direct === 'string') return direct;
+  if (direct && typeof direct === 'object') return direct.name || direct.short_name || direct.team_name || '';
+  const obj = ev && (ev[side + '_team'] || ev[side + 'Team']);
+  if (typeof obj === 'string') return obj;
+  if (obj && typeof obj === 'object') return obj.name || obj.short_name || obj.team_name || '';
+  return (ev && (ev[side + '_name'] || ev[side + 'Name'])) || '';
+}
+function gdEventId(ev) { return ev && (ev.id || ev.event_id || ev.eventId); }
+function gdPick(obj, keys) {
+  if (!obj || typeof obj !== 'object') return null;
+  for (const k of keys) {
+    if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] !== null && obj[k] !== undefined && obj[k] !== '') {
+      const v = obj[k];
+      if (typeof v === 'object' && v) {
+        if (v.actual !== undefined && v.actual !== null) return Number(v.actual);
+        if (v.value !== undefined && v.value !== null) return Number(v.value);
+      }
+      const n = Number(v);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+async function gdFetch(pathname, timeoutMs = 9000) {
+  if (!GOALDIR_API_KEY) {
+    const e = new Error('GOALDIR_API_KEY non configurata.'); e.code = 'NO_GOALDIR_KEY'; throw e;
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const r = await fetch(GOALDIR_BASE + pathname, {
+      headers: { 'Authorization': 'Token ' + GOALDIR_API_KEY, 'Accept': 'application/json' },
+      signal: controller.signal
+    });
+    const bodyText = await r.text();
+    let data = null;
+    try { data = bodyText ? JSON.parse(bodyText) : null; } catch (_) { data = { raw: bodyText }; }
+    if (!r.ok) {
+      const e = new Error((data && (data.detail || data.error || data.message)) || ('GoalDir HTTP ' + r.status));
+      e.status = r.status; e.payload = data; throw e;
+    }
+    return { data, rate: r.headers.get('ratelimit') || '', policy: r.headers.get('ratelimit-policy') || '' };
+  } finally { clearTimeout(timer); }
+}
+function gdNormalizeStats(statsData) {
+  const bag = (statsData && statsData.stats) || statsData || {};
+  const h = bag.home || {}, a = bag.away || {};
+  const pair = (keys) => [gdPick(h, keys), gdPick(a, keys)];
+  let xgotH = null, xgotA = null;
+  if (Array.isArray(statsData && statsData.shotmap)) {
+    let hs = 0, as = 0, hc = 0, ac = 0;
+    for (const sh of statsData.shotmap) {
+      if (!sh || sh.xgot === null || sh.xgot === undefined) continue;
+      const v = Number(sh.xgot); if (!Number.isFinite(v)) continue;
+      if (sh.home === true) { hs += v; hc++; } else if (sh.home === false) { as += v; ac++; }
+    }
+    if (hc) xgotH = Math.round(hs * 100) / 100;
+    if (ac) xgotA = Math.round(as * 100) / 100;
+  }
+  const out = {
+    xg: pair(['xg','expected_goals']),
+    xgot: [xgotH, xgotA],
+    possession: pair(['ball_possession','possession']),
+    shots: pair(['total_shots','shots_total']),
+    sot: pair(['shots_on_target','shots_on_goal']),
+    big: pair(['big_chances','big_chances_created']),
+    corners: pair(['corner_kicks','corners']),
+    boxshots: pair(['shots_inside_box','shots_in_box']),
+    touches: pair(['touches_in_box','touches_in_opposition_box','touches_opposition_box']),
+    xa: pair(['expected_assists','xa']),
+    blocked: pair(['blocked_shots','shots_blocked']),
+    saves: pair(['goalkeeper_saves','saves']),
+    off: pair(['shots_off_target']),
+    offsides: pair(['offsides'])
+  };
+  return out;
+}
+function gdLiveMinute(ev) {
+  const v = ev && (ev.current_minute ?? (ev.time && ev.time.minute) ?? ev.minute);
+  const n = Number(v); return Number.isFinite(n) ? n : null;
+}
+function gdLiveScore(ev) {
+  const h = ev && (ev.home_score ?? (ev.score && ev.score.home));
+  const a = ev && (ev.away_score ?? (ev.score && ev.score.away));
+  return (h !== null && h !== undefined && a !== null && a !== undefined) ? String(h) + '-' + String(a) : '';
+}
+
+app.get('/api/goaldir/status', async (req, res) => {
+  res.json({ configured: !!GOALDIR_API_KEY, provider: 'GoalDir / BSD', mode: 'REST', pollSeconds: 60 });
+});
+
+app.get('/api/goaldir/live-stats', async (req, res) => {
+  const home = String(req.query.home || '').trim();
+  const away = String(req.query.away || '').trim();
+  if (!home || !away) return res.status(400).json({ error: 'Squadre mancanti.' });
+  if (!GOALDIR_API_KEY) return res.status(503).json({ code: 'NO_GOALDIR_KEY', error: 'GOALDIR_API_KEY non configurata sul server.' });
+  try {
+    const liveResp = await gdFetch('/events/live/');
+    const payload = liveResp.data;
+    const events = Array.isArray(payload) ? payload : (Array.isArray(payload && payload.results) ? payload.results : (Array.isArray(payload && payload.events) ? payload.events : []));
+    let best = null, bestScore = 0;
+    for (const ev of events) {
+      const eh = gdEventTeamName(ev, 'home'), ea = gdEventTeamName(ev, 'away');
+      const direct = (gdNameScore(home, eh) + gdNameScore(away, ea)) / 2;
+      const swapped = (gdNameScore(home, ea) + gdNameScore(away, eh)) / 2;
+      const score = Math.max(direct, swapped * 0.92);
+      if (score > bestScore) { bestScore = score; best = ev; }
+    }
+    if (!best || bestScore < 0.44) {
+      return res.status(404).json({
+        code: 'MATCH_NOT_FOUND',
+        error: 'Partita non trovata nel feed live GoalDir oppure competizione non coperta.',
+        liveCount: events.length,
+        sample: events.slice(0, 8).map(ev => ({ id: gdEventId(ev), home: gdEventTeamName(ev,'home'), away: gdEventTeamName(ev,'away'), minute: gdLiveMinute(ev) }))
+      });
+    }
+    const eventId = gdEventId(best);
+    if (!eventId) return res.status(502).json({ error: 'Evento GoalDir senza ID.' });
+    const statsResp = await gdFetch('/events/' + encodeURIComponent(eventId) + '/stats/');
+    const normalized = gdNormalizeStats(statsResp.data || {});
+    res.json({
+      ok: true,
+      provider: 'GoalDir / BSD',
+      eventId,
+      matchScore: Math.round(bestScore * 100) / 100,
+      home: gdEventTeamName(best,'home'),
+      away: gdEventTeamName(best,'away'),
+      minute: gdLiveMinute(best),
+      score: gdLiveScore(best),
+      stats: normalized,
+      xgEstimated: statsResp.data && statsResp.data.xg_estimated === true,
+      hasShotmap: Array.isArray(statsResp.data && statsResp.data.shotmap) && statsResp.data.shotmap.length > 0,
+      hasMomentum: Array.isArray(statsResp.data && statsResp.data.momentum) && statsResp.data.momentum.length > 0,
+      rateLimit: statsResp.rate || liveResp.rate || ''
+    });
+  } catch (err) {
+    console.error('GoalDir live stats:', err);
+    const status = err.status && Number.isFinite(Number(err.status)) ? Number(err.status) : (err.code === 'NO_GOALDIR_KEY' ? 503 : 502);
+    res.status(status).json({ code: err.code || 'GOALDIR_ERROR', error: err.message || 'Errore GoalDir.' });
+  }
+});
+
 // ---------- casse ----------
 app.post('/api/casse', async (req, res) => {
   try {
