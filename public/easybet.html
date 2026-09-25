@@ -204,6 +204,21 @@ body:not([data-theme="light"]) .la-mini b{color:#fff8ea}
 body:not([data-theme="light"]) .la-close{background:#242018;color:#f1eadc;border-color:#4a4233}
 body:not([data-theme="light"]) .la-close:hover{background:#332c20;border-color:#75613a}
 
+/* Live Analyzer - dark premium compact refinement */
+body:not([data-theme="light"]) .live-analyzer-modal{max-height:90vh;scrollbar-width:thin;scrollbar-color:rgba(214,174,70,.38) transparent}
+body:not([data-theme="light"]) .live-analyzer-modal::-webkit-scrollbar{width:6px}
+body:not([data-theme="light"]) .live-analyzer-modal::-webkit-scrollbar-track{background:transparent}
+body:not([data-theme="light"]) .live-analyzer-modal::-webkit-scrollbar-thumb{background:rgba(214,174,70,.34);border-radius:999px}
+body:not([data-theme="light"]) .la-body{padding:15px;gap:14px}
+body:not([data-theme="light"]) .la-panel{padding:13px}
+body:not([data-theme="light"]) .la-textarea{min-height:285px}
+body:not([data-theme="light"]) .la-signals{gap:7px}
+body:not([data-theme="light"]) .la-signal{padding:10px 11px}
+body:not([data-theme="light"]) .la-signal.yellow{background:linear-gradient(180deg,rgba(176,139,38,.29),rgba(105,82,22,.20));border-color:rgba(235,199,86,.68);box-shadow:inset 0 0 0 1px rgba(240,204,92,.05)}
+body:not([data-theme="light"]) .la-signal.red{background:linear-gradient(180deg,rgba(143,58,50,.28),rgba(82,34,30,.20));border-color:rgba(221,108,96,.66);box-shadow:inset 0 0 0 1px rgba(230,117,104,.04)}
+body:not([data-theme="light"]) .la-signal.yellow .la-pill{background:#544313;color:#ffe087;border-color:rgba(244,207,94,.20)}
+body:not([data-theme="light"]) .la-signal.red .la-pill{background:#562621;color:#ffc0b8;border-color:rgba(236,117,104,.18)}
+
 @media(max-width:980px){.la-body{grid-template-columns:1fr}.la-meta{grid-template-columns:1fr 1fr 90px 100px}.la-meta .la-favorite{grid-column:span 2}.la-parsed-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:620px){.live-analyzer-overlay{padding:8px}.la-body{padding:10px}.la-meta{grid-template-columns:1fr 1fr}.la-meta .la-field:nth-child(1),.la-meta .la-field:nth-child(2),.la-meta .la-favorite{grid-column:span 2}.la-parsed-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 
