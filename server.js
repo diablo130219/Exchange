@@ -241,6 +241,26 @@ function gdLiveMinute(ev) {
   const v = ev && (ev.current_minute ?? (ev.time && ev.time.minute) ?? ev.minute);
   const n = Number(v); return Number.isFinite(n) ? n : null;
 }
+function gdStatusText(ev) {
+  if (!ev || typeof ev !== 'object') return '';
+  const vals = [ev.status, ev.status_text, ev.statusText, ev.state, ev.phase, ev.period, ev.stage];
+  for (const v of vals) {
+    if (v == null) continue;
+    if (typeof v === 'string' || typeof v === 'number') {
+      const t = String(v).trim(); if (t) return t;
+    }
+    if (typeof v === 'object') {
+      for (const k of ['name','type','description','label','short_name','shortName','code']) {
+        if (v[k] != null && String(v[k]).trim()) return String(v[k]).trim();
+      }
+    }
+  }
+  return '';
+}
+function gdIsHalftime(ev) {
+  const s = gdStatusText(ev).toLowerCase().replace(/[_-]+/g, ' ').trim();
+  return s === 'ht' || s === 'half time' || s === 'halftime' || s === 'intervallo' || s.includes('half time') || s.includes('halftime');
+}
 function gdLiveScore(ev) {
   const h = ev && (ev.home_score ?? (ev.score && ev.score.home));
   const a = ev && (ev.away_score ?? (ev.score && ev.score.away));
@@ -346,6 +366,8 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
       away: gdEventTeamName(best,'away'),
       minute: gdLiveMinute(best),
       score: gdLiveScore(best),
+      isHalftime: gdIsHalftime(best),
+      liveStatus: gdStatusText(best),
       firstGoalMinute,
       earlyGoalBefore25: firstGoalMinute !== null && firstGoalMinute < 25,
       stats: normalized,
