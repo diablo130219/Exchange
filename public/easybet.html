@@ -637,44 +637,57 @@ body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data
     if(currentView==='live'){grid.classList.add('live-mode')}
     grid.innerHTML=list.map(renderMatchCard).join('')
   }
-  var loadInProgress=false,hasLoadedOnce=false;
-  function fetchJsonWithTimeout(url,ms){
-    var ctrl=window.AbortController?new AbortController():null;
-    var timer=setTimeout(function(){if(ctrl)ctrl.abort()},ms||7000);
-    return fetch(url,{signal:ctrl?ctrl.signal:undefined,cache:'no-store'})
-      .then(function(r){if(!r.ok)throw new Error(url+' HTTP '+r.status);return r.json()})
-      .finally(function(){clearTimeout(timer)});
-  }
+  var loadInProgress=false,hasLoadedOnce=false,loadWatchdog=null;
   function normalizeMatchesPayload(s){
-    if(Array.isArray(s))return s;
-    if(s&&Array.isArray(s.matches))return s.matches;
+    if(Array.isArray(s)) return s;
+    if(s && Array.isArray(s.matches)) return s.matches;
     return [];
+  }
+  function publicLoadError(message){
+    var note=document.getElementById('refreshNote'),grid=document.getElementById('grid');
+    loadInProgress=false;
+    if(note) note.textContent=hasLoadedOnce?'ultimo aggiornamento mantenuto':'errore aggiornamento';
+    if(grid&&!hasLoadedOnce) grid.innerHTML='<div class="empty">'+esc(message||'Impossibile caricare le partite. Riprovo automaticamente.')+'</div>';
+  }
+  function applyPublicState(s){
+    if(loadWatchdog){clearTimeout(loadWatchdog);loadWatchdog=null}
+    var incoming=normalizeMatchesPayload(s);
+    matches=incoming.slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});
+    hasLoadedOnce=true;
+    loadInProgress=false;
+    render();
+    var note=document.getElementById('refreshNote');
+    if(note) note.textContent='aggiornato alle '+new Date().toLocaleTimeString('it-IT');
   }
   function load(){
     if(loadInProgress)return;
     loadInProgress=true;
-    var note=document.getElementById('refreshNote'),grid=document.getElementById('grid');
-    if(note&&!hasLoadedOnce)note.textContent='caricamento…';
-    /* /api/state è lo stesso endpoint già usato dall'admin. Se non risponde,
-       si prova automaticamente il feed leggero /api/matches. */
-    fetchJsonWithTimeout('/api/state',7000)
-      .catch(function(errState){
-        console.warn('EasyBet /api/state fallback:',errState);
-        return fetchJsonWithTimeout('/api/matches',7000);
-      })
-      .then(function(s){
-        var incoming=normalizeMatchesPayload(s);
-        matches=incoming.slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});
-        hasLoadedOnce=true;
-        render();
-        if(note)note.textContent='aggiornato alle '+new Date().toLocaleTimeString('it-IT');
-      })
+    var note=document.getElementById('refreshNote');
+    if(note)note.textContent=hasLoadedOnce?'aggiornamento…':'caricamento…';
+
+    /* Usa ESATTAMENTE lo stesso endpoint e lo stesso metodo dell'area admin,
+       che e' la fonte dati gia' verificata per l'elenco partite. */
+    var settled=false;
+    loadWatchdog=setTimeout(function(){
+      if(settled)return;
+      /* Se per qualunque motivo /api/state tarda, prova il feed partite diretto. */
+      fetch('/api/matches?ts='+Date.now(),{cache:'no-store'})
+        .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+        .then(function(s){if(settled)return;settled=true;applyPublicState(s)})
+        .catch(function(){if(settled)return;settled=true;publicLoadError('Impossibile aggiornare i dati pubblici in questo momento.')});
+    },6000);
+
+    fetch('/api/state?ts='+Date.now(),{cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+      .then(function(s){if(settled)return;settled=true;applyPublicState(s)})
       .catch(function(err){
-        console.error('EasyBet load:',err);
-        if(note)note.textContent=hasLoadedOnce?'ultimo aggiornamento mantenuto':'errore di aggiornamento';
-        if(grid&&!hasLoadedOnce)grid.innerHTML='<div class="empty">Impossibile caricare le partite. Riprovo automaticamente tra pochi secondi.</div>';
-      })
-      .finally(function(){loadInProgress=false});
+        console.warn('EasyBet /api/state:',err);
+        if(settled)return;
+        fetch('/api/matches?ts='+Date.now(),{cache:'no-store'})
+          .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+          .then(function(s){if(settled)return;settled=true;applyPublicState(s)})
+          .catch(function(){if(settled)return;settled=true;publicLoadError('Impossibile aggiornare i dati pubblici in questo momento.')});
+      });
   }
   function setView(view,scroll){
     currentView=view||'home';currentFilter='tutte';if(currentView!=='pronostici')currentPronosticiStrategy=null;
