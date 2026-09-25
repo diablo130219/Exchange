@@ -568,19 +568,7 @@ const CREST_ALIASES = {
   'lokomotiv sofia 1929': ['Lokomotiv Sofia', 'Lokomotiv 1929 Sofia'],
   'cska sofia': ['CSKA Sofia'],
   'zalgiris': ['FK Zalgiris', 'Zalgiris Vilnius'],
-  'kauno zalgiris': ['FK Kauno Zalgiris', 'Kauno Zalgiris'],
-  'basel': ['FC Basel 1893', 'FC Basel', 'Basel 1893'],
-  'fc basel': ['FC Basel 1893', 'FC Basel', 'Basel 1893'],
-  'st gallen': ['FC St. Gallen 1879', 'FC St Gallen', 'St. Gallen'],
-  'saint gallen': ['FC St. Gallen 1879', 'FC St Gallen', 'St. Gallen'],
-  'atletico de madrid': ['Atletico Madrid', 'Club Atletico de Madrid'],
-  'atletico madrid': ['Atletico Madrid', 'Club Atletico de Madrid'],
-  'real madrid': ['Real Madrid CF', 'Real Madrid'],
-  'sint truiden': ['Sint-Truidense VV', 'STVV', 'Sint-Truiden'],
-  'sint truidense': ['Sint-Truidense VV', 'STVV', 'Sint-Truiden'],
-  'westerlo': ['KVC Westerlo', 'Westerlo'],
-  'saint etienne': ['AS Saint-Etienne', 'AS Saint Etienne', 'Saint-Etienne'],
-  'st etienne': ['AS Saint-Etienne', 'AS Saint Etienne', 'Saint-Etienne']
+  'kauno zalgiris': ['FK Kauno Zalgiris', 'Kauno Zalgiris']
 };
 const COUNTRY_ALIASES = {
   'republic of ireland':'ireland', 'england':'england', 'scotland':'scotland',
@@ -670,9 +658,8 @@ async function lookupCrest(name,countryHint){
       const data=await r.json();
       const teams=(data&&Array.isArray(data.teams)?data.teams:[]).filter(t=>t&&t.strBadge);
       for(const team of teams){
-        const passesCountry=!countryHint || countriesMatch(team.strCountry,countryHint);
-        if(countryHint && !passesCountry) continue;
         const score=crestCandidateScore(team,name,query,countryHint);
+        const passesCountry=!countryHint || countriesMatch(team.strCountry,countryHint);
         const finalScore=score + (passesCountry ? 25 : 0);
         if(finalScore>bestScore){bestScore=finalScore;best=team;}
       }
@@ -680,7 +667,7 @@ async function lookupCrest(name,countryHint){
     }catch(err){ console.error('Lookup stemma "'+query+'":',err.message); }
   }
   if(best && best.strBadge) return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb'};
-  return {url:null,matched:null,source:'none'};
+  return await lookupCrestWikipedia(name,countryHint);
 }
 
 app.get('/api/team-crest', async (req, res) => {
@@ -694,9 +681,8 @@ app.get('/api/team-crest', async (req, res) => {
     if(cached){
       if(cached.manual) return res.json({url:cached.url||null,manual:true,source:'manual'});
       const age=now-Number(cached.fetched_at);
-      const riskyAutoImage=!!(cached.url && /wikimedia|wikipedia/i.test(String(cached.url)));
       const fresh=cached.url ? age<CREST_TTL_HIT_MS : age<CREST_TTL_MISS_MS;
-      if(fresh && !riskyAutoImage) return res.json({url:cached.url||null,manual:false,source:'cache'});
+      if(fresh) return res.json({url:cached.url||null,manual:false,source:'cache'});
     }
     const found=await lookupCrest(name,countryHint);
     await pool.query(
