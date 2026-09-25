@@ -637,25 +637,44 @@ body[data-theme="light"] #grid.pronostici-summary-mode .pstrategy-list,body[data
     if(currentView==='live'){grid.classList.add('live-mode')}
     grid.innerHTML=list.map(renderMatchCard).join('')
   }
-  function load(){
-    var note=document.getElementById('refreshNote'),grid=document.getElementById('grid');
-    if(note) note.textContent='aggiornamento…';
+  var loadInProgress=false,hasLoadedOnce=false;
+  function fetchJsonWithTimeout(url,ms){
     var ctrl=window.AbortController?new AbortController():null;
-    var timer=setTimeout(function(){if(ctrl)ctrl.abort()},10000);
-    fetch('/api/matches',{signal:ctrl?ctrl.signal:undefined,cache:'no-store'})
-      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+    var timer=setTimeout(function(){if(ctrl)ctrl.abort()},ms||7000);
+    return fetch(url,{signal:ctrl?ctrl.signal:undefined,cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error(url+' HTTP '+r.status);return r.json()})
+      .finally(function(){clearTimeout(timer)});
+  }
+  function normalizeMatchesPayload(s){
+    if(Array.isArray(s))return s;
+    if(s&&Array.isArray(s.matches))return s.matches;
+    return [];
+  }
+  function load(){
+    if(loadInProgress)return;
+    loadInProgress=true;
+    var note=document.getElementById('refreshNote'),grid=document.getElementById('grid');
+    if(note&&!hasLoadedOnce)note.textContent='caricamento…';
+    /* /api/state è lo stesso endpoint già usato dall'admin. Se non risponde,
+       si prova automaticamente il feed leggero /api/matches. */
+    fetchJsonWithTimeout('/api/state',7000)
+      .catch(function(errState){
+        console.warn('EasyBet /api/state fallback:',errState);
+        return fetchJsonWithTimeout('/api/matches',7000);
+      })
       .then(function(s){
-        clearTimeout(timer);
-        matches=(s.matches||[]).slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});
+        var incoming=normalizeMatchesPayload(s);
+        matches=incoming.slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});
+        hasLoadedOnce=true;
         render();
         if(note)note.textContent='aggiornato alle '+new Date().toLocaleTimeString('it-IT');
       })
       .catch(function(err){
-        clearTimeout(timer);
         console.error('EasyBet load:',err);
-        if(note)note.textContent='errore di aggiornamento';
-        if(grid && (!matches||!matches.length))grid.innerHTML='<div class="empty">Impossibile caricare le partite. Riprovo automaticamente tra pochi secondi.</div>';
+        if(note)note.textContent=hasLoadedOnce?'ultimo aggiornamento mantenuto':'errore di aggiornamento';
+        if(grid&&!hasLoadedOnce)grid.innerHTML='<div class="empty">Impossibile caricare le partite. Riprovo automaticamente tra pochi secondi.</div>';
       })
+      .finally(function(){loadInProgress=false});
   }
   function setView(view,scroll){
     currentView=view||'home';currentFilter='tutte';if(currentView!=='pronostici')currentPronosticiStrategy=null;
