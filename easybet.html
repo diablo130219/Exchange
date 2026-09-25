@@ -1061,6 +1061,12 @@ body[data-theme="light"] .la-first-goal input{background:#fff9e8!important;borde
 body:not([data-theme="light"]) .la-first-goal input{background:#16130d!important;border-color:#6d5926!important;color:#f3d271!important}
 @media(max-width:1180px){.la-meta{grid-template-columns:1fr 1fr 82px 92px 105px!important}.la-meta .la-favorite{grid-column:span 5!important}}
 @media(max-width:700px){.la-meta{grid-template-columns:1fr 1fr!important}.la-meta .la-first-goal,.la-meta .la-favorite{grid-column:span 1!important}}
+
+/* Quote live manuali: disponibili sia in AUTO sia in MANUALE */
+.la-odds-wrap{margin:0 0 11px;padding:10px;border:1px solid rgba(216,173,61,.22);border-radius:13px;background:rgba(216,173,61,.045)}
+.la-odds-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;font-size:.63rem;font-weight:900;color:#9e927d}.la-odds-title b{color:#f0c95f;font-size:.68rem}.la-odds-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.la-odds-field label{display:block;margin-bottom:4px;font-size:.55rem;font-weight:800;color:#8f8778}.la-odds-field input{width:100%;min-width:0;border:1px solid #343027;border-radius:9px;background:#090909;color:#f5f1e7;padding:8px 9px;font:inherit;font-weight:800;outline:none}.la-odds-field input:focus{border-color:#caa33d;box-shadow:0 0 0 3px rgba(216,173,61,.10)}
+body[data-theme="light"] .la-odds-wrap{background:#fff9e9;border-color:#e4d39d}body[data-theme="light"] .la-odds-title{color:#7b7466}body[data-theme="light"] .la-odds-title b{color:#b47d00}body[data-theme="light"] .la-odds-field label{color:#6d7480}body[data-theme="light"] .la-odds-field input{background:#fff;border-color:#d9cfbc;color:#17243b}
+@media(max-width:900px){.la-odds-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.la-odds-grid{grid-template-columns:1fr 1fr}}
 </style>
 
 </head>
@@ -1467,119 +1473,128 @@ body:not([data-theme="light"]) .la-first-goal input{background:#16130d!important
   function laParse(txt){var l=laLines(txt),m={},defs={xg:['goal previsti (xg)','expected goals','xg'],xgot:['xg sui tiri in porta','xgot'],possession:['possesso palla','possesso'],shots:['tiri totali'],sot:['tiri in porta'],big:['grandi occasioni','big chances'],corners:['calci d’angolo','calci d\'angolo','calci dangolo'],boxshots:['tiri dall\'area di rigore','tiri dall’area di rigore','tiri in area'],touches:['palloni toccati nell\'area avversaria','palloni toccati nell’area avversaria','tocchi nell\'area avversaria','tocchi in area'],xa:['assist previsti (xa)','assist previsti','xa'],saves:['parate'],blocked:['tiri fermati','tiri bloccati'],off:['tiri fuori'],offsides:['fuorigioco']};Object.keys(defs).forEach(function(k){m[k]=k==='xgot'?laPair(l,defs[k],['xgot affrontati','xgot faced','expected goals on target faced']):laPair(l,defs[k])});function sanePair(p,min,max){return (p||[null,null]).map(function(v){return v==null||!Number.isFinite(Number(v))||Number(v)<min||Number(v)>max?null:Number(v)})}m.xg=sanePair(m.xg,0,15);m.xgot=sanePair(m.xgot,0,15);m.xa=sanePair(m.xa,0,15);m.possession=sanePair(m.possession,0,100);return m}
   function laSum(p){return p&&p[0]!=null&&p[1]!=null?p[0]+p[1]:null}function laDiff(p){return p&&p[0]!=null&&p[1]!=null?p[0]-p[1]:null}function laR(v){return v==null?null:Math.round((v+Number.EPSILON)*100)/100}function laFmt(p,s){s=s||'';return p&&p[0]!=null&&p[1]!=null?laR(p[0])+s+' – '+laR(p[1])+s:'N/D'}
   function laSig(name,state,reason,why,criteria){return{name:name,state:state,reason:reason,why:why,criteria:criteria||[]}}
-  function laAnalyzeStats(m,min,sc,favSel,homeName,awayName){
+  function laAnalyzeStats(m,min,sc,favSel,homeName,awayName,odds){
+    odds=odds||{};
     var xg=laSum(m.xg),sot=laSum(m.sot),shots=laSum(m.shots),big=laSum(m.big),box=laSum(m.boxshots),touches=laSum(m.touches);
     var goals=0,sm=String(sc||'').match(/(\d+)\s*[-:]\s*(\d+)/);if(sm)goals=Number(sm[1])+Number(sm[2]);
     var minuteText=String(min==null?'':min).trim();
     var isHT=/^(ht|intervallo|half\s*time)$/i.test(minuteText);
     var minuteN=isHT?45:laNum(min);
-    function dyn(list){
+    function line(label,value,pass,weight){return [label,!!pass,value!=null,weight||1]}
+    function weighted(list){
       var available=list.filter(function(x){return x[2]});
+      var totalW=available.reduce(function(a,x){return a+(x[3]||1)},0);
+      var passW=available.filter(function(x){return x[1]}).reduce(function(a,x){return a+(x[3]||1)},0);
       var passed=available.filter(function(x){return x[1]}).length;
-      return {checks:available.map(function(x){return [x[0],x[1]]}),available:available.length,passed:passed,ratio:available.length?passed/available.length:0};
+      return {checks:available.map(function(x){return [x[0],x[1]]}),available:available.length,passed:passed,score:totalW?passW/totalW:0,totalWeight:totalW};
     }
-    function line(label,value,pass){return [label,!!pass,value!=null]}
-    var q=dyn([
-      line('xG',xg,xg!=null&&xg>=0.65),
-      line('SOT',sot,sot!=null&&sot>=2),
-      line('Big chances',big,big!=null&&big>=1),
-      line('Tiri area',box,box!=null&&box>=6),
-      line('Tocchi area',touches,touches!=null&&touches>=12),
-      line('Tiri',shots,shots!=null&&shots>=6)
+    function oddNum(v){var n=Number(String(v==null?'':v).replace(',','.'));return Number.isFinite(n)&&n>1?n:null}
+    function oddText(v){var n=oddNum(v);return n==null?'':(' • quota '+n.toFixed(2))}
+    function softState(name,score,checks,greenAt,strongAt,waitAt,reasonBase,whyBase,core){
+      if(checks.available<2)return laSig(name,'DATI','Dati live insufficienti per una lettura affidabile.','Servono almeno 2 indicatori disponibili; le metriche mancanti vengono ignorate.',checks.checks);
+      if(score>=greenAt&&(core!==false))return laSig(name,'VERDE',reasonBase+' '+checks.passed+'/'+checks.available+' criteri disponibili.','Punteggio adattivo: '+Math.round(score*100)+'%. '+whyBase,checks.checks);
+      if(score>=strongAt)return laSig(name,'ATTENDI FORTE','Segnale vicino all’ingresso: '+checks.passed+'/'+checks.available+' criteri disponibili.','Punteggio adattivo: '+Math.round(score*100)+'%. Manca una conferma forte.',checks.checks);
+      if(score>=waitAt)return laSig(name,'ATTENDI','Segnali presenti ma ancora incompleti: '+checks.passed+'/'+checks.available+'.','Punteggio adattivo: '+Math.round(score*100)+'%. '+whyBase,checks.checks);
+      return laSig(name,'NO BET','Indicatori disponibili ancora troppo deboli.','Punteggio adattivo: '+Math.round(score*100)+'%. Le metriche assenti non penalizzano.',checks.checks);
+    }
+
+    var htOdds=oddNum(odds.ht),ftOdds=oddNum(odds.ft),layOdds=oddNum(odds.lay),favOdds=oddNum(odds.fav);
+    var q=weighted([
+      line('xG',xg,xg!=null&&xg>=0.55,1.4),
+      line('SOT',sot,sot!=null&&sot>=2,1.5),
+      line('Big chances',big,big!=null&&big>=1,1.1),
+      line('Tiri area',box,box!=null&&box>=5,1.0),
+      line('Tocchi area',touches,touches!=null&&touches>=10,0.7),
+      line('Tiri',shots,shots!=null&&shots>=6,1.0),
+      line('Quota',htOdds,htOdds!=null&&htOdds>=1.55&&htOdds<=2.10,0.6)
     ]);
-    var s=dyn([
-      line('xG',xg,xg!=null&&xg>=1),
-      line('SOT',sot,sot!=null&&sot>=3),
-      line('Big chances',big,big!=null&&big>=1),
-      line('Tiri area',box,box!=null&&box>=8),
-      line('Tocchi area',touches,touches!=null&&touches>=15),
-      line('Tiri',shots,shots!=null&&shots>=8)
+    var s=weighted([
+      line('xG',xg,xg!=null&&xg>=0.85,1.4),
+      line('SOT',sot,sot!=null&&sot>=3,1.5),
+      line('Big chances',big,big!=null&&big>=1,1.0),
+      line('Tiri area',box,box!=null&&box>=6,1.0),
+      line('Tocchi area',touches,touches!=null&&touches>=12,0.7),
+      line('Tiri',shots,shots!=null&&shots>=7,1.0),
+      line('Quota',ftOdds,ftOdds!=null&&ftOdds>=1.55,0.7)
     ]);
-    var coreHT=(sot!=null&&sot>=2)||(shots!=null&&shots>=8)||(xg!=null&&xg>=0.65);
-    var coreFT=(sot!=null&&sot>=3)||(shots!=null&&shots>=10)||(xg!=null&&xg>=1);
+    var coreHT=(sot!=null&&sot>=2)||(shots!=null&&shots>=7)||(xg!=null&&xg>=0.60);
+    var coreFT=(sot!=null&&sot>=3)||(shots!=null&&shots>=8)||(xg!=null&&xg>=0.90);
     var ht,ft;
     if(minuteN==null)ht=laSig('Over 0.5 HT','DATI','Inserisci il minuto della partita.','Finestra principale 15’–30’.');
     else if(minuteN<15)ht=laSig('Over 0.5 HT','ATTENDI','Non ancora in zona operativa.','La finestra EasyBet parte indicativamente dal 15°.');
     else if(minuteN>32)ht=laSig('Over 0.5 HT','NO BET','Finestra operativa superata.','Non inseguire il mercato troppo tardi.');
     else if(goals>0)ht=laSig('Over 0.5 HT','CHIUSA','C’è già almeno un gol nel match.','La condizione Over 0.5 è raggiunta.');
-    else if(q.available<2)ht=laSig('Over 0.5 HT','DATI','Dati live insufficienti per una lettura affidabile.','Servono almeno 2 indicatori disponibili tra tiri, SOT, xG e metriche d’area.',q.checks);
-    else if(q.ratio>=0.70&&coreHT)ht=laSig('Over 0.5 HT','VERDE','Pressione forte: '+q.passed+'/'+q.available+' criteri disponibili soddisfatti.','Valuto solo le statistiche realmente disponibili. SOT '+(sot??'N/D')+' • Tiri '+(shots??'N/D')+' • xG '+(laR(xg)??'N/D'),q.checks);
-    else if(q.ratio>=0.40||coreHT)ht=laSig('Over 0.5 HT','ATTENDI','Segnali presenti: '+q.passed+'/'+q.available+' criteri disponibili.','Le metriche mancanti non vengono conteggiate come negative; attendo ulteriore conferma.',q.checks);
-    else ht=laSig('Over 0.5 HT','NO BET','Gli indicatori disponibili sono sotto soglia.','Valutazione basata solo sui '+q.available+' dati effettivamente presenti.',q.checks);
+    else ht=softState('Over 0.5 HT',q.score,q,0.60,0.46,0.30,'Pressione live compatibile con l’ingresso.','SOT '+(sot??'N/D')+' • Tiri '+(shots??'N/D')+' • xG '+(laR(xg)??'N/D')+oddText(htOdds),coreHT);
 
     var goalState=(liveAnalyzerCurrentKey&&liveAnalyzerState[liveAnalyzerCurrentKey])||{},earlyGoalBefore25=!!goalState.earlyGoalBefore25,firstGoalKnown=goalState.firstGoalObservedMinute!=null&&Number.isFinite(Number(goalState.firstGoalObservedMinute));
-    var pressureReal=(big!=null&&big>=1)||(box!=null&&box>=8)||(touches!=null&&touches>=15)||(shots!=null&&shots>=10);
-    var pressureStrong=(big!=null&&big>=1)&&((box!=null&&box>=8)||(touches!=null&&touches>=15)||(shots!=null&&shots>=12));
-    var midChecks=dyn([
-      line('xG ≥ 1.30',xg,xg!=null&&xg>=1.30),
-      line('SOT ≥ 4',sot,sot!=null&&sot>=4),
-      line('Pressione reale',pressureReal,pressureReal),
-      line('Big chances',big,big!=null&&big>=1),
-      line('Tiri ≥ 10',shots,shots!=null&&shots>=10)
+    var pressureReal=(big!=null&&big>=1)||(box!=null&&box>=6)||(touches!=null&&touches>=12)||(shots!=null&&shots>=8);
+    var pressureStrong=((big!=null&&big>=1)?1:0)+((box!=null&&box>=8)?1:0)+((touches!=null&&touches>=15)?1:0)+((shots!=null&&shots>=10)?1:0)>=2;
+    var midChecks=weighted([
+      line('xG ≥ 1.20',xg,xg!=null&&xg>=1.20,1.5),
+      line('SOT ≥ 4',sot,sot!=null&&sot>=4,1.6),
+      line('Pressione reale',pressureReal,pressureReal,1.3),
+      line('Big chances',big,big!=null&&big>=1,1.0),
+      line('Tiri ≥ 9',shots,shots!=null&&shots>=9,1.0),
+      line('Quota',ftOdds,ftOdds!=null&&ftOdds>=1.55,0.7)
     ]);
-    var lateChecks=dyn([
-      line('xG ≥ 1.60',xg,xg!=null&&xg>=1.60),
-      line('SOT ≥ 5',sot,sot!=null&&sot>=5),
-      line('Big chance',big,big!=null&&big>=1),
-      line('Produzione forte',pressureStrong,pressureStrong),
-      line('Tiri ≥ 12',shots,shots!=null&&shots>=12)
+    var lateChecks=weighted([
+      line('xG ≥ 1.55',xg,xg!=null&&xg>=1.55,1.5),
+      line('SOT ≥ 5',sot,sot!=null&&sot>=5,1.6),
+      line('Big chance',big,big!=null&&big>=1,1.1),
+      line('Produzione forte',pressureStrong,pressureStrong,1.3),
+      line('Tiri ≥ 11',shots,shots!=null&&shots>=11,1.0),
+      line('Quota',ftOdds,ftOdds!=null&&ftOdds>=1.60,0.7)
     ]);
     if(goals>=2)ft=laSig('Over 1.5 FT','CHIUSA','Sono già stati segnati almeno 2 gol.','La condizione Over 1.5 è raggiunta.');
     else if(goals>0&&!firstGoalKnown)ft=laSig('Over 1.5 FT','DATI GOL','Inserisci il minuto del primo gol.','Con inserimento manuale EasyBet deve sapere quando è arrivato il primo gol: se è prima del 25° l’Over 1.5 FT diventa INGIOCABILE.');
     else if(earlyGoalBefore25&&goals>0)ft=laSig('Over 1.5 FT','INGIOCABILE','Gol arrivato prima del 25° minuto.','Regola EasyBet: il primo gol è arrivato troppo presto; il mercato resta escluso perché la quota è già stata compressa.');
     else if(minuteN!=null&&minuteN<20)ft=laSig('Over 1.5 FT','ATTENDI','Match ancora presto per il filtro principale.','Finestra operativa principale 20’–45’.');
-    else if(minuteN!=null&&minuteN<=45){
-      if(s.available<2)ft=laSig('Over 1.5 FT','DATI','Dati live insufficienti per una lettura affidabile.','Servono almeno 2 indicatori disponibili; le metriche mancanti non valgono come esito negativo.',s.checks);
-      else if(s.ratio>=0.70&&coreFT)ft=laSig('Over 1.5 FT','VERDE','Volume offensivo alto: '+s.passed+'/'+s.available+' criteri disponibili soddisfatti.','Finestra 20’–45’: soglie normali. SOT '+(sot??'N/D')+' • Tiri '+(shots??'N/D')+' • xG '+(laR(xg)??'N/D'),s.checks);
-      else if(s.ratio>=0.40||coreFT)ft=laSig('Over 1.5 FT','ATTENDI','Partita interessante: '+s.passed+'/'+s.available+' criteri disponibili.','Finestra 20’–45’: attendo ulteriore conferma.',s.checks);
-      else ft=laSig('Over 1.5 FT','NO BET','Gli indicatori disponibili sono sotto soglia.','Valutazione basata solo sui '+s.available+' dati effettivamente presenti.',s.checks);
-    }else if(minuteN!=null&&minuteN<=55){
-      var midGreen=xg!=null&&xg>=1.30&&sot!=null&&sot>=4&&pressureReal;
-      var midNear=(xg!=null&&xg>=1.10&&sot!=null&&sot>=3&&pressureReal)||(midChecks.ratio>=0.60);
-      if(midChecks.available<3)ft=laSig('Over 1.5 FT','DATI','Dati insufficienti per la finestra 46’–55’.','In questa fase servono xG, SOT e almeno un indicatore reale di pressione.',midChecks.checks);
-      else if(midGreen)ft=laSig('Over 1.5 FT','VERDE','Finestra estesa confermata: pressione forte dopo il 45° minuto.','46’–55’: xG ≥ 1.30, almeno 4 SOT e pressione reale. xG '+laR(xg)+' • SOT '+sot+' • Tiri '+(shots??'N/D'),midChecks.checks);
-      else if(midNear)ft=laSig('Over 1.5 FT','ATTENDI','Vicino alla soglia della finestra 46’–55’.','Serve ancora conferma: riferimento xG 1.30–1.50, 4+ SOT e pressione reale.',midChecks.checks);
-      else ft=laSig('Over 1.5 FT','NO BET','Dati non abbastanza forti per entrare dopo il 45°.','Dal 46° al 55° EasyBet alza le soglie: xG ≥ 1.30, 4+ SOT e pressione reale.',midChecks.checks);
+    else if(minuteN!=null&&minuteN<=45)ft=softState('Over 1.5 FT',s.score,s,0.60,0.47,0.30,'Volume offensivo sufficiente.','Finestra 20’–45’ con criteri pesati'+oddText(ftOdds)+'.',coreFT);
+    else if(minuteN!=null&&minuteN<=55){
+      var midCore=((xg!=null&&xg>=1.20)?1:0)+((sot!=null&&sot>=4)?1:0)+(pressureReal?1:0)>=2;
+      ft=softState('Over 1.5 FT',midChecks.score,midChecks,0.64,0.50,0.34,'Finestra estesa con pressione convincente.','46’–55’: bastano 2 segnali forti su 3 principali; non serve che tutte le metriche siano presenti'+oddText(ftOdds)+'.',midCore);
     }else if(minuteN!=null&&minuteN<=60){
-      var lateGreen=xg!=null&&xg>=1.60&&sot!=null&&sot>=5&&big!=null&&big>=1&&pressureStrong;
-      if(lateChecks.available<4)ft=laSig('Over 1.5 FT','DATI','Dati insufficienti per un ingresso così tardivo.','56’–60’: servono xG, SOT, big chance e produzione offensiva forte.',lateChecks.checks);
-      else if(lateGreen)ft=laSig('Over 1.5 FT','VERDE','Scenario eccezionalmente forte anche nella finestra 56’–60’.','Richiesti xG ≥ 1.60, almeno 5 SOT, 1+ big chance e produzione offensiva forte.',lateChecks.checks);
-      else ft=laSig('Over 1.5 FT','NO BET','Scenario non abbastanza forte per un ingresso al 56’–60’.','A questo minuto EasyBet entra solo con xG ≥ 1.60, 5+ SOT, big chance e produzione offensiva forte.',lateChecks.checks);
+      var lateCore=((xg!=null&&xg>=1.55)?1:0)+((sot!=null&&sot>=5)?1:0)+((big!=null&&big>=1)?1:0)+(pressureStrong?1:0)>=3;
+      ft=softState('Over 1.5 FT',lateChecks.score,lateChecks,0.72,0.58,0.42,'Scenario molto forte nonostante il minuto avanzato.','56’–60’: servono almeno 3 segnali forti tra xG, SOT, big chance e produzione offensiva'+oddText(ftOdds)+'.',lateCore);
     }else if(minuteN!=null&&minuteN>60)ft=laSig('Over 1.5 FT','NO BET','Finestra operativa chiusa.','Dopo il 60° minuto non vengono aperti nuovi ingressi Over 1.5 FT.');
     else ft=laSig('Over 1.5 FT','DATI','Inserisci il minuto della partita.','Finestra operativa 20’–60’.');
 
     var dxg=laDiff(m.xg),dsot=laDiff(m.sot),dshots=laDiff(m.shots),dtouch=laDiff(m.touches),dbig=laDiff(m.big);
-    var layDyn=dyn([
-      line('ΔxG',dxg,dxg!=null&&Math.abs(dxg)>=0.45),
-      line('ΔSOT',dsot,dsot!=null&&Math.abs(dsot)>=2),
-      line('ΔTiri',dshots,dshots!=null&&Math.abs(dshots)>=5),
-      line('ΔTocchi area',dtouch,dtouch!=null&&Math.abs(dtouch)>=10),
-      line('ΔBig chances',dbig,dbig!=null&&Math.abs(dbig)>=1)
+    var layDyn=weighted([
+      line('ΔxG',dxg,dxg!=null&&Math.abs(dxg)>=0.30,1.5),
+      line('ΔSOT',dsot,dsot!=null&&Math.abs(dsot)>=1,1.5),
+      line('ΔTiri',dshots,dshots!=null&&Math.abs(dshots)>=3,1.0),
+      line('ΔTocchi area',dtouch,dtouch!=null&&Math.abs(dtouch)>=6,0.8),
+      line('ΔBig chances',dbig,dbig!=null&&Math.abs(dbig)>=1,1.1),
+      line('Quota Lay X',layOdds,layOdds!=null&&layOdds>=1.70&&layOdds<=2.50,0.7)
     ]),lay;
     if(isHT){
       if(!sm||sm[1]!==sm[2])lay=laSig('Banca X','NON ATTIVA','Intervallo raggiunto, ma il risultato non è in parità.','La strategia Banca X si attiva a HT solo sullo 0-0 o 1-1.');
-      else if(layDyn.available<2)lay=laSig('Banca X','DATI','Intervallo: dati insufficienti per misurare lo squilibrio.','Servono almeno 2 differenziali disponibili tra SOT, tiri, xG e metriche d’area.',layDyn.checks);
-      else if(layDyn.ratio>=0.60)lay=laSig('Banca X','VERDE','Intervallo: parità fragile, '+layDyn.passed+'/'+layDyn.available+' indicatori disponibili mostrano squilibrio.','Le metriche assenti vengono ignorate.',layDyn.checks);
-      else if(layDyn.ratio>=0.30)lay=laSig('Banca X','ATTENDI','Intervallo: c’è uno squilibrio, ma non è ancora abbastanza netto.','Valutazione su '+layDyn.available+' indicatori realmente disponibili.',layDyn.checks);
-      else lay=laSig('Banca X','NO BET','Intervallo: i dati disponibili mostrano una partita ancora equilibrata.','Nessuna penalizzazione per le metriche mancanti.',layDyn.checks);
+      else if(layDyn.available<2)lay=laSig('Banca X','DATI','Intervallo: dati insufficienti per misurare lo squilibrio.','Servono almeno 2 indicatori comparativi disponibili.',layDyn.checks);
+      else if(layDyn.score>=0.55)lay=laSig('Banca X','VERDE','Parità fragile: '+layDyn.passed+'/'+layDyn.available+' segnali disponibili.','Punteggio adattivo '+Math.round(layDyn.score*100)+'%'+oddText(layOdds)+'. Le metriche mancanti sono ignorate.',layDyn.checks);
+      else if(layDyn.score>=0.40)lay=laSig('Banca X','ATTENDI FORTE','Pareggio sotto pressione ma da confermare.','Punteggio adattivo '+Math.round(layDyn.score*100)+'%'+oddText(layOdds)+'.',layDyn.checks);
+      else if(layDyn.score>=0.25)lay=laSig('Banca X','ATTENDI','C’è qualche squilibrio, ma non abbastanza netto.','Punteggio adattivo '+Math.round(layDyn.score*100)+'%.',layDyn.checks);
+      else lay=laSig('Banca X','NO BET','Il pareggio appare ancora abbastanza stabile.','Punteggio adattivo '+Math.round(layDyn.score*100)+'%.',layDyn.checks);
     }else if(minuteN!=null&&minuteN<45)lay=laSig('Banca X','VALUTA A HT','Strategia da valutare all’intervallo.','Prima dell’HT non viene emesso un NO BET: la lettura parte solo quando la partita è realmente all’intervallo.');
     else if(minuteN===45)lay=laSig('Banca X','ATTENDI HT','Attendo la fine effettiva del primo tempo.','Il 45° può includere recupero. In manuale, quando è davvero intervallo scrivi HT nel campo Minuto.');
     else if(minuteN!=null&&minuteN>45)lay=laSig('Banca X','CHIUSA','Finestra Banca X all’intervallo superata.','La strategia viene valutata esclusivamente a HT; dopo la ripresa non vengono aperti nuovi ingressi.');
     else lay=laSig('Banca X','DATI','Inserisci il minuto o HT.','Per la valutazione Banca X all’intervallo puoi scrivere HT nel campo Minuto.');
 
-    var homeDyn=dyn([
-      line('ΔxG',dxg,dxg!=null&&dxg>=0.35),
-      line('ΔSOT',dsot,dsot!=null&&dsot>=2),
-      line('ΔTiri',dshots,dshots!=null&&dshots>=4),
-      line('ΔTocchi area',dtouch,dtouch!=null&&dtouch>=8),
-      line('ΔBig chances',dbig,dbig!=null&&dbig>=1)
+    var homeDyn=weighted([
+      line('ΔxG',dxg,dxg!=null&&dxg>=0.25,1.5),
+      line('ΔSOT',dsot,dsot!=null&&dsot>=1,1.5),
+      line('ΔTiri',dshots,dshots!=null&&dshots>=3,1.0),
+      line('ΔTocchi area',dtouch,dtouch!=null&&dtouch>=6,0.8),
+      line('ΔBig chances',dbig,dbig!=null&&dbig>=1,1.1),
+      line('Quota favorita',favOdds,favOdds!=null&&favOdds>=1.55&&favOdds<=2.50,0.7)
     ]);
-    var awayDyn=dyn([
-      line('ΔxG',dxg,dxg!=null&&dxg<=-0.35),
-      line('ΔSOT',dsot,dsot!=null&&dsot<=-2),
-      line('ΔTiri',dshots,dshots!=null&&dshots<=-4),
-      line('ΔTocchi area',dtouch,dtouch!=null&&dtouch<=-8),
-      line('ΔBig chances',dbig,dbig!=null&&dbig<=-1)
+    var awayDyn=weighted([
+      line('ΔxG',dxg,dxg!=null&&dxg<=-0.25,1.5),
+      line('ΔSOT',dsot,dsot!=null&&dsot<=-1,1.5),
+      line('ΔTiri',dshots,dshots!=null&&dshots<=-3,1.0),
+      line('ΔTocchi area',dtouch,dtouch!=null&&dtouch<=-6,0.8),
+      line('ΔBig chances',dbig,dbig!=null&&dbig<=-1,1.1),
+      line('Quota favorita',favOdds,favOdds!=null&&favOdds>=1.55&&favOdds<=2.50,0.7)
     ]),fav;
     if(favSel==='none'){
       var side=homeDyn.passed>awayDyn.passed?(homeName||'Casa'):awayDyn.passed>homeDyn.passed?(awayName||'Ospite'):'Nessuna';
@@ -1587,13 +1602,14 @@ body:not([data-theme="light"]) .la-first-goal input{background:#16130d!important
     }else{
       var ih=favSel==='home',name=ih?(homeName||'Casa'):(awayName||'Ospite'),fd=ih?homeDyn:awayDyn;
       if(fd.available<2)fav=laSig('Segna favorita','DATI','Dati insufficienti per valutare '+name+'.','Servono almeno 2 indicatori comparativi disponibili.',fd.checks);
-      else if(fd.ratio>=0.70)fav=laSig('Segna favorita','VERDE',name+' conferma il ruolo di favorita: '+fd.passed+'/'+fd.available+' criteri disponibili.','Le metriche mancanti vengono ignorate.',fd.checks);
-      else if(fd.ratio>=0.40)fav=laSig('Segna favorita','ATTENDI',name+' mostra superiorità: '+fd.passed+'/'+fd.available+' criteri disponibili.','Serve una conferma ulteriore, senza penalizzare i dati non forniti.',fd.checks);
-      else fav=laSig('Segna favorita','NO BET',name+' non sta mostrando sufficiente superiorità nei dati disponibili.','Valutazione basata solo sugli indicatori effettivamente presenti.',fd.checks);
+      else if(fd.score>=0.58)fav=laSig('Segna favorita','VERDE',name+' sta confermando superiorità offensiva.','Punteggio adattivo '+Math.round(fd.score*100)+'%'+oddText(favOdds)+'. Non servono tutti i criteri insieme.',fd.checks);
+      else if(fd.score>=0.42)fav=laSig('Segna favorita','ATTENDI FORTE',name+' è vicina alla conferma del segnale.','Punteggio adattivo '+Math.round(fd.score*100)+'%'+oddText(favOdds)+'.',fd.checks);
+      else if(fd.score>=0.28)fav=laSig('Segna favorita','ATTENDI',name+' mostra qualche segnale di superiorità.','Punteggio adattivo '+Math.round(fd.score*100)+'%.',fd.checks);
+      else fav=laSig('Segna favorita','NO BET',name+' non sta mostrando sufficiente superiorità.','Punteggio adattivo '+Math.round(fd.score*100)+'%.',fd.checks);
     }
     return [ht,ft,lay,fav]
   }
-  function laClass(s){return s==='VERDE'?'green':(s==='NO BET'||s==='INGIOCABILE')?'red':(s==='ATTENDI'||s==='ATTENDI HT'||s==='VALUTA A HT')?'yellow':'blue'}
+  function laClass(s){return s==='VERDE'?'green':(s==='NO BET'||s==='INGIOCABILE')?'red':(s==='ATTENDI'||s==='ATTENDI FORTE'||s==='ATTENDI HT'||s==='VALUTA A HT')?'yellow':'blue'}
 
 
   function laSetMode(mode){var a=document.getElementById('laModeAuto'),m=document.getElementById('laModeManual');if(a)a.classList.toggle('active',mode==='auto');if(m)m.classList.toggle('active',mode==='manual')}
@@ -1603,9 +1619,9 @@ body:not([data-theme="light"]) .la-first-goal input{background:#16130d!important
   function laDisplayState(x){if(x.state!=='NO BET')return x.state;var r=laNorm(x.reason+' '+x.why);if(r.indexOf('finestra operativa superata')!==-1||r.indexOf('tempo residuo ridotto')!==-1)return 'NO BET';return 'NO BET ORA'}
   function laMetricPairMarkup(label,val){var raw=String(val||'N/D'),m=raw.match(/(-?\d+(?:\.\d+)?%?)\s*[–-]\s*(-?\d+(?:\.\d+)?%?)/),isNA=raw.trim()==='N/D',a='N/D',b='N/D',ah=0,aw=0;if(m){a=m[1];b=m[2];var na=Math.abs(parseFloat(a)),nb=Math.abs(parseFloat(b)),tot=na+nb;if(tot>0){ah=Math.round(na/tot*100);aw=100-ah}else{ah=50;aw=50}}return '<div class="la-mini '+(isNA?'is-na':'')+'"><span class="la-mini-ico">'+esc(laMiniIcon(label))+'</span><span class="la-mini-label">'+esc(label)+'</span><div class="la-mini-pair"><div class="la-mini-side"><small>CASA</small><b>'+esc(a)+'</b></div><div class="la-mini-side"><small>OSPITE</small><b>'+esc(b)+'</b></div></div><div class="la-mini-bar dual"><i class="home" style="width:'+ah+'%"></i><i class="away" style="width:'+aw+'%"></i></div></div>'}
   function laStrategySignalName(name){var t=laNorm(name).replace(/\./g,'');if(!t)return '';if(t.indexOf('over 0 5')!==-1||t.indexOf('over 05')!==-1||t.indexOf('over 0,5')!==-1){if(t.indexOf('ht')!==-1||t.indexOf('1 tempo')!==-1||t.indexOf('primo tempo')!==-1)return 'Over 0.5 HT'}if(t.indexOf('over 1 5')!==-1||t.indexOf('over 15')!==-1||t.indexOf('over 1,5')!==-1){if(t.indexOf('ft')!==-1||t.indexOf('full time')!==-1||t.indexOf('finale')!==-1)return 'Over 1.5 FT'}if(t.indexOf('banca')!==-1&&t.indexOf('x')!==-1)return 'Banca X';if(t.indexOf('favorita')!==-1)return 'Segna favorita';return name||''}
-  function openLiveAnalyzer(m){laAutoManualOnly=false;laSetMode('auto');liveAnalyzerCurrentKey=liveAnalyzerMatchKey(m);var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{};var selectedStrategy=st.strategy||m.tipoGiocata||'';liveAnalyzerState[liveAnalyzerCurrentKey]=Object.assign({},st,{strategy:selectedStrategy});document.getElementById('laHome').value=m.casa||'';document.getElementById('laAway').value=m.trasferta||'';document.getElementById('laMinute').value=st.minute||'';document.getElementById('laScore').value=st.score||'';document.getElementById('laFirstGoal').value=(st.firstGoalObservedMinute!=null?st.firstGoalObservedMinute:'');document.getElementById('laFavorite').value=st.favorite||'none';document.getElementById('laRaw').value=st.raw||'';document.getElementById('liveAnalyzerOverlay').classList.add('open');document.getElementById('liveAnalyzerOverlay').setAttribute('aria-hidden','false');if(st.raw)renderLiveAnalyzer();else{var sum=document.getElementById('laSummary');if(sum)sum.innerHTML='<div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div><div class="la-stat strategy-focus"><small>Strategia pre-match</small><strong>'+esc(selectedStrategy||'Non definita')+'</strong></div>';var sig=document.getElementById('laSignals');if(sig&&selectedStrategy){sig.innerHTML='<div class="la-pre-banner"><span>★</span><div><small>Strategia selezionata pre-match</small><br><b>'+esc(selectedStrategy)+'</b> — il relativo segnale verrà evidenziato appena analizzi il live.</div></div>'}}laStartAuto()}
+  function openLiveAnalyzer(m){laAutoManualOnly=false;laSetMode('auto');liveAnalyzerCurrentKey=liveAnalyzerMatchKey(m);var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{};var selectedStrategy=st.strategy||m.tipoGiocata||'';liveAnalyzerState[liveAnalyzerCurrentKey]=Object.assign({},st,{strategy:selectedStrategy});document.getElementById('laHome').value=m.casa||'';document.getElementById('laAway').value=m.trasferta||'';document.getElementById('laMinute').value=st.minute||'';document.getElementById('laScore').value=st.score||'';document.getElementById('laFirstGoal').value=(st.firstGoalObservedMinute!=null?st.firstGoalObservedMinute:'');document.getElementById('laFavorite').value=st.favorite||'none';document.getElementById('laRaw').value=st.raw||'';var oo=st.odds||{};document.getElementById('laOddHT').value=oo.ht||'';document.getElementById('laOddFT').value=oo.ft||'';document.getElementById('laOddLay').value=oo.lay||'';document.getElementById('laOddFav').value=oo.fav||'';document.getElementById('liveAnalyzerOverlay').classList.add('open');document.getElementById('liveAnalyzerOverlay').setAttribute('aria-hidden','false');if(st.raw)renderLiveAnalyzer();else{var sum=document.getElementById('laSummary');if(sum)sum.innerHTML='<div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div><div class="la-stat strategy-focus"><small>Strategia pre-match</small><strong>'+esc(selectedStrategy||'Non definita')+'</strong></div>';var sig=document.getElementById('laSignals');if(sig&&selectedStrategy){sig.innerHTML='<div class="la-pre-banner"><span>★</span><div><small>Strategia selezionata pre-match</small><br><b>'+esc(selectedStrategy)+'</b> — il relativo segnale verrà evidenziato appena analizzi il live.</div></div>'}}laStartAuto()}
   function closeLiveAnalyzer(){laStopAuto();var ov=document.getElementById('liveAnalyzerOverlay');ov.classList.remove('open');ov.setAttribute('aria-hidden','true')}
-  function renderLiveAnalyzer(){if(!liveAnalyzerCurrentKey)return;var homeEl=document.getElementById('laHome'),awayEl=document.getElementById('laAway'),minEl=document.getElementById('laMinute'),scoreEl=document.getElementById('laScore'),firstGoalEl=document.getElementById('laFirstGoal'),favEl=document.getElementById('laFavorite'),rawEl=document.getElementById('laRaw');var prev=liveAnalyzerState[liveAnalyzerCurrentKey]||{},preStrategy=prev.strategy||'',manualFirstGoal=firstGoalEl&&String(firstGoalEl.value||'').trim()!==''?Number(String(firstGoalEl.value).replace(/[^0-9.]/g,'')):null;if(manualFirstGoal!=null&&Number.isFinite(manualFirstGoal)){prev.firstGoalObservedMinute=manualFirstGoal;prev.earlyGoalBefore25=manualFirstGoal<25}else if(firstGoalEl&&String(firstGoalEl.value||'').trim()===''){delete prev.firstGoalObservedMinute;prev.earlyGoalBefore25=false}liveAnalyzerState[liveAnalyzerCurrentKey]=Object.assign({},prev,{minute:minEl.value,score:scoreEl.value,favorite:favEl.value,raw:rawEl.value,strategy:preStrategy});var m=laParse(rawEl.value),arr=laAnalyzeStats(m,minEl.value,scoreEl.value,favEl.value,homeEl.value,awayEl.value),sum=document.getElementById('laSummary'),sig=document.getElementById('laSignals'),par=document.getElementById('laParsed'),txg=laSum(m.xg),tsot=laSum(m.sot),tshots=laSum(m.shots),priority=laStrategySignalName(preStrategy),pretty=laPrettyStrategy(preStrategy);if(priority){arr.sort(function(a,b){return (a.name===priority?-1:0)-(b.name===priority?-1:0)})}var preSignal=priority?arr.find(function(z){return z.name===priority}):null,preNote='STRATEGIA ATTIVA';if(preSignal){if(preSignal.state==='VERDE')preNote='STRATEGIA CONFERMATA';else if(preSignal.state==='NON ATTIVA')preNote='PRE-MATCH • NON ATTIVA';else if(preSignal.state==='CHIUSA')preNote='PRE-MATCH • CHIUSA';else if(preSignal.state==='VALUTA A HT'||preSignal.state==='ATTENDI HT')preNote='PRE-MATCH • ATTESA HT';}sum.innerHTML='<div class="la-stat"><small>Partita</small><strong>'+esc(homeEl.value)+' – '+esc(awayEl.value)+'</strong></div><div class="la-stat"><small>Minuto / risultato</small><strong>'+(minEl.value?esc(minEl.value)+(String(minEl.value).toUpperCase()==='HT'?'':"'"):'N/D')+' • '+esc(scoreEl.value||'N/D')+'</strong></div><div class="la-stat"><small>xG totale</small><strong>'+(txg==null?'N/D':laR(txg))+'</strong></div><div class="la-stat"><small>SOT / Tiri</small><strong>'+(tsot??'N/D')+' / '+(tshots??'N/D')+'</strong></div>'+(pretty?'<div class="la-stat strategy-focus"><div class="strategy-copy"><small>Strategia pre-match selezionata</small><strong>'+esc(pretty)+'</strong></div><span class="strategy-note">'+esc(preNote)+'</span></div>':'');var title='<div class="la-live-section-title"><div class="left"><span>⚡</span><span>Segnali live</span></div><span class="hint">Ordinati per priorità in base alla strategia pre-match</span></div>';sig.innerHTML=title+arr.map(function(x){var icons={'Over 0.5 HT':'⚽','Over 1.5 FT':'▥','Banca X':'◆','Segna favorita':'◎'},cc=(x.criteria||[]),okc=cc.filter(function(c){return c[1]}).length,total=cc.length||0,dots=cc.length?'<div class="la-criterion-dots">'+cc.map(function(c){return '<span class="la-dot '+(c[1]?'ok':'')+'"></span>'}).join('')+'</div>':'',isPriority=priority&&x.name===priority,confirmed=isPriority&&x.state==='VERDE',inactivePre=isPriority&&(x.state==='NON ATTIVA'||x.state==='CHIUSA'),waitingPre=isPriority&&(x.state==='VALUTA A HT'||x.state==='ATTENDI HT'),badge=isPriority?('<span class="la-signal-badge'+(confirmed?' confirmed':'')+'>'+ (confirmed?'★ PRIORITÀ 1 ✓ CONFERMATA':inactivePre?('PRE-MATCH • '+x.state):waitingPre?'PRE-MATCH • ATTESA HT':'★ PRIORITÀ 1')+'</span>'):'',displayState=laDisplayState(x),pillClass=displayState==='NO BET ORA'?' no-bet-now':'';return '<article class="la-signal '+laClass(x.state)+(isPriority?' is-pre-match':'')+(confirmed?' confirmed':'')+'"><div class="la-signal-icon">'+(icons[x.name]||'•')+'</div><div class="la-signal-main"><div class="la-signal-head"><h5>'+esc(x.name)+'</h5>'+badge+'</div><p>'+esc(x.reason)+'</p><div class="la-signal-note">'+esc(x.why||'')+'</div></div><div class="la-signal-score">'+(total?'<div class="la-signal-count">'+okc+'/'+total+' criteri</div>':'')+dots+'<span class="la-pill'+pillClass+'">'+esc(displayState)+'</span></div></article>'}).join('');var rows=[['xG',laFmt(m.xg)],['xGOT',laFmt(m.xgot)],['Possesso',laFmt(m.possession,'%')],['Tiri',laFmt(m.shots)],['Tiri in porta',laFmt(m.sot)],['Big chances',laFmt(m.big)],['Corner',laFmt(m.corners)],['Tiri in area',laFmt(m.boxshots)],['Tocchi area',laFmt(m.touches)],['xA',laFmt(m.xa)],['Tiri bloccati',laFmt(m.blocked)],['Parate',laFmt(m.saves)]];par.innerHTML=rows.map(function(r){return laMetricPairMarkup(r[0],r[1])}).join('');var head=document.querySelector('.la-parsed-head');if(head&&!head.querySelector('.la-side-legend'))head.insertAdjacentHTML('beforeend','<span class="la-side-legend">CASA / OSPITE</span>')}
+  function renderLiveAnalyzer(){if(!liveAnalyzerCurrentKey)return;var homeEl=document.getElementById('laHome'),awayEl=document.getElementById('laAway'),minEl=document.getElementById('laMinute'),scoreEl=document.getElementById('laScore'),firstGoalEl=document.getElementById('laFirstGoal'),favEl=document.getElementById('laFavorite'),rawEl=document.getElementById('laRaw');var prev=liveAnalyzerState[liveAnalyzerCurrentKey]||{},preStrategy=prev.strategy||'',odds={ht:(document.getElementById('laOddHT')||{}).value||'',ft:(document.getElementById('laOddFT')||{}).value||'',lay:(document.getElementById('laOddLay')||{}).value||'',fav:(document.getElementById('laOddFav')||{}).value||''},manualFirstGoal=firstGoalEl&&String(firstGoalEl.value||'').trim()!==''?Number(String(firstGoalEl.value).replace(/[^0-9.]/g,'')):null;if(manualFirstGoal!=null&&Number.isFinite(manualFirstGoal)){prev.firstGoalObservedMinute=manualFirstGoal;prev.earlyGoalBefore25=manualFirstGoal<25}else if(firstGoalEl&&String(firstGoalEl.value||'').trim()===''){delete prev.firstGoalObservedMinute;prev.earlyGoalBefore25=false}liveAnalyzerState[liveAnalyzerCurrentKey]=Object.assign({},prev,{minute:minEl.value,score:scoreEl.value,favorite:favEl.value,raw:rawEl.value,strategy:preStrategy,odds:odds});var m=laParse(rawEl.value),arr=laAnalyzeStats(m,minEl.value,scoreEl.value,favEl.value,homeEl.value,awayEl.value,odds),sum=document.getElementById('laSummary'),sig=document.getElementById('laSignals'),par=document.getElementById('laParsed'),txg=laSum(m.xg),tsot=laSum(m.sot),tshots=laSum(m.shots),priority=laStrategySignalName(preStrategy),pretty=laPrettyStrategy(preStrategy);if(priority){arr.sort(function(a,b){return (a.name===priority?-1:0)-(b.name===priority?-1:0)})}var preSignal=priority?arr.find(function(z){return z.name===priority}):null,preNote='STRATEGIA ATTIVA';if(preSignal){if(preSignal.state==='VERDE')preNote='STRATEGIA CONFERMATA';else if(preSignal.state==='NON ATTIVA')preNote='PRE-MATCH • NON ATTIVA';else if(preSignal.state==='CHIUSA')preNote='PRE-MATCH • CHIUSA';else if(preSignal.state==='VALUTA A HT'||preSignal.state==='ATTENDI HT')preNote='PRE-MATCH • ATTESA HT';}sum.innerHTML='<div class="la-stat"><small>Partita</small><strong>'+esc(homeEl.value)+' – '+esc(awayEl.value)+'</strong></div><div class="la-stat"><small>Minuto / risultato</small><strong>'+(minEl.value?esc(minEl.value)+(String(minEl.value).toUpperCase()==='HT'?'':"'"):'N/D')+' • '+esc(scoreEl.value||'N/D')+'</strong></div><div class="la-stat"><small>xG totale</small><strong>'+(txg==null?'N/D':laR(txg))+'</strong></div><div class="la-stat"><small>SOT / Tiri</small><strong>'+(tsot??'N/D')+' / '+(tshots??'N/D')+'</strong></div>'+(pretty?'<div class="la-stat strategy-focus"><div class="strategy-copy"><small>Strategia pre-match selezionata</small><strong>'+esc(pretty)+'</strong></div><span class="strategy-note">'+esc(preNote)+'</span></div>':'');var title='<div class="la-live-section-title"><div class="left"><span>⚡</span><span>Segnali live</span></div><span class="hint">Ordinati per priorità in base alla strategia pre-match</span></div>';sig.innerHTML=title+arr.map(function(x){var icons={'Over 0.5 HT':'⚽','Over 1.5 FT':'▥','Banca X':'◆','Segna favorita':'◎'},cc=(x.criteria||[]),okc=cc.filter(function(c){return c[1]}).length,total=cc.length||0,dots=cc.length?'<div class="la-criterion-dots">'+cc.map(function(c){return '<span class="la-dot '+(c[1]?'ok':'')+'"></span>'}).join('')+'</div>':'',isPriority=priority&&x.name===priority,confirmed=isPriority&&x.state==='VERDE',inactivePre=isPriority&&(x.state==='NON ATTIVA'||x.state==='CHIUSA'),waitingPre=isPriority&&(x.state==='VALUTA A HT'||x.state==='ATTENDI HT'),badge=isPriority?('<span class="la-signal-badge'+(confirmed?' confirmed':'')+'>'+ (confirmed?'★ PRIORITÀ 1 ✓ CONFERMATA':inactivePre?('PRE-MATCH • '+x.state):waitingPre?'PRE-MATCH • ATTESA HT':'★ PRIORITÀ 1')+'</span>'):'',displayState=laDisplayState(x),pillClass=displayState==='NO BET ORA'?' no-bet-now':'';return '<article class="la-signal '+laClass(x.state)+(isPriority?' is-pre-match':'')+(confirmed?' confirmed':'')+'"><div class="la-signal-icon">'+(icons[x.name]||'•')+'</div><div class="la-signal-main"><div class="la-signal-head"><h5>'+esc(x.name)+'</h5>'+badge+'</div><p>'+esc(x.reason)+'</p><div class="la-signal-note">'+esc(x.why||'')+'</div></div><div class="la-signal-score">'+(total?'<div class="la-signal-count">'+okc+'/'+total+' criteri</div>':'')+dots+'<span class="la-pill'+pillClass+'">'+esc(displayState)+'</span></div></article>'}).join('');var rows=[['xG',laFmt(m.xg)],['xGOT',laFmt(m.xgot)],['Possesso',laFmt(m.possession,'%')],['Tiri',laFmt(m.shots)],['Tiri in porta',laFmt(m.sot)],['Big chances',laFmt(m.big)],['Corner',laFmt(m.corners)],['Tiri in area',laFmt(m.boxshots)],['Tocchi area',laFmt(m.touches)],['xA',laFmt(m.xa)],['Tiri bloccati',laFmt(m.blocked)],['Parate',laFmt(m.saves)]];par.innerHTML=rows.map(function(r){return laMetricPairMarkup(r[0],r[1])}).join('');var head=document.querySelector('.la-parsed-head');if(head&&!head.querySelector('.la-side-legend'))head.insertAdjacentHTML('beforeend','<span class="la-side-legend">CASA / OSPITE</span>')}
   var laAutoTimer=null,laAutoBusy=false,laAutoManualOnly=false;
   function laPairHasAny(p){return p&&((p[0]!==null&&p[0]!==undefined)||(p[1]!==null&&p[1]!==undefined))}
   function laAutoRaw(data){
@@ -1660,7 +1676,7 @@ body:not([data-theme="light"]) .la-first-goal input{background:#16130d!important
     document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLiveAnalyzer()});
     analyzeBtn.addEventListener('click',renderLiveAnalyzer);
     if(autoBtn)autoBtn.addEventListener('click',function(){laAutoManualOnly=false;laFetchAuto(false)});
-    clearBtn.addEventListener('click',function(){var st=liveAnalyzerCurrentKey?(liveAnalyzerState[liveAnalyzerCurrentKey]||{}):{};document.getElementById('laRaw').value='';var fgClear=document.getElementById('laFirstGoal');if(fgClear)fgClear.value='';document.getElementById('laSummary').innerHTML='<div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div>'+(st.strategy?'<div class="la-stat strategy-focus"><small>Strategia pre-match</small><strong>'+esc(st.strategy)+'</strong></div>':'');document.getElementById('laSignals').innerHTML=st.strategy?'<div class="la-pre-banner"><span>★</span><div><small>Strategia selezionata pre-match</small><br><b>'+esc(st.strategy)+'</b> — il relativo segnale verrà evidenziato appena analizzi il live.</div></div>':'';document.getElementById('laParsed').innerHTML='';if(liveAnalyzerCurrentKey)liveAnalyzerState[liveAnalyzerCurrentKey]={strategy:st.strategy||'',favorite:st.favorite||'none',minute:'',score:'',raw:'',firstGoalObservedMinute:null,earlyGoalBefore25:false}});
+    clearBtn.addEventListener('click',function(){var st=liveAnalyzerCurrentKey?(liveAnalyzerState[liveAnalyzerCurrentKey]||{}):{};document.getElementById('laRaw').value='';['laOddHT','laOddFT','laOddLay','laOddFav'].forEach(function(id){var el=document.getElementById(id);if(el)el.value=''});var fgClear=document.getElementById('laFirstGoal');if(fgClear)fgClear.value='';document.getElementById('laSummary').innerHTML='<div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div>'+(st.strategy?'<div class="la-stat strategy-focus"><small>Strategia pre-match</small><strong>'+esc(st.strategy)+'</strong></div>':'');document.getElementById('laSignals').innerHTML=st.strategy?'<div class="la-pre-banner"><span>★</span><div><small>Strategia selezionata pre-match</small><br><b>'+esc(st.strategy)+'</b> — il relativo segnale verrà evidenziato appena analizzi il live.</div></div>':'';document.getElementById('laParsed').innerHTML='';if(liveAnalyzerCurrentKey)liveAnalyzerState[liveAnalyzerCurrentKey]={strategy:st.strategy||'',favorite:st.favorite||'none',minute:'',score:'',raw:'',odds:{},firstGoalObservedMinute:null,earlyGoalBefore25:false}});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initLiveAnalyzerUI);else initLiveAnalyzerUI();
 
@@ -1679,7 +1695,7 @@ body:not([data-theme="light"]) .la-first-goal input{background:#16130d!important
         <div class="la-field"><label>Risultato</label><input id="laScore" placeholder="0-0"></div>
         <div class="la-field la-first-goal"><label>1° gol (min)</label><input id="laFirstGoal" inputmode="numeric" placeholder="es. 23"></div>
         <div class="la-field la-favorite"><label>Favorita pre-match</label><select id="laFavorite"><option value="none">Non so / Nessuna</option><option value="home">Casa</option><option value="away">Ospite</option></select></div>
-      </div><div class="la-field"><label>Statistiche live — AUTO se coperta, altrimenti incolla manualmente tutto il blocco</label><textarea class="la-textarea" id="laRaw" placeholder="Statistiche Top\n1.93\nGoal previsti (xG)\n0.85\n61%\nPossesso palla\n39%\n..."></textarea></div>
+      </div><div class="la-odds-wrap"><div class="la-odds-title"><b>Quote live manuali</b><span>facoltative • usate come supporto, non come requisito obbligatorio</span></div><div class="la-odds-grid"><div class="la-odds-field"><label>Over 0.5 HT</label><input id="laOddHT" inputmode="decimal" placeholder="es. 1.70"></div><div class="la-odds-field"><label>Over 1.5 FT</label><input id="laOddFT" inputmode="decimal" placeholder="es. 1.72"></div><div class="la-odds-field"><label>Banca X (Lay)</label><input id="laOddLay" inputmode="decimal" placeholder="es. 2.05"></div><div class="la-odds-field"><label>Segna favorita</label><input id="laOddFav" inputmode="decimal" placeholder="es. 1.90"></div></div></div><div class="la-field"><label>Statistiche live — AUTO se coperta, altrimenti incolla manualmente tutto il blocco</label><textarea class="la-textarea" id="laRaw" placeholder="Statistiche Top\n1.93\nGoal previsti (xG)\n0.85\n61%\nPossesso palla\n39%\n..."></textarea></div>
       <div class="la-actions"><button class="la-btn primary" id="laAnalyze" type="button">ANALIZZA / AGGIORNA</button><button class="la-btn live-auto" id="laAutoFetch" type="button">↻ DATI LIVE AUTO</button><button class="la-btn secondary" id="laClear" type="button">SVUOTA DATI</button><span class="la-auto-status" id="laAutoStatus">AUTO: cerca la partita nel feed GoalDir • se non la trova passa automaticamente a MANUALE</span></div></section>
       <section class="la-panel"><div class="la-panel-title"><span class="la-panel-icon">▥</span><h4>Situazione EasyBet</h4></div><div class="la-summary" id="laSummary"><div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div></div><div class="la-signals" id="laSignals"></div><div class="la-parsed"><div class="la-parsed-head"><span class="la-panel-icon">●</span><h4>Dati riconosciuti</h4></div><div class="la-parsed-grid" id="laParsed"></div></div></section>
     </div>
