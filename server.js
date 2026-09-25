@@ -246,6 +246,54 @@ function gdLiveScore(ev) {
   const a = ev && (ev.away_score ?? (ev.score && ev.score.away));
   return (h !== null && h !== undefined && a !== null && a !== undefined) ? String(h) + '-' + String(a) : '';
 }
+function gdIncidentItems(data) {
+  if (Array.isArray(data)) return data;
+  if (!data || typeof data !== 'object') return [];
+  for (const k of ['incidents','results','events','items','timeline']) {
+    if (Array.isArray(data[k])) return data[k];
+  }
+  return [];
+}
+function gdIncidentType(it) {
+  return String((it && (it.type ?? it.incident_type ?? it.incidentType ?? it.kind ?? it.event_type ?? it.eventType ?? it.name)) || '').toLowerCase();
+}
+function gdIncidentMinute(it) {
+  if (!it || typeof it !== 'object') return null;
+  const direct = it.minute ?? it.min ?? it.match_minute ?? it.matchMinute ?? (it.time && (it.time.minute ?? it.time.min));
+  const n = Number(direct);
+  if (Number.isFinite(n) && n >= 0) return n;
+  const ps = Number(it.period_second ?? it.periodSecond ?? it.second ?? it.seconds);
+  if (!Number.isFinite(ps) || ps < 0) return null;
+  let base = 0;
+  const p = String(it.period ?? it.period_name ?? it.periodName ?? '').toLowerCase();
+  if (p.includes('second') || p === '2' || p === '2h' || p.includes('2nd')) base = 45;
+  else if (p.includes('extra') && (p.includes('second') || p.includes('2'))) base = 105;
+  else if (p.includes('extra')) base = 90;
+  return base + Math.floor(ps / 60);
+}
+function gdFirstGoalMinute(incidentsData, statsData) {
+  const mins = [];
+  for (const it of gdIncidentItems(incidentsData)) {
+    const t = gdIncidentType(it);
+    const isGoal = t === 'goal' || t.includes('goal') || it.goal === true || it.is_goal === true || it.isGoal === true;
+    const isShootout = t.includes('shootout') || String(it.situation || it.sit || '').toLowerCase().includes('shootout');
+    if (!isGoal || isShootout) continue;
+    const m = gdIncidentMinute(it);
+    if (Number.isFinite(m)) mins.push(m);
+  }
+  if (Array.isArray(statsData && statsData.shotmap)) {
+    for (const sh of statsData.shotmap) {
+      if (!sh) continue;
+      const type = String(sh.type || '').toLowerCase();
+      const sit = String(sh.sit || sh.situation || '').toLowerCase();
+      if (type !== 'goal' || sit.includes('shootout')) continue;
+      const m = Number(sh.min ?? sh.minute);
+      if (Number.isFinite(m) && m >= 0) mins.push(m);
+    }
+  }
+  return mins.length ? Math.min(...mins) : null;
+}
+
 
 app.get('/api/goaldir/status', async (req, res) => {
   res.json({ configured: !!GOALDIR_API_KEY, provider: 'GoalDir / BSD', mode: 'REST', pollSeconds: 60 });
@@ -279,7 +327,16 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
     const eventId = gdEventId(best);
     if (!eventId) return res.status(502).json({ error: 'Evento GoalDir senza ID.' });
     const statsResp = await gdFetch('/events/' + encodeURIComponent(eventId) + '/stats/');
+    let incidentsData = null;
+    try {
+      const incidentsResp = await gdFetch('/events/' + encodeURIComponent(eventId) + '/incidents/');
+      incidentsData = incidentsResp.data || null;
+    } catch (incErr) {
+      // Alcune competizioni possono non esporre la timeline: in quel caso usiamo lo shotmap.
+      console.warn('GoalDir incidents non disponibili per evento', eventId, incErr && incErr.message ? incErr.message : incErr);
+    }
     const normalized = gdNormalizeStats(statsResp.data || {});
+    const firstGoalMinute = gdFirstGoalMinute(incidentsData, statsResp.data || {});
     res.json({
       ok: true,
       provider: 'GoalDir / BSD',
@@ -289,6 +346,8 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
       away: gdEventTeamName(best,'away'),
       minute: gdLiveMinute(best),
       score: gdLiveScore(best),
+      firstGoalMinute,
+      earlyGoalBefore25: firstGoalMinute !== null && firstGoalMinute < 25,
       stats: normalized,
       xgEstimated: statsResp.data && statsResp.data.xg_estimated === true,
       hasShotmap: Array.isArray(statsResp.data && statsResp.data.shotmap) && statsResp.data.shotmap.length > 0,

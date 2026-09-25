@@ -1586,13 +1586,20 @@ body:not([data-theme="light"]) .la-mini-ico{background:linear-gradient(180deg,#2
       var stGoal=liveAnalyzerState[liveAnalyzerCurrentKey]||{},prevScore=String(stGoal.score||document.getElementById('laScore').value||'0-0'),nextScore=String(d.score||prevScore),nextMinute=d.minute!=null?Number(d.minute):Number(document.getElementById('laMinute').value||0);
       function goalCount(sc){var mm=String(sc||'').match(/(\d+)\s*[-:]\s*(\d+)/);return mm?Number(mm[1])+Number(mm[2]):0}
       var prevGoals=goalCount(prevScore),nextGoals=goalCount(nextScore);
-      if(!stGoal.earlyGoalBefore25&&nextGoals>0&&((prevGoals===0&&nextMinute<25)||(!stGoal.minute&&nextMinute<=25))){stGoal.earlyGoalBefore25=true;stGoal.firstGoalObservedMinute=nextMinute}
+      if(d.firstGoalMinute!==null&&d.firstGoalMinute!==undefined&&Number.isFinite(Number(d.firstGoalMinute))){
+        stGoal.firstGoalObservedMinute=Number(d.firstGoalMinute);
+        stGoal.earlyGoalBefore25=Number(d.firstGoalMinute)<25;
+      }else if(d.earlyGoalBefore25===true){
+        stGoal.earlyGoalBefore25=true;
+      }else if(!stGoal.earlyGoalBefore25&&nextGoals>0&&((prevGoals===0&&nextMinute<25)||(!stGoal.minute&&nextMinute<25))){
+        stGoal.earlyGoalBefore25=true;stGoal.firstGoalObservedMinute=nextMinute;
+      }
       liveAnalyzerState[liveAnalyzerCurrentKey]=Object.assign({},stGoal);
       if(d.minute!=null)document.getElementById('laMinute').value=d.minute;
       if(d.score)document.getElementById('laScore').value=d.score;
       var raw=laAutoRaw(d);if(raw)document.getElementById('laRaw').value=raw;
       renderLiveAnalyzer();
-      var extras=[];if(d.xgEstimated)extras.push('xG stimato');if(d.hasShotmap)extras.push('shotmap');if(d.hasMomentum)extras.push('momentum');
+      var extras=[];if(d.xgEstimated)extras.push('xG stimato');if(d.hasShotmap)extras.push('shotmap');if(d.hasMomentum)extras.push('momentum');if(d.firstGoalMinute!==null&&d.firstGoalMinute!==undefined)extras.push('1° gol '+d.firstGoalMinute+"'");
       laSetMode('auto');laSetAutoStatus('LIVE AUTO OK • '+(d.minute!=null?d.minute+"' • ":'')+(d.rateLimit?d.rateLimit+' • ':'')+(extras.length?extras.join(' + '):'dati standard'),'ok');
     }catch(e){laSetAutoStatus(e&&e.message?e.message:'Errore statistiche live.','err')}
     finally{laAutoBusy=false;if(btn)btn.disabled=false}
