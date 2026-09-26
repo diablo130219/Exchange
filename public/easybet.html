@@ -41,6 +41,237 @@ button,input{font:inherit}.num{font-variant-numeric:tabular-nums}.hidden{display
 @media(max-width:1350px){.match-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.app{padding:8px}.topbar{grid-template-columns:1fr auto;gap:10px}.brand{min-width:0}.mainnav{grid-column:1/-1;grid-row:2;justify-content:flex-start}.actions{min-width:0}.ghostbtn,.primarybtn{display:none}.match-grid{grid-template-columns:1fr}.match-hero-main{grid-template-columns:1fr;gap:14px}.hero-team,.hero-team.away{justify-content:center;flex-direction:column;text-align:center}.match-center{order:-1}.hero-strip{grid-template-columns:repeat(2,1fr)}.hero-stat:nth-child(2){border-right:0}.compare-grid{grid-template-columns:1fr}.goal-buckets{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.brandcopy small{display:none}.navitem{padding:0 10px}.scanner-head,.scanner-tools,.match-grid{padding-left:10px;padding-right:10px}.headline-row{flex-direction:column}.reset{margin-left:0}.search{min-width:100%;flex-basis:100%}.stat-grid{grid-template-columns:1fr}.hero-strip{grid-template-columns:1fr}.hero-stat{border-right:0;border-bottom:1px solid var(--line)}.hero-stat:last-child{border-bottom:0}.goal-buckets{grid-template-columns:repeat(2,1fr)}}
+
+/* =========================================================
+   EASYBET V2 — LIGHT PREMIUM THEME
+   Light is intentionally designed as its own UI system.
+   Dark theme rules above remain untouched.
+   ========================================================= */
+body[data-theme="light"]{
+  --bg:#e8eef2;
+  --bg2:#f3f6f8;
+  --panel:#ffffff;
+  --panel2:#f8fafb;
+  --panel3:#f1f5f7;
+  --line:#cbd7dd;
+  --line2:#aebfc8;
+  --text:#102735;
+  --muted:#5f7480;
+  --cyan:#087f95;
+  --cyan2:#0f91a5;
+  --blue:#176da2;
+  --green:#14875a;
+  --red:#c94f59;
+  --gold:#a97818;
+  --home:#d9684d;
+  --away:#2787bf;
+  --shadow:0 18px 48px rgba(31,58,72,.12),0 2px 7px rgba(31,58,72,.07);
+  background:
+    radial-gradient(circle at 12% -10%,rgba(43,154,176,.12),transparent 31rem),
+    radial-gradient(circle at 92% 3%,rgba(70,128,173,.07),transparent 28rem),
+    linear-gradient(180deg,#edf3f6 0,#e7edf1 52%,#e5ebef 100%);
+}
+body[data-theme="light"] .app{padding-top:0}
+body[data-theme="light"] .topbar{
+  min-height:72px;
+  background:rgba(255,255,255,.93);
+  border-color:#c8d6dd;
+  border-top:0;
+  box-shadow:0 9px 28px rgba(39,67,80,.12),0 1px 0 rgba(255,255,255,.9) inset;
+}
+body[data-theme="light"] .brandmark{
+  background:linear-gradient(145deg,#0d8198,#07576c);
+  border-color:#0b7286;
+  box-shadow:0 5px 14px rgba(6,91,110,.22);
+}
+body[data-theme="light"] .brandcopy strong{color:#102a38}
+body[data-theme="light"] .brandcopy small{color:#6e828d;font-weight:750}
+body[data-theme="light"] .navitem{color:#506773}
+body[data-theme="light"] .navitem:hover{
+  color:#12313f;background:#eef5f7;border-color:#d8e4e9
+}
+body[data-theme="light"] .navitem.active{
+  color:#075f72;
+  background:linear-gradient(180deg,#e5f6f8,#d9eff3);
+  border-color:#91c4cf;
+  box-shadow:inset 0 3px 0 #22a4b8,0 4px 12px rgba(17,119,140,.10);
+}
+body[data-theme="light"] .iconbtn,
+body[data-theme="light"] .ghostbtn{
+  background:#fff;border-color:#c4d3da;color:#183745;
+  box-shadow:0 2px 7px rgba(39,66,80,.07)
+}
+body[data-theme="light"] .iconbtn:hover,
+body[data-theme="light"] .ghostbtn:hover{background:#f0f6f8;border-color:#91b8c3}
+body[data-theme="light"] .primarybtn{
+  background:linear-gradient(180deg,#35b8c9,#178ca1);
+  border-color:#14859a;color:white;
+  box-shadow:0 7px 17px rgba(20,133,154,.22)
+}
+body[data-theme="light"] .workspace{padding-top:16px}
+body[data-theme="light"] .scanner{
+  background:#fff;
+  border-color:#cbd8de;
+  box-shadow:0 20px 52px rgba(43,66,78,.12),0 2px 5px rgba(43,66,78,.05);
+}
+body[data-theme="light"] .scanner-head{
+  background:linear-gradient(180deg,#fbfdfe,#f5f9fa);
+  border-color:#d3dfe4;
+}
+body[data-theme="light"] .scanner-title h1{color:#163340;font-weight:900}
+body[data-theme="light"] .statusline{color:#70838d;font-weight:650}
+body[data-theme="light"] .scanner-tools{background:#fff}
+body[data-theme="light"] .headline-row h2{color:#122d3a;font-weight:900}
+body[data-theme="light"] .headline-row p{color:#607680}
+body[data-theme="light"] .counter{
+  background:#e8f5f7;border-color:#bad9df;color:#176d7d;font-weight:800
+}
+body[data-theme="light"] .search input{
+  background:#f7fafb;border-color:#bdcdd5;color:#142f3c;
+  box-shadow:inset 0 1px 2px rgba(31,58,72,.035)
+}
+body[data-theme="light"] .search input::placeholder{color:#84949d}
+body[data-theme="light"] .search input:focus{
+  background:#fff;border-color:#2d93a5;box-shadow:0 0 0 3px rgba(36,145,164,.13)
+}
+body[data-theme="light"] .chip{
+  background:#f5f8fa;border-color:#c4d2d9;color:#4d6672
+}
+body[data-theme="light"] .chip:hover{background:#edf5f7;border-color:#9ebdc6;color:#264b5a}
+body[data-theme="light"] .chip.active{
+  background:#dff2f5;border-color:#82bfca;color:#0b6678;
+  box-shadow:0 3px 9px rgba(26,122,141,.10)
+}
+body[data-theme="light"] .reset{color:#087e94;font-weight:800}
+body[data-theme="light"] .smallchip{
+  background:#eef6f7;border-color:#c7dee3;color:#426b76
+}
+body[data-theme="light"] .match-grid{background:#fff}
+body[data-theme="light"] .match-card{
+  background:linear-gradient(180deg,#ffffff,#f8fbfc);
+  border-color:#c8d5dc;
+  box-shadow:0 5px 15px rgba(39,68,82,.075);
+}
+body[data-theme="light"] .match-card:hover{
+  transform:translateY(-3px);
+  border-color:#76aeb9;
+  box-shadow:0 14px 30px rgba(35,75,91,.15)
+}
+body[data-theme="light"] .tag{
+  background:#f0f5f7;border-color:#c8d7de;color:#536d79
+}
+body[data-theme="light"] .tag.value{
+  color:#8c6410;border-color:#dcc37d;background:#fff8df
+}
+body[data-theme="light"] .tag.strategy{
+  color:#286590;border-color:#aac9dd;background:#eef7fc
+}
+body[data-theme="light"] .fav{color:#76909b}
+body[data-theme="light"] .league{color:#3a5865}
+body[data-theme="light"] .crest{
+  background:#fff;border-color:#c7d5dc;box-shadow:0 2px 6px rgba(34,61,73,.08)
+}
+body[data-theme="light"] .crest-fallback{
+  background:#e7f2f5;border-color:#aac8d0;color:#236c7b
+}
+body[data-theme="light"] .team-name{color:#112d3b}
+body[data-theme="light"] .dash{color:#8ca0a9}
+body[data-theme="light"] .formbox{background:#e7ecef;color:#687f89}
+body[data-theme="light"] .formbox.w{background:#daf2e5;color:#11724c}
+body[data-theme="light"] .formbox.d{background:#fff1cc;color:#8d6617}
+body[data-theme="light"] .formbox.l{background:#fbe1e3;color:#a83f49}
+body[data-theme="light"] .card-bottom{border-color:#d9e2e6}
+body[data-theme="light"] .metric small{color:#73858e;font-weight:750}
+body[data-theme="light"] .metric strong{color:#183645}
+body[data-theme="light"] .metric strong.green{color:#137e55}
+body[data-theme="light"] .metric strong.cyan{color:#0b7790}
+body[data-theme="light"] .dossier-link{color:#087f95}
+body[data-theme="light"] .empty{background:#f8fbfc;border-color:#c5d3da;color:#6b7f89}
+
+/* Light premium — dossier */
+body[data-theme="light"] .backbtn,
+body[data-theme="light"] .tinybtn{
+  background:#fff;border-color:#c3d2d9;color:#244654;
+  box-shadow:0 2px 7px rgba(31,58,72,.06)
+}
+body[data-theme="light"] .tinybtn.active{
+  border-color:#75b7c3;color:#09687b;background:#e1f3f6
+}
+body[data-theme="light"] .match-hero{
+  background:linear-gradient(135deg,#ffffff 0%,#f2f8fa 52%,#eaf4f6 100%);
+  border-color:#bfcfd7;
+  box-shadow:0 17px 40px rgba(33,65,80,.13)
+}
+body[data-theme="light"] .hero-crest{
+  background:#fff;border-color:#c4d5dc;box-shadow:0 4px 12px rgba(39,66,79,.09)
+}
+body[data-theme="light"] .hero-fallback{background:#e2f1f4;border-color:#9ec4cd;color:#17697a}
+body[data-theme="light"] .hero-team h2{color:#102a38}
+body[data-theme="light"] .hero-team p{color:#6a7e88}
+body[data-theme="light"] .match-center .meta{color:#637a85;font-weight:700}
+body[data-theme="light"] .match-center .time{color:#0c2937}
+body[data-theme="light"] .match-center .state{
+  background:#dff2f5;border-color:#b5d7de;color:#0b6d7d
+}
+body[data-theme="light"] .hero-strip{
+  background:rgba(255,255,255,.68);border-color:#cbdadf
+}
+body[data-theme="light"] .hero-stat{border-color:#d2dee3}
+body[data-theme="light"] .hero-stat small{color:#71848e;font-weight:800}
+body[data-theme="light"] .hero-stat strong{color:#14323f}
+body[data-theme="light"] .hero-stat .accent{color:#087f95}
+body[data-theme="light"] .strategy-candidates,
+body[data-theme="light"] .dossier-section{
+  background:#fff;border-color:#c7d5dc;
+  box-shadow:0 7px 20px rgba(35,63,77,.07)
+}
+body[data-theme="light"] .block-title h3,
+body[data-theme="light"] .section-title h3{color:#15313e}
+body[data-theme="light"] .section-title span{color:#70838d}
+body[data-theme="light"] .candidate{
+  color:#0b6f65;background:#e5f6ef;border-color:#a9dac8;
+  box-shadow:0 2px 7px rgba(20,125,91,.06)
+}
+body[data-theme="light"] .dossier-nav{
+  background:rgba(245,249,250,.95);border-color:#c5d4db;
+  box-shadow:0 6px 18px rgba(35,64,78,.08)
+}
+body[data-theme="light"] .dossier-nav button{color:#536b76}
+body[data-theme="light"] .dossier-nav button:hover{background:#e8f1f4;color:#214957}
+body[data-theme="light"] .dossier-nav button.active{
+  background:#dceff3;border-color:#8cbec8;color:#08687a;
+  box-shadow:inset 0 2px 0 #26a3b6
+}
+body[data-theme="light"] .stat-card,
+body[data-theme="light"] .compare-panel,
+body[data-theme="light"] .skeleton-card,
+body[data-theme="light"] .goal-bucket{
+  background:linear-gradient(180deg,#fbfdfe,#f3f7f9);
+  border-color:#ccd9df;
+  box-shadow:0 3px 10px rgba(39,64,77,.045)
+}
+body[data-theme="light"] .stat-card small,
+body[data-theme="light"] .skeleton-card small{color:#607984;font-weight:800}
+body[data-theme="light"] .stat-card strong{color:#102f3d}
+body[data-theme="light"] .stat-card p{color:#6f828c}
+body[data-theme="light"] .compare-head{border-color:#d6e0e4}
+body[data-theme="light"] .compare-head strong{color:#15313f}
+body[data-theme="light"] .compare-head span{color:#6d828c}
+body[data-theme="light"] .compare-line label{color:#4f6975}
+body[data-theme="light"] .compare-line b{color:#234654}
+body[data-theme="light"] .bar{background:#dfe7eb}
+body[data-theme="light"] .bar i{background:linear-gradient(90deg,#25a3b6,#68bdca)}
+body[data-theme="light"] .goal-bucket .col{
+  background:linear-gradient(180deg,#55b9c8,#17869b);
+  box-shadow:0 5px 12px rgba(22,128,149,.16)
+}
+body[data-theme="light"] .goal-bucket b{color:#14313e}
+body[data-theme="light"] .goal-bucket small{color:#6d818b}
+body[data-theme="light"] .sline{background:#dfe8ec}
+body[data-theme="light"] .foot-note{
+  color:#677d88;background:#eef4f6;border-color:#cfdbdf
+}
+
 </style>
 </head>
 <body data-theme="dark">
