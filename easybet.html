@@ -1108,22 +1108,152 @@ body:not([data-theme="light"]) .la-proof-chip{background:#20242a;color:#c8d0d8;b
 
 </style>
 
+
+<style id="easybet-intelligence-visual-v1">
+/* EasyBet Intelligence — visual redesign only. Existing data, APIs and business logic are unchanged. */
+body:not([data-theme="light"]){
+  --eb-bg:#06111a;--eb-shell:#081722;--eb-panel:#0b1d29;--eb-panel2:#0e2432;--eb-line:#203949;
+  --eb-line-strong:#2d5c70;--eb-text:#edf7fb;--eb-muted:#8fa8b7;--eb-cyan:#58c8df;--eb-cyan2:#24d8f0;
+  --eb-blue:#4aa8ff;--eb-green:#43d887;--eb-red:#ff6272;--eb-yellow:#e9b949;
+  background:
+    linear-gradient(rgba(50,157,185,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(50,157,185,.045) 1px,transparent 1px),
+    radial-gradient(circle at 50% -10%,#103044 0,#07131d 42%,#040b11 100%)!important;
+  background-size:48px 48px,48px 48px,auto!important;
+  color:var(--eb-text)!important;
+}
+body:not([data-theme="light"]) .page-shell{
+  width:min(1600px,calc(100vw - 26px))!important;margin:12px auto 28px!important;border-radius:20px!important;
+  background:rgba(5,15,23,.96)!important;border:1px solid rgba(88,200,223,.18)!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.42)!important;overflow:hidden!important;
+}
+body:not([data-theme="light"]) .topbar{
+  height:76px!important;grid-template-columns:220px 1fr 300px!important;padding:0 22px!important;
+  background:rgba(7,20,30,.96)!important;border-bottom:1px solid rgba(88,200,223,.18)!important;
+  backdrop-filter:blur(18px);position:sticky;top:0;z-index:90;
+}
+body:not([data-theme="light"]) .brand{gap:11px!important}
+body:not([data-theme="light"]) .brand-mark{
+  width:44px!important;height:44px!important;border:0!important;border-radius:10px!important;color:transparent!important;
+  background:linear-gradient(180deg,rgba(22,76,94,.7),rgba(7,27,38,.9))!important;box-shadow:inset 0 0 0 1px rgba(88,200,223,.25)!important;position:relative;
+}
+body:not([data-theme="light"]) .brand-mark:before{content:"▥";position:absolute;inset:0;display:grid;place-items:center;color:var(--eb-cyan2);font-size:1.5rem;font-weight:900;transform:rotate(90deg)}
+body:not([data-theme="light"]) .brand-copy strong{font-size:1.34rem!important;color:#f4fbff!important}
+body:not([data-theme="light"]) .brand-copy strong span{color:var(--eb-cyan2)!important}
+body:not([data-theme="light"]) .brand-copy small{color:#6f9bad!important;letter-spacing:.18em!important;font-size:.54rem!important}
+body:not([data-theme="light"]) .nav{gap:8px!important;justify-content:flex-start!important}
+body:not([data-theme="light"]) .nav a{
+  padding:12px 15px!important;border:1px solid transparent!important;border-radius:12px!important;color:#a9bcc7!important;
+  font-size:.72rem!important;font-weight:800!important;letter-spacing:.055em;text-transform:uppercase;
+}
+body:not([data-theme="light"]) .nav a:after{display:none!important}
+body:not([data-theme="light"]) .nav a:hover{background:#0d2330!important;color:#eefaff!important;border-color:#1d3b4b!important}
+body:not([data-theme="light"]) .nav a.active{background:linear-gradient(180deg,#123346,#0d2634)!important;color:#74d9ed!important;border-color:#2c6a81!important;box-shadow:0 0 24px rgba(36,216,240,.08)}
+body:not([data-theme="light"]) .nav-actions{gap:8px!important}
+body:not([data-theme="light"]) .theme-toggle,body:not([data-theme="light"]) .nav-btn,body:not([data-theme="light"]) .mobile-menu-btn{
+  background:#0b1d29!important;color:#c7d7df!important;border:1px solid #233b4a!important;border-radius:11px!important;box-shadow:none!important;
+}
+body:not([data-theme="light"]) .nav-btn.primary{background:linear-gradient(180deg,#66d6e9,#3dbbd3)!important;color:#05131a!important;border-color:#6bdcee!important}
+body:not([data-theme="light"]) .mobile-nav{background:#071620!important;border-color:#1b3442!important}
+body:not([data-theme="light"]) .mobile-nav a{background:#0b1d29!important;border-color:#203a49!important;color:#bdd0d9!important}
+body:not([data-theme="light"]) .mobile-nav a.active{background:#123346!important;color:#77dcef!important;border-color:#2f7189!important}
+/* The old marketing hero is intentionally reduced: the working dashboard becomes the focus. */
+body:not([data-theme="light"]) .hero{height:7px!important;min-height:7px!important;background:linear-gradient(90deg,transparent,#2ebbd6 35%,#62d8ec 50%,#2ebbd6 65%,transparent)!important;opacity:.55}
+body:not([data-theme="light"]) .hero img{display:none!important}
+body:not([data-theme="light"]) .section{padding:18px 22px 34px!important;background:linear-gradient(180deg,#071620,#06111a)!important}
+body:not([data-theme="light"]) .section-head{
+  margin:0 0 14px!important;padding:17px 18px!important;border:1px solid #1c3442!important;border-radius:16px!important;background:linear-gradient(180deg,rgba(13,34,46,.96),rgba(8,24,34,.96))!important;
+}
+body:not([data-theme="light"]) .accent-line{width:38px!important;height:38px!important;border-radius:11px!important;background:linear-gradient(180deg,#163b4f,#0f2a39)!important;border:1px solid #28556a!important;box-shadow:none!important;position:relative}
+body:not([data-theme="light"]) .accent-line:after{content:"⌁";position:absolute;inset:0;display:grid;place-items:center;color:#56c8df;font-size:1.25rem;font-weight:900}
+body:not([data-theme="light"]) .section-head h2{font-size:1.08rem!important;color:#f2f8fb!important;letter-spacing:.01em!important}
+body:not([data-theme="light"]) .section-head p{color:#8199a7!important;font-size:.69rem!important;letter-spacing:.02em!important}
+body:not([data-theme="light"]) .refresh{color:#78929f!important}
+body:not([data-theme="light"]) .toolbar{margin:0 0 14px!important;padding:12px!important;border:1px solid #1a3240!important;border-radius:14px!important;background:#081824!important;justify-content:flex-start!important}
+body:not([data-theme="light"]) .pill{background:#0b1d29!important;color:#9db2bd!important;border:1px solid #203c4b!important;border-radius:999px!important;padding:8px 14px!important}
+body:not([data-theme="light"]) .pill:hover{color:#eefbff!important;border-color:#3f7b90!important}
+body:not([data-theme="light"]) .pill.active{background:linear-gradient(180deg,#174056,#102d3e)!important;color:#70d9ed!important;border-color:#36768e!important;box-shadow:0 0 18px rgba(37,190,217,.08)!important}
+body:not([data-theme="light"]) .live-searchbox{background:#091b27!important;border-color:#244554!important;box-shadow:none!important}
+body:not([data-theme="light"]) .live-searchbox .search-ico{color:#52cbe2!important}
+body:not([data-theme="light"]) .live-searchbox input{color:#edf8fc!important}
+body:not([data-theme="light"]) .live-search-count{color:#7ea0af!important}
+body:not([data-theme="light"]) .date-group{border-color:#193442!important;background:linear-gradient(180deg,#091b27,#07151f)!important;box-shadow:none!important}
+body:not([data-theme="light"]) .date-group-head{color:#68d3e8!important}
+body:not([data-theme="light"]) .date-group-head:before{background:#102b3a!important;border-color:#28556a!important;color:#62d3e9!important}
+body:not([data-theme="light"]) .date-group-head:after{background:linear-gradient(90deg,#2d7188,transparent)!important}
+body:not([data-theme="light"]) .date-group.archive{border-color:#1b3948!important;background:#081923!important}
+body:not([data-theme="light"]) .date-group.archive summary{color:#c9d9e1!important}
+body:not([data-theme="light"]) .date-group.archive summary:hover{background:#0b202d!important}
+body:not([data-theme="light"]) .date-group.archive summary:after{border-color:#2a566a!important;background:#0d2a39!important;color:#66d6eb!important}
+body:not([data-theme="light"]) .archive-count{background:#0e2b38!important;border-color:#23495b!important;color:#8eb1bf!important}
+body:not([data-theme="light"]) .archive-label:before{color:#57c8df!important}
+body:not([data-theme="light"]) .card{
+  min-height:365px!important;padding:13px!important;border-radius:15px!important;background:linear-gradient(180deg,#0c202c,#081721)!important;
+  border:1px solid #1e3b49!important;box-shadow:0 12px 28px rgba(0,0,0,.18)!important;gap:9px!important;
+}
+body:not([data-theme="light"]) .card:hover{border-color:#397188!important;transform:translateY(-1px);transition:.16s ease}
+body:not([data-theme="light"]) .card:before{background:radial-gradient(circle at 50% 35%,rgba(34,160,185,.09),transparent 38%)!important}
+body:not([data-theme="light"]) .card:after{background:linear-gradient(90deg,transparent,rgba(82,200,223,.35),transparent)!important;bottom:64px!important}
+body:not([data-theme="light"]) .card.esito-entrata_vinta{border-color:#1d8c60!important;box-shadow:0 0 0 1px rgba(67,216,135,.08) inset!important}
+body:not([data-theme="light"]) .card.esito-entrata_persa{border-color:#87404a!important;box-shadow:0 0 0 1px rgba(255,98,114,.07) inset!important}
+body:not([data-theme="light"]) .card.esito-non_entrata{border-color:#7a6229!important;box-shadow:0 0 0 1px rgba(233,185,73,.07) inset!important}
+body:not([data-theme="light"]) .league{color:#eaf5f8!important;font-size:.78rem!important}
+body:not([data-theme="light"]) .league small,body:not([data-theme="light"]) .date,body:not([data-theme="light"]) .role{color:#72909f!important}
+body:not([data-theme="light"]) .time{background:#071620!important;border-color:#1e3948!important;border-radius:10px!important}
+body:not([data-theme="light"]) .time small{color:#6f8e9c!important}
+body:not([data-theme="light"]) .time strong{color:#f1f9fc!important}
+body:not([data-theme="light"]) .matchup{background:#091b26!important;border-color:#193440!important;border-radius:12px!important;padding-top:11px!important;padding-bottom:10px!important}
+body:not([data-theme="light"]) .crest-wrap{width:68px!important;height:68px!important;border-radius:50%!important;background:#07151f!important;border-color:#264656!important}
+body:not([data-theme="light"]) .crest{width:52px!important;height:52px!important}
+body:not([data-theme="light"]) .team-name{color:#eef7fb!important;font-size:.84rem!important}
+body:not([data-theme="light"]) .vs{width:36px!important;height:36px!important;background:#0e2c3b!important;color:#68d4e9!important;border:1px solid #2d6176!important;box-shadow:none!important;font-size:.66rem!important}
+body:not([data-theme="light"]) .info-grid{border-top-color:#244754!important}
+body:not([data-theme="light"]) .info + .info{border-left-color:#23414e!important}
+body:not([data-theme="light"]) .info label{color:#738f9d!important}
+body:not([data-theme="light"]) .info strong{color:#edf8fb!important}
+body:not([data-theme="light"]) .info.strategy strong{color:#66d4e9!important}
+body:not([data-theme="light"]) .status{border-radius:10px!important;letter-spacing:.035em!important;font-size:.7rem!important}
+body:not([data-theme="light"]) .status.wait,body:not([data-theme="light"]) .status.in-attesa{background:#0f2632!important;color:#8aa7b5!important;border-color:#244654!important}
+body:not([data-theme="light"]) .status.win,body:not([data-theme="light"]) .status.entrata_vinta{background:#0d2c21!important;color:#4ee199!important;border-color:#1e7654!important}
+body:not([data-theme="light"]) .status.loss,body:not([data-theme="light"]) .status.entrata_persa{background:#311820!important;color:#ff7180!important;border-color:#713440!important}
+body:not([data-theme="light"]) .status.non_entrata{background:#302a17!important;color:#f1c75f!important;border-color:#655526!important}
+body:not([data-theme="light"]) .empty{background:#091b27!important;border:1px solid #1d3947!important;color:#89a5b1!important;border-radius:14px!important}
+/* Boards (strategie, consigli, statistiche) */
+body:not([data-theme="light"]) .strategies-board,body:not([data-theme="light"]) .advice-board,body:not([data-theme="light"]) .stats-dashboard{color:#e8f4f8!important}
+body:not([data-theme="light"]) .strategies-board *,body:not([data-theme="light"]) .advice-board *,body:not([data-theme="light"]) .stats-dashboard *{border-color:#1f3b49}
+/* Live Analyzer overlay keeps its working logic but adopts the new visual system. */
+body:not([data-theme="light"]) .live-analyzer-overlay,body:not([data-theme="light"]) .live-analyzer-backdrop{backdrop-filter:blur(12px)}
+body:not([data-theme="light"]) .live-analyzer-modal{border-color:#2a5264!important;box-shadow:0 30px 90px rgba(0,0,0,.55)!important}
+@media(max-width:900px){
+ body:not([data-theme="light"]) .page-shell{width:calc(100vw - 12px)!important;margin:6px auto 16px!important;border-radius:16px!important}
+ body:not([data-theme="light"]) .topbar{grid-template-columns:1fr auto auto!important;padding:10px 12px!important;height:auto!important}
+ body:not([data-theme="light"]) .section{padding:12px!important}
+ body:not([data-theme="light"]) .section-head{padding:14px!important}
+}
+@media(max-width:560px){
+ body:not([data-theme="light"]) .page-shell{width:100%!important;margin:0!important;border-radius:0!important;border-left:0!important;border-right:0!important}
+ body:not([data-theme="light"]) .brand-mark{width:38px!important;height:38px!important}
+ body:not([data-theme="light"]) .brand-copy strong{font-size:1.12rem!important}
+ body:not([data-theme="light"]) .section-head{border-radius:12px!important}
+}
+</style>
+
 </head>
 <body>
 <div class="page-shell">
   <header class="topbar">
     <a href="/easybet.html" class="brand">
       <div class="brand-mark">EB</div>
-      <div class="brand-copy"><strong>Easy<span>Bet</span></strong><small>PLAY SMARTER</small></div>
+      <div class="brand-copy"><strong>Easy<span>Bet</span></strong><small>FOOTBALL INTELLIGENCE</small></div>
     </a>
     <nav class="nav">
-      <a class="view-link active" data-view="home" href="#home">Home</a><a class="view-link" data-view="pronostici" href="#pronostici">Pronostici</a><a class="view-link" data-view="live" href="#live">Live</a><a class="view-link" data-view="statistiche" href="#statistiche">Statistiche</a><a class="view-link" data-view="strategie" href="#strategie">Strategie</a><a class="view-link" data-view="consigli" href="#consigli">Consigli</a>
+      <a class="view-link active" data-view="home" href="#home">Oggi</a><a class="view-link" data-view="pronostici" href="#pronostici">Segnali</a><a class="view-link" data-view="live" href="#live">Live</a><a class="view-link" data-view="statistiche" href="#statistiche">Statistiche</a><a class="view-link" data-view="strategie" href="#strategie">Strategie</a><a class="view-link" data-view="consigli" href="#consigli">Consigli</a>
     </nav>
     <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Apri menu" aria-expanded="false">☰</button><div class="nav-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-label="Attiva modalità chiara" title="Cambia tema">☀️</button><a class="nav-btn" href="/easybet-admin.html">Accedi</a><a class="nav-btn primary" href="#partite">Registrati</a></div>
   </header>
   <nav class="mobile-nav" id="mobileNav" aria-label="Navigazione mobile">
-    <a class="active" href="#" data-view="home">Home</a>
-    <a href="#partite" data-view="pronostici">Pronostici</a>
+    <a class="active" href="#" data-view="home">Oggi</a>
+    <a href="#partite" data-view="pronostici">Segnali</a>
     <a href="#partite" data-view="live">Live</a>
     <a href="#partite" data-view="statistiche">Statistiche</a>
     <a href="#partite" data-view="strategie">Strategie</a>
