@@ -781,7 +781,7 @@ const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;
 const CREST_TTL_MISS_MS = 5 * 60 * 1000; // riprova molto prima i mancanti per evitare placeholder persistenti
 // Versione cache automatica: evita di riusare vecchi risultati errati (es. foto di città).
 // Gli override manuali restano sulla chiave storica e continuano a funzionare.
-const CREST_CACHE_VERSION = 'v4';
+const CREST_CACHE_VERSION = 'v5';
 
 const CREST_ALIASES = {
   'lahti': ['FC Lahti'],
@@ -853,7 +853,60 @@ const CREST_ALIASES = {
   'sporting kc': ['Sporting Kansas City', 'Sporting KC', 'SKC'],
   'sporting kansas city': ['Sporting Kansas City', 'Sporting KC', 'SKC'],
   'toronto': ['Toronto FC'],
-  'toronto fc': ['Toronto FC']
+  'toronto fc': ['Toronto FC'],
+  'dallas': ['FC Dallas'],
+  'fc dallas': ['FC Dallas'],
+  'los angeles': ['Los Angeles FC','LAFC'],
+  'los angeles fc': ['Los Angeles FC','LAFC'],
+  'valladolid': ['Real Valladolid'],
+  'cordoba': ['Cordoba CF','Córdoba CF'],
+  'mallorca': ['RCD Mallorca'],
+  'almeria': ['UD Almeria','UD Almería'],
+  'girona': ['Girona FC'],
+  'albacete': ['Albacete Balompie','Albacete Balompié'],
+  'avellino': ['US Avellino 1912','U.S. Avellino 1912'],
+  'entella': ['Virtus Entella'],
+  'port vale': ['Port Vale FC'],
+  'mansfield': ['Mansfield Town','Mansfield Town FC'],
+  'carlisle': ['Carlisle United','Carlisle United FC'],
+  'halifax': ['FC Halifax Town'],
+  'rochdale': ['Rochdale AFC'],
+  'aldershot': ['Aldershot Town','Aldershot Town FC'],
+  'san jose': ['San Jose Earthquakes','SJ Earthquakes'],
+  'sj earthquakes': ['San Jose Earthquakes'],
+  'vancouver': ['Vancouver Whitecaps FC','Vancouver Whitecaps'],
+  'philadelphia': ['Philadelphia Union'],
+  'philadelphia union': ['Philadelphia Union'],
+  'orlando city': ['Orlando City SC','Orlando City'],
+  'charlotte': ['Charlotte FC'],
+  'chicago fire': ['Chicago Fire FC','Chicago Fire'],
+  'montreal': ['CF Montreal','CF Montréal'],
+  'cf montreal': ['CF Montreal','CF Montréal'],
+  'cincinnati': ['FC Cincinnati'],
+  'st louis city': ['St. Louis City SC','St Louis City SC'],
+  'st louis': ['St. Louis City SC','St Louis City SC'],
+  'san diego': ['San Diego FC'],
+  'portland': ['Portland Timbers'],
+  'new york rb': ['New York Red Bulls','NY Red Bulls'],
+  'new york red bulls': ['New York Red Bulls'],
+  'gimnastic': ['Gimnastic de Tarragona','Gimnàstic de Tarragona'],
+  'gimnastic tarragona': ['Gimnastic de Tarragona','Gimnàstic de Tarragona'],
+  'atletico baleares': ['CD Atletico Baleares','CD Atlético Baleares'],
+  'teruel': ['CD Teruel'],
+  'europa': ['CE Europa'],
+  'antequera': ['Antequera CF'],
+  'sabadell': ['CE Sabadell FC','Centre d Esports Sabadell Futbol Club'],
+  'twente': ['FC Twente'],
+  'fc twente': ['FC Twente'],
+  'fortuna sittard': ['Fortuna Sittard'],
+  'nac breda': ['NAC Breda'],
+  'groningen': ['FC Groningen'],
+  'fc groningen': ['FC Groningen'],
+  'den bosch': ['FC Den Bosch'],
+  'fc den bosch': ['FC Den Bosch'],
+  'houston dynamo': ['Houston Dynamo FC','Houston Dynamo'],
+  'nashville sc': ['Nashville SC'],
+  'nashville': ['Nashville SC']
 };
 
 // ID Wikidata fissati per i club che possono essere ambigui o che i provider
@@ -866,7 +919,34 @@ const CREST_WIKIDATA_IDS = {
   'sporting kc': 'Q329812',
   'sporting kansas city': 'Q329812',
   'toronto': 'Q327238',
-  'toronto fc': 'Q327238'
+  'toronto fc': 'Q327238',
+  'dallas': 'Q642291',
+  'fc dallas': 'Q642291',
+  'los angeles fc': 'Q18380286',
+  'avellino': 'Q298217',
+  'entella': 'Q2276413',
+  'de graafschap': 'Q221927',
+  'den bosch': 'Q875169',
+  'fc den bosch': 'Q875169',
+  'girona': 'Q11945',
+  'albacete': 'Q576285',
+  'gimnastic': 'Q257984',
+  'gimnastic tarragona': 'Q257984',
+  'teruel': 'Q2128712',
+  'sabadell': 'Q12260',
+  'atletico baleares': 'Q855199',
+  'houston dynamo': 'Q328313',
+  'sporting kansas city': 'Q329812',
+  'chicago fire': 'Q308683',
+  'charlotte': 'Q78944434',
+  'montreal': 'Q167615',
+  'cf montreal': 'Q167615',
+  'cincinnati': 'Q20855983',
+  'cordoba': 'Q10499',
+  'valladolid': 'Q10319',
+  'mallorca': 'Q8835',
+  'groningen': 'Q24711',
+  'fortuna sittard': 'Q854167'
 };
 const COUNTRY_ALIASES = {
   'republic of ireland':'ireland', 'england':'england', 'scotland':'scotland',
@@ -1055,15 +1135,25 @@ async function lookupCrestWikipedia(name,countryHint){
 }
 
 async function lookupCrest(name,countryHint){
-  // Per i club noti/ambigui preferiamo direttamente Wikidata: evita
-  // abbreviazioni come LP/DG/SK e loghi generici di campionato.
-  const fixedId=CREST_WIKIDATA_IDS[normCrestName(name)];
+  const key=normCrestName(name);
+
+  // 1) Club noti/ambigui: QID Wikidata fissato. È la fonte più sicura.
+  const fixedId=CREST_WIKIDATA_IDS[key];
   if(fixedId){
     const fixed=await lookupCrestWikidataById(fixedId,name);
     if(fixed&&fixed.url) return fixed;
   }
 
+  // 2) Wikidata prima dei motori fuzzy: cerchiamo un'entità descritta come club/team di calcio
+  // e chiediamo esplicitamente logo/stemma. Questo evita città, leghe e club omonimi.
+  const wd=await lookupCrestWikidata(name,countryHint);
+  if(wd && wd.url) return wd;
+
+  // 3) TheSportsDB solo con corrispondenza FORTE del nome. In precedenza la ricerca fuzzy
+  // poteva restituire un club diverso dello stesso Paese e quindi uno stemma sbagliato.
   const queries=crestQueries(name);
+  const allowedNames=new Set(queries.map(normCrestName));
+  allowedNames.add(key);
   let best=null, bestScore=-Infinity;
   for(const query of queries){
     try{
@@ -1074,20 +1164,18 @@ async function lookupCrest(name,countryHint){
       for(const team of teams){
         if(team.strSport && normCrestName(team.strSport)!=='soccer') continue;
         if(countryHint && team.strCountry && !countriesMatch(team.strCountry,countryHint)) continue;
-        const score=crestCandidateScore(team,name,query,countryHint);
+        const teamNames=[team.strTeam,team.strTeamShort].filter(Boolean).map(normCrestName);
+        const alternates=String(team.strAlternate||'').split(/[,;/|]+/).map(normCrestName).filter(Boolean);
+        const exact=[...teamNames,...alternates].some(n=>allowedNames.has(n));
+        if(!exact) continue;
+        const score=crestCandidateScore(team,name,query,countryHint)+100;
         if(score>bestScore){bestScore=score;best=team;}
       }
-      if(bestScore>=150) break;
     }catch(err){ console.error('Lookup stemma "'+query+'":',err.message); }
   }
-  if(best && best.strBadge && bestScore>=90) return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb'};
+  if(best && best.strBadge) return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb-exact'};
 
-  // Secondo provider: Wikidata/Commons. Qui chiediamo esplicitamente la proprietà
-  // 'logo' (P154) o 'stemma' (P94), quindi non può tornare una foto della città.
-  const wd=await lookupCrestWikidata(name,countryHint);
-  if(wd && wd.url) return wd;
-
-  // Ultimo fallback: Wikipedia, ma solo se la pagina è chiaramente un club di calcio.
+  // 4) Wikipedia è l'ultima spiaggia e resta sottoposta al controllo sul titolo del club.
   return await lookupCrestWikipedia(name,countryHint);
 }
 
