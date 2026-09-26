@@ -781,7 +781,7 @@ const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;
 const CREST_TTL_MISS_MS = 5 * 60 * 1000; // riprova molto prima i mancanti per evitare placeholder persistenti
 // Versione cache automatica: evita di riusare vecchi risultati errati (es. foto di città).
 // Gli override manuali restano sulla chiave storica e continuano a funzionare.
-const CREST_CACHE_VERSION = 'v3';
+const CREST_CACHE_VERSION = 'v4';
 
 const CREST_ALIASES = {
   'lahti': ['FC Lahti'],
@@ -848,7 +848,25 @@ const CREST_ALIASES = {
   'burgos': ['Burgos CF', 'Burgos'],
   'eldense': ['CD Eldense', 'Eldense'],
   'perugia': ['AC Perugia Calcio', 'Perugia Calcio', 'Perugia'],
-  'reggiana': ['AC Reggiana 1919', 'Reggiana 1919', 'Reggiana']
+  'reggiana': ['AC Reggiana 1919', 'Reggiana 1919', 'Reggiana'],
+  'de graafschap': ['De Graafschap', 'BV De Graafschap'],
+  'sporting kc': ['Sporting Kansas City', 'Sporting KC', 'SKC'],
+  'sporting kansas city': ['Sporting Kansas City', 'Sporting KC', 'SKC'],
+  'toronto': ['Toronto FC'],
+  'toronto fc': ['Toronto FC']
+};
+
+// ID Wikidata fissati per i club che possono essere ambigui o che i provider
+// restituiscono con immagini generiche. Qui prendiamo lo stemma del club, non
+// una foto della città e non il logo generico della lega.
+const CREST_WIKIDATA_IDS = {
+  'las palmas': 'Q11979',
+  'ud las palmas': 'Q11979',
+  'de graafschap': 'Q221927',
+  'sporting kc': 'Q329812',
+  'sporting kansas city': 'Q329812',
+  'toronto': 'Q327238',
+  'toronto fc': 'Q327238'
 };
 const COUNTRY_ALIASES = {
   'republic of ireland':'ireland', 'england':'england', 'scotland':'scotland',
@@ -907,6 +925,44 @@ function looksLikeFootballClubTitle(title, requestedName){
   return footballMarker && enoughOverlap;
 }
 
+function chooseBestWikidataLogoClaim(claims){
+  const candidates=[];
+  for(const prop of ['P154','P94']){
+    for(const claim of (claims&&claims[prop])||[]){
+      const filename=claim&&claim.mainsnak&&claim.mainsnak.datavalue&&claim.mainsnak.datavalue.value;
+      if(!filename) continue;
+      const f=String(filename).toLowerCase();
+      let score=(prop==='P154'?30:20);
+      if(/crest|badge|emblem|shield/.test(f)) score+=80;
+      if(/logo/.test(f)) score+=35;
+      if(/wordmark|logotype|text/.test(f)) score-=80;
+      if(/old|former|2006|2010|histor/.test(f)) score-=25;
+      candidates.push({filename,score});
+    }
+  }
+  candidates.sort((a,b)=>b.score-a.score);
+  return candidates.length?candidates[0].filename:null;
+}
+
+async function lookupCrestWikidataById(id, matched){
+  if(!id) return {url:null,matched:null};
+  try{
+    const entityUrl='https://www.wikidata.org/w/api.php?action=wbgetentities&ids='+encodeURIComponent(id)+'&props=claims&format=json&origin=*';
+    const er=await fetch(entityUrl,{headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}});
+    if(!er.ok) return {url:null,matched:null};
+    const ed=await er.json();
+    const ent=ed&&ed.entities&&ed.entities[id];
+    const claims=ent&&ent.claims?ent.claims:{};
+    const filename=chooseBestWikidataLogoClaim(claims);
+    if(!filename) return {url:null,matched:null};
+    const url='https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(filename)+'?width=320';
+    return {url,matched:matched||id,source:'wikidata-fixed'};
+  }catch(err){
+    console.error('Wikidata ID stemma "'+id+'":',err.message);
+    return {url:null,matched:null};
+  }
+}
+
 async function lookupCrestWikidata(name,countryHint){
   const clean=String(name||'').trim();
   if(!clean) return {url:null,matched:null};
@@ -949,8 +1005,7 @@ async function lookupCrestWikidata(name,countryHint){
     const ed=await er.json();
     const ent=ed&&ed.entities&&ed.entities[best.id];
     const claims=ent&&ent.claims?ent.claims:{};
-    const claim=(claims.P154&&claims.P154[0]) || (claims.P94&&claims.P94[0]);
-    const filename=claim&&claim.mainsnak&&claim.mainsnak.datavalue&&claim.mainsnak.datavalue.value;
+    const filename=chooseBestWikidataLogoClaim(claims);
     if(!filename) return {url:null,matched:null};
     const url='https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(filename)+'?width=320';
     return {url,matched:best.label||clean,source:'wikidata'};
@@ -1000,6 +1055,14 @@ async function lookupCrestWikipedia(name,countryHint){
 }
 
 async function lookupCrest(name,countryHint){
+  // Per i club noti/ambigui preferiamo direttamente Wikidata: evita
+  // abbreviazioni come LP/DG/SK e loghi generici di campionato.
+  const fixedId=CREST_WIKIDATA_IDS[normCrestName(name)];
+  if(fixedId){
+    const fixed=await lookupCrestWikidataById(fixedId,name);
+    if(fixed&&fixed.url) return fixed;
+  }
+
   const queries=crestQueries(name);
   let best=null, bestScore=-Infinity;
   for(const query of queries){
