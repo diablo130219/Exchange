@@ -720,12 +720,18 @@ app.post('/api/live-stats', async (req, res) => {
     const payload = {
       scoreHome: numOrNull(b.scoreHome),
       scoreAway: numOrNull(b.scoreAway),
-      xgHome: numOrNull(b.xgHome) || 0,
-      xgAway: numOrNull(b.xgAway) || 0,
-      sotHome: numOrNull(b.sotHome) || 0,
-      sotAway: numOrNull(b.sotAway) || 0,
-      chancesHome: numOrNull(b.chancesHome) || 0,
-      chancesAway: numOrNull(b.chancesAway) || 0
+      xgHome: numOrNull(b.xgHome),
+      xgAway: numOrNull(b.xgAway),
+      sotHome: numOrNull(b.sotHome),
+      sotAway: numOrNull(b.sotAway),
+      chancesHome: numOrNull(b.chancesHome),
+      chancesAway: numOrNull(b.chancesAway),
+      shotsHome: numOrNull(b.shotsHome),
+      shotsAway: numOrNull(b.shotsAway),
+      boxshotsHome: numOrNull(b.boxshotsHome),
+      boxshotsAway: numOrNull(b.boxshotsAway),
+      touchesHome: numOrNull(b.touchesHome),
+      touchesAway: numOrNull(b.touchesAway)
     };
 
     const { rows } = await pool.query(

@@ -58,7 +58,10 @@
     return {
       xg: pairStat(text, 'Goal previsti \\(xG\\)', true),
       sot: pairStat(text, 'Tiri in porta', false),
-      chances: pairStat(text, 'Grandi occasioni', false)
+      chances: pairStat(text, 'Grandi occasioni', false),
+      shots: pairStat(text, 'Tiri totali', false),
+      boxshots: pairStat(text, 'Tiri (?:dall.?area di rigore|in area)', false),
+      touches: pairStat(text, '(?:Palloni toccati nell.?area avversaria|Tocchi (?:nell.?area avversaria|in area))', false)
     };
   }
 
@@ -109,7 +112,8 @@
       (score.home !== null ? ' (' + score.home + '-' + score.away + ')' : '');
 
     var st = getStats();
-    statsEl.innerHTML = 'xG: ' + fmtPair(st.xg) + ' • SOT: ' + fmtPair(st.sot) + ' • Occ: ' + fmtPair(st.chances);
+    statsEl.innerHTML = 'xG: ' + fmtPair(st.xg) + ' • SOT: ' + fmtPair(st.sot) + ' • Occ: ' + fmtPair(st.chances) +
+      ' • Tiri: ' + fmtPair(st.shots);
 
     if (!API_BASE) {
       statusEl.textContent = 'Errore: impossibile determinare il server.';
@@ -129,7 +133,13 @@
         sotHome: st.sot ? st.sot.home : null,
         sotAway: st.sot ? st.sot.away : null,
         chancesHome: st.chances ? st.chances.home : null,
-        chancesAway: st.chances ? st.chances.away : null
+        chancesAway: st.chances ? st.chances.away : null,
+        shotsHome: st.shots ? st.shots.home : null,
+        shotsAway: st.shots ? st.shots.away : null,
+        boxshotsHome: st.boxshots ? st.boxshots.home : null,
+        boxshotsAway: st.boxshots ? st.boxshots.away : null,
+        touchesHome: st.touches ? st.touches.home : null,
+        touchesAway: st.touches ? st.touches.away : null
       })
     }).then(function (r) { return r.json(); }).then(function (data) {
       var now = new Date().toLocaleTimeString('it-IT');
