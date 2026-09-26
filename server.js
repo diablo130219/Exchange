@@ -779,6 +779,9 @@ function normCrestName(s) {
 }
 const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;
 const CREST_TTL_MISS_MS = 5 * 60 * 1000; // riprova molto prima i mancanti per evitare placeholder persistenti
+// Versione cache automatica: evita di riusare vecchi risultati errati (es. foto di città).
+// Gli override manuali restano sulla chiave storica e continuano a funzionare.
+const CREST_CACHE_VERSION = 'v3';
 
 const CREST_ALIASES = {
   'lahti': ['FC Lahti'],
@@ -836,7 +839,16 @@ const CREST_ALIASES = {
   'lokomotiv sofia 1929': ['Lokomotiv Sofia', 'Lokomotiv 1929 Sofia'],
   'cska sofia': ['CSKA Sofia'],
   'zalgiris': ['FK Zalgiris', 'Zalgiris Vilnius'],
-  'kauno zalgiris': ['FK Kauno Zalgiris', 'Kauno Zalgiris']
+  'kauno zalgiris': ['FK Kauno Zalgiris', 'Kauno Zalgiris'],
+  'foggia': ['Calcio Foggia 1920', 'Foggia Calcio', 'Foggia'],
+  'sorrento': ['Sorrento Calcio 1945', 'Sorrento Calcio', 'Sorrento'],
+  'sd eibar': ['SD Eibar', 'Eibar'],
+  'eibar': ['SD Eibar', 'Eibar'],
+  'las palmas': ['UD Las Palmas', 'Las Palmas'],
+  'burgos': ['Burgos CF', 'Burgos'],
+  'eldense': ['CD Eldense', 'Eldense'],
+  'perugia': ['AC Perugia Calcio', 'Perugia Calcio', 'Perugia'],
+  'reggiana': ['AC Reggiana 1919', 'Reggiana 1919', 'Reggiana']
 };
 const COUNTRY_ALIASES = {
   'republic of ireland':'ireland', 'england':'england', 'scotland':'scotland',
@@ -880,16 +892,85 @@ function crestCandidateScore(team, requestedName, query, countryHint){
   if(team.strBadge) score+=10;
   return score;
 }
+function meaningfulCrestTokens(s){
+  const stop=new Set(['fc','cf','afc','sc','ac','as','sk','fk','sv','tsv','club','football','calcio','de','del','the']);
+  return normCrestName(s).split(' ').filter(t=>t.length>2&&!stop.has(t));
+}
+function looksLikeFootballClubTitle(title, requestedName){
+  const raw=String(title||'');
+  const t=normCrestName(raw), req=normCrestName(requestedName);
+  if(!t||!req) return false;
+  const footballMarker=/(football club|football|soccer|calcio|futbol|fussball|fc\b|cf\b|afc\b|sc\b|ac\b|club)/i.test(raw);
+  const tokens=meaningfulCrestTokens(requestedName);
+  const overlap=tokens.filter(x=>t.includes(x)).length;
+  const enoughOverlap=tokens.length ? overlap>=Math.min(2,tokens.length) : t.includes(req);
+  return footballMarker && enoughOverlap;
+}
+
+async function lookupCrestWikidata(name,countryHint){
+  const clean=String(name||'').trim();
+  if(!clean) return {url:null,matched:null};
+  const queries=crestQueries(clean);
+  const langs=['en','it'];
+  let best=null,bestScore=-Infinity;
+  for(const lang of langs){
+    for(const q of queries){
+      try{
+        const searchUrl='https://www.wikidata.org/w/api.php?action=wbsearchentities&search='+encodeURIComponent(q)+'&language='+lang+'&uselang='+lang+'&type=item&limit=10&format=json&origin=*';
+        const sr=await fetch(searchUrl,{headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}});
+        if(!sr.ok) continue;
+        const sd=await sr.json();
+        const items=Array.isArray(sd&&sd.search)?sd.search:[];
+        for(const item of items){
+          const label=normCrestName(item.label||'');
+          const desc=String(item.description||'');
+          const descNorm=normCrestName(desc);
+          const req=normCrestName(clean);
+          const qn=normCrestName(q);
+          const football=/football club|association football club|soccer club|football team|calcio|societa calcistica|club de futbol|fussballverein/.test(descNorm);
+          if(!football) continue;
+          let score=0;
+          if(label===req) score+=120;
+          if(label===qn) score+=100;
+          if(label.includes(req)||req.includes(label)) score+=55;
+          const toks=meaningfulCrestTokens(clean);
+          score+=toks.filter(t=>label.includes(t)).length*25;
+          if(countryHint && descNorm.includes(normCountry(countryHint))) score+=25;
+          if(score>bestScore){bestScore=score;best=item;}
+        }
+      }catch(err){ console.error('Lookup Wikidata stemma "'+q+'":',err.message); }
+    }
+  }
+  if(!best || bestScore<55 || !best.id) return {url:null,matched:null};
+  try{
+    const entityUrl='https://www.wikidata.org/w/api.php?action=wbgetentities&ids='+encodeURIComponent(best.id)+'&props=claims&format=json&origin=*';
+    const er=await fetch(entityUrl,{headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}});
+    if(!er.ok) return {url:null,matched:null};
+    const ed=await er.json();
+    const ent=ed&&ed.entities&&ed.entities[best.id];
+    const claims=ent&&ent.claims?ent.claims:{};
+    const claim=(claims.P154&&claims.P154[0]) || (claims.P94&&claims.P94[0]);
+    const filename=claim&&claim.mainsnak&&claim.mainsnak.datavalue&&claim.mainsnak.datavalue.value;
+    if(!filename) return {url:null,matched:null};
+    const url='https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(filename)+'?width=320';
+    return {url,matched:best.label||clean,source:'wikidata'};
+  }catch(err){
+    console.error('Wikidata dettaglio stemma "'+clean+'":',err.message);
+    return {url:null,matched:null};
+  }
+}
+
 async function lookupCrestWikipedia(name,countryHint){
   const clean=String(name||'').trim();
   if(!clean) return {url:null,matched:null};
   const searches=[];
   if(countryHint) searches.push(clean+' football club '+countryHint);
   searches.push(clean+' football club');
+  searches.push(clean+' calcio');
   searches.push(clean+' FC');
   for(const q of [...new Set(searches)]){
     try{
-      const url='https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrnamespace=0&gsrlimit=6&gsrsearch='+encodeURIComponent(q)+'&prop=pageimages&pithumbsize=320&format=json&origin=*';
+      const url='https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrnamespace=0&gsrlimit=8&gsrsearch='+encodeURIComponent(q)+'&prop=pageimages&pithumbsize=320&format=json&origin=*';
       const r=await fetch(url,{headers:{'User-Agent':'EasyBet/1.0 (team crest fallback)'}});
       if(!r.ok) continue;
       const data=await r.json();
@@ -899,16 +980,18 @@ async function lookupCrestWikipedia(name,countryHint){
       let best=null,bestScore=-Infinity;
       for(const page of pages){
         if(!page||!page.thumbnail||!page.thumbnail.source) continue;
+        // Non accettiamo più pagine generiche di città/località/stadi come stemmi.
+        if(!looksLikeFootballClubTitle(page.title, clean)) continue;
         const title=normCrestName(page.title||'');
         let score=0;
         if(title===requested) score+=120;
         if(title.includes(requested)||requested.includes(title)) score+=70;
-        const reqTokens=requested.split(' ').filter(x=>x.length>2);
-        score+=reqTokens.filter(x=>title.includes(x)).length*15;
-        if(/football|soccer|club|fc|cf|afc|sc/.test(title)) score+=10;
+        const reqTokens=meaningfulCrestTokens(clean);
+        score+=reqTokens.filter(x=>title.includes(x)).length*25;
+        if(/football|soccer|club|fc|cf|afc|sc|ac|calcio/.test(title)) score+=25;
         if(score>bestScore){bestScore=score;best=page;}
       }
-      if(best&&best.thumbnail&&bestScore>=25){
+      if(best&&best.thumbnail&&bestScore>=50){
         return {url:best.thumbnail.source,matched:best.title||null,source:'wikipedia'};
       }
     }catch(err){ console.error('Fallback Wikipedia stemma "'+q+'":',err.message); }
@@ -926,15 +1009,22 @@ async function lookupCrest(name,countryHint){
       const data=await r.json();
       const teams=(data&&Array.isArray(data.teams)?data.teams:[]).filter(t=>t&&t.strBadge);
       for(const team of teams){
+        if(team.strSport && normCrestName(team.strSport)!=='soccer') continue;
+        if(countryHint && team.strCountry && !countriesMatch(team.strCountry,countryHint)) continue;
         const score=crestCandidateScore(team,name,query,countryHint);
-        const passesCountry=!countryHint || countriesMatch(team.strCountry,countryHint);
-        const finalScore=score + (passesCountry ? 25 : 0);
-        if(finalScore>bestScore){bestScore=finalScore;best=team;}
+        if(score>bestScore){bestScore=score;best=team;}
       }
       if(bestScore>=150) break;
     }catch(err){ console.error('Lookup stemma "'+query+'":',err.message); }
   }
-  if(best && best.strBadge) return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb'};
+  if(best && best.strBadge && bestScore>=90) return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb'};
+
+  // Secondo provider: Wikidata/Commons. Qui chiediamo esplicitamente la proprietà
+  // 'logo' (P154) o 'stemma' (P94), quindi non può tornare una foto della città.
+  const wd=await lookupCrestWikidata(name,countryHint);
+  if(wd && wd.url) return wd;
+
+  // Ultimo fallback: Wikipedia, ma solo se la pagina è chiaramente un club di calcio.
   return await lookupCrestWikipedia(name,countryHint);
 }
 
@@ -943,20 +1033,29 @@ app.get('/api/team-crest', async (req, res) => {
     const name = String(req.query.name || '').trim();
     if (!name) return res.status(400).json({ error: 'Nome squadra mancante.' });
     const countryHint = countryHintFromCampionato(req.query.country || '');
-    const key = normCrestName(name) + (countryHint ? '|' + normCountry(countryHint) : '');
-    const { rows } = await pool.query('SELECT * FROM team_crests WHERE name_norm = $1', [key]);
-    const cached = rows[0], now=Date.now();
+    const baseKey = normCrestName(name) + (countryHint ? '|' + normCountry(countryHint) : '');
+    const autoKey = 'auto:' + CREST_CACHE_VERSION + '|' + baseKey;
+    const now=Date.now();
+
+    // Preserva gli override manuali già inseriti dall'admin.
+    const manualQ = await pool.query('SELECT * FROM team_crests WHERE name_norm = $1 AND manual=true', [baseKey]);
+    const manualCached = manualQ.rows[0];
+    if(manualCached) return res.json({url:manualCached.url||null,manual:true,source:'manual'});
+
+    // Cache automatica versionata: ignora le vecchie foto sbagliate già memorizzate.
+    const autoQ = await pool.query('SELECT * FROM team_crests WHERE name_norm = $1', [autoKey]);
+    const cached = autoQ.rows[0];
     if(cached){
-      if(cached.manual) return res.json({url:cached.url||null,manual:true,source:'manual'});
       const age=now-Number(cached.fetched_at);
       const fresh=cached.url ? age<CREST_TTL_HIT_MS : age<CREST_TTL_MISS_MS;
       if(fresh) return res.json({url:cached.url||null,manual:false,source:'cache'});
     }
+
     const found=await lookupCrest(name,countryHint);
     await pool.query(
       `INSERT INTO team_crests (name_norm,nome_originale,url,fetched_at,manual) VALUES ($1,$2,$3,$4,false)
        ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=false`,
-      [key,name,found.url,now]
+      [autoKey,name,found.url,now]
     );
     res.json({url:found.url,manual:false,source:found.url?(found.source||'provider'):'fallback',matched:found.matched});
   } catch (err) {
@@ -974,8 +1073,9 @@ app.put('/api/team-crest', async (req,res)=>{
     if(!name) return res.status(400).json({error:'Nome squadra mancante.'});
     const countryHint=countryHintFromCampionato(campionato);
     const key=normCrestName(name)+(countryHint?'|'+normCountry(countryHint):'');
+    const autoKey='auto:'+CREST_CACHE_VERSION+'|'+key;
     if(!rawUrl || rawUrl.toUpperCase()==='AUTO'){
-      await pool.query('DELETE FROM team_crests WHERE name_norm=$1',[key]);
+      await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[key,autoKey]]);
       return res.json({ok:true,url:null,manual:false,reset:true});
     }
     if(!/^https?:\/\//i.test(rawUrl)) return res.status(400).json({error:'Inserisci un URL http/https valido.'});
@@ -984,6 +1084,8 @@ app.put('/api/team-crest', async (req,res)=>{
        ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=true`,
       [key,name,rawUrl,Date.now()]
     );
+    // Se imposto manualmente, elimino l'eventuale cache automatica della stessa squadra.
+    await pool.query('DELETE FROM team_crests WHERE name_norm=$1',[autoKey]);
     res.json({ok:true,url:rawUrl,manual:true});
   }catch(err){ console.error(err); res.status(500).json({error:'Errore nel salvataggio dello stemma.'}); }
 });
