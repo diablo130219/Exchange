@@ -1255,6 +1255,135 @@ body[data-theme="dark"]{--app-bg:#182027;background:#182027!important;color:#dce
 @media(max-width:560px){.topbar .nav-actions .nav-btn:first-of-type{display:none!important}.date-group-grid{grid-template-columns:1fr!important}.card{min-height:330px!important}.section-head{align-items:flex-start!important}.toolbar{overflow-x:auto!important}.pills{flex-wrap:nowrap!important}.pill{white-space:nowrap!important}}
 </style>
 
+
+
+<style id="easybet-fullwidth-five-cards-v3">
+/* ===== EasyBet V3: full-width + 5 tessere desktop (Dark e Light) =====
+   Override finale autorevole: mantiene i temi esistenti e modifica solo
+   larghezza applicazione / densità delle tessere delle Partite terminate. */
+html, body{
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+}
+body .page-shell{
+  width:100vw!important;
+  max-width:none!important;
+  margin:0!important;
+  border-radius:0!important;
+}
+body .section{
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  margin:0!important;
+}
+#grid.home-history,
+#grid.home-history .history-section,
+#grid.home-history details.history-archive{
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+}
+
+/* Cinque tessere per riga sul desktop ampio, in entrambi i temi. */
+#grid.home-history .history-section .date-group-grid,
+#grid.home-history details.history-archive > .date-group-grid{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  justify-content:stretch!important;
+  align-items:stretch!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  gap:10px!important;
+}
+#grid.home-history .history-section .date-group-grid > .card,
+#grid.home-history details.history-archive > .date-group-grid > .card{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+}
+
+/* Compattezza controllata: nessun cambio di palette tra Dark e Light. */
+#grid.home-history .card{
+  min-height:300px!important;
+  padding:9px!important;
+  gap:6px!important;
+}
+#grid.home-history .card .card-head{gap:7px!important}
+#grid.home-history .card .league{font-size:.64rem!important;min-width:0!important}
+#grid.home-history .card .league small{font-size:.50rem!important;margin-bottom:3px!important}
+#grid.home-history .card .date{font-size:.52rem!important}
+#grid.home-history .card .time{padding:5px 7px!important;min-width:47px!important}
+#grid.home-history .card .time small{font-size:.46rem!important}
+#grid.home-history .card .time strong{font-size:.67rem!important}
+#grid.home-history .card .matchup{
+  grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr)!important;
+  gap:5px!important;
+  padding:7px 4px!important;
+}
+#grid.home-history .card .crest-wrap{
+  width:48px!important;
+  height:48px!important;
+}
+#grid.home-history .card .crest{
+  width:39px!important;
+  height:39px!important;
+}
+#grid.home-history .card .vs{
+  width:26px!important;
+  height:26px!important;
+  font-size:.50rem!important;
+}
+#grid.home-history .card .role{font-size:.47rem!important}
+#grid.home-history .card .team-name{
+  font-size:.64rem!important;
+  line-height:1.12!important;
+  min-height:2.25em!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+#grid.home-history .card .info{padding:7px 5px!important;min-width:0!important}
+#grid.home-history .card .info label{font-size:.47rem!important}
+#grid.home-history .card .info strong{font-size:.66rem!important;overflow-wrap:anywhere!important}
+#grid.home-history .card .status{
+  min-height:38px!important;
+  padding:6px 7px!important;
+  font-size:.56rem!important;
+}
+
+/* Desktop/laptop responsive: 5 -> 4 -> 3 -> 2 -> 1. */
+@media (max-width:1500px){
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive > .date-group-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+}
+@media (max-width:1200px){
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive > .date-group-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+@media (max-width:900px){
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive > .date-group-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #grid.home-history .card{min-height:320px!important}
+}
+@media (max-width:640px){
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive > .date-group-grid{
+    grid-template-columns:1fr!important;
+  }
+  #grid.home-history .card{min-height:360px!important}
+}
+</style>
+
 </head>
 <body>
 <div class="page-shell">
