@@ -1384,6 +1384,111 @@ body .section{
 }
 </style>
 
+
+<style id="pronostici-5col-fullwidth-v4">
+/* EasyBet V4 — Pronostici: 5 tessere desktop, identico layout in Dark e Light. */
+#grid.pronostici-detail-mode{
+  display:grid!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  justify-content:stretch!important;
+  align-items:stretch!important;
+  gap:10px!important;
+  overflow:visible!important;
+}
+#grid.pronostici-detail-mode>.pronostici-detail-top{
+  grid-column:1/-1!important;
+  width:100%!important;
+  max-width:none!important;
+}
+#grid.pronostici-detail-mode>.card{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  min-height:270px!important;
+  padding:9px!important;
+  gap:6px!important;
+  margin:0!important;
+}
+#grid.pronostici-detail-mode>.card .card-head{gap:7px!important;min-width:0!important}
+#grid.pronostici-detail-mode>.card .league{font-size:.64rem!important;min-width:0!important;overflow-wrap:anywhere!important}
+#grid.pronostici-detail-mode>.card .league small{font-size:.50rem!important;margin-bottom:3px!important}
+#grid.pronostici-detail-mode>.card .date{font-size:.52rem!important}
+#grid.pronostici-detail-mode>.card .time{padding:5px 7px!important;min-width:47px!important}
+#grid.pronostici-detail-mode>.card .time small{font-size:.46rem!important}
+#grid.pronostici-detail-mode>.card .time strong{font-size:.67rem!important}
+#grid.pronostici-detail-mode>.card .matchup{
+  grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr)!important;
+  gap:5px!important;
+  padding:7px 4px!important;
+  min-width:0!important;
+}
+#grid.pronostici-detail-mode>.card .team{min-width:0!important}
+#grid.pronostici-detail-mode>.card .crest-wrap{
+  width:48px!important;
+  height:48px!important;
+  border-radius:6px!important;
+}
+#grid.pronostici-detail-mode>.card .crest{width:39px!important;height:39px!important}
+#grid.pronostici-detail-mode>.card .vs{width:26px!important;height:26px!important;font-size:.50rem!important}
+#grid.pronostici-detail-mode>.card .role{font-size:.47rem!important}
+#grid.pronostici-detail-mode>.card .team-name{
+  font-size:.64rem!important;
+  line-height:1.12!important;
+  min-height:2.25em!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+#grid.pronostici-detail-mode>.card .info{padding:7px 5px!important;min-width:0!important}
+#grid.pronostici-detail-mode>.card .info label{font-size:.47rem!important}
+#grid.pronostici-detail-mode>.card .info strong{font-size:.66rem!important;overflow-wrap:anywhere!important}
+#grid.pronostici-detail-mode>.card .status{
+  min-height:38px!important;
+  padding:6px 7px!important;
+  font-size:.56rem!important;
+}
+/* Evita che il tema Light o Dark reimposti 4 colonne. */
+body[data-theme="light"] #grid.pronostici-detail-mode,
+body[data-theme="dark"] #grid.pronostici-detail-mode{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+}
+@media(max-width:1500px){
+  #grid.pronostici-detail-mode,
+  body[data-theme="light"] #grid.pronostici-detail-mode,
+  body[data-theme="dark"] #grid.pronostici-detail-mode{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:1200px){
+  #grid.pronostici-detail-mode,
+  body[data-theme="light"] #grid.pronostici-detail-mode,
+  body[data-theme="dark"] #grid.pronostici-detail-mode{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:900px){
+  #grid.pronostici-detail-mode,
+  body[data-theme="light"] #grid.pronostici-detail-mode,
+  body[data-theme="dark"] #grid.pronostici-detail-mode{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #grid.pronostici-detail-mode>.card{min-height:310px!important}
+  .pronostici-detail-top{flex-direction:column!important;align-items:flex-start!important}
+  .pronostici-detail-top .meta{width:100%!important;justify-content:space-between!important}
+}
+@media(max-width:640px){
+  #grid.pronostici-detail-mode,
+  body[data-theme="light"] #grid.pronostici-detail-mode,
+  body[data-theme="dark"] #grid.pronostici-detail-mode{
+    grid-template-columns:1fr!important;
+  }
+  #grid.pronostici-detail-mode>.card{min-height:340px!important}
+}
+</style>
+
 </head>
 <body>
 <div class="page-shell">
