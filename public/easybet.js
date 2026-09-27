@@ -177,9 +177,18 @@
     series.forEach(function(x,i){var px=series.length===1?W/2:pad+(W-pad*2)*(i/(series.length-1));var py=pad+(H-pad*2)*(1-(x.v-min)/(max-min));pts.push([px,py])});
     var line=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)}).join(' ');
     var area=line+' L '+pts[pts.length-1][0].toFixed(1)+' '+(H-pad)+' L '+pts[0][0].toFixed(1)+' '+(H-pad)+' Z';
-    var circles=pts.map(function(p){return '<circle class="trend-point" cx="'+p[0]+'" cy="'+p[1]+'" r="4"/>'}).join('');
+    var circles=pts.map(function(p,i){
+      var x=series[i]||{},tip=(x.label||'')+' • Win rate '+Number(x.v||0).toFixed(1).replace('.',',')+'%'+
+        (x.entered!=null?' • '+x.entered+' ingressi':'')+
+        (x.wins!=null?' • '+x.wins+' vinte':'')+
+        (x.losses!=null?' • '+x.losses+' perse':'');
+      return '<g class="trend-point-group" tabindex="0" data-trend-tip="'+escAttr(tip)+'">'+
+        '<circle class="trend-point-hit" cx="'+p[0]+'" cy="'+p[1]+'" r="12"/>'+
+        '<circle class="trend-point" cx="'+p[0]+'" cy="'+p[1]+'" r="4"/>'+
+        '<title>'+esc(tip)+'</title></g>';
+    }).join('');
     var labels=series.length>1?'<div class="trend-labels"><span>'+esc(series[0].label)+'</span><span>'+esc(series[Math.floor(series.length/2)].label)+'</span><span>'+esc(series[series.length-1].label)+'</span></div>':'';
-    return '<div class="trend-wrap"><svg class="trend-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none"><defs><linearGradient id="trendArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f3d271" stop-opacity=".28"/><stop offset="100%" stop-color="#f3d271" stop-opacity="0"/></linearGradient></defs><line class="trend-grid" x1="18" x2="602" y1="18" y2="18"/><line class="trend-grid" x1="18" x2="602" y1="105" y2="105"/><line class="trend-grid" x1="18" x2="602" y1="192" y2="192"/><path class="trend-area" d="'+area+'"/><path class="trend-line" d="'+line+'"/>'+circles+'</svg>'+labels+'</div>';
+    return '<div class="trend-wrap"><svg class="trend-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none"><defs><linearGradient id="trendArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f3d271" stop-opacity=".28"/><stop offset="100%" stop-color="#f3d271" stop-opacity="0"/></linearGradient></defs><line class="trend-grid" x1="18" x2="602" y1="18" y2="18"/><line class="trend-grid" x1="18" x2="602" y1="105" y2="105"/><line class="trend-grid" x1="18" x2="602" y1="192" y2="192"/><path class="trend-area" d="'+area+'"/><path class="trend-line" d="'+line+'"/>'+circles+'</svg><div class="trend-tooltip" id="trendTooltip" role="tooltip"></div>'+labels+'</div>';
   }
   function performanceClass(v){v=Number(v)||0;return v>=70?'good':v>=55?'warn':'bad'}
   function fmtQuota(v){return v==null?'—':Number(v).toFixed(2).replace('.',',')}
@@ -269,7 +278,7 @@
       '<div class="stat-box skip"><div class="stat-label">Non entrati</div><div class="stat-value num">'+sk+'</div><div class="stat-foot">'+skipRate+'% dei conclusi</div></div>'+ 
       '<div class="stat-box rate"><div class="stat-label">Win rate ingressi</div><div class="stat-value num">'+winRate+'%</div><div class="stat-foot">'+w+' vinte su '+entered+' ingressi · '+entryRate+'% ingresso</div></div>'+ 
       '<div class="chart-box"><div class="chart-title">Distribuzione esiti</div><div class="chart-sub">Presa, perdita e non entrati nel periodo selezionato.</div><div class="donut-wrap"><div class="donut"><div class="donut-center"><div><strong class="num">'+total+'</strong><span>conclusi</span></div></div></div><div class="chart-legend"><div class="chart-legend-row"><span><i class="dot g"></i>Presa</span><b class="num">'+(total?Math.round(w/total*1000)/10:0)+'%</b></div><div class="chart-legend-row"><span><i class="dot r"></i>Perdita</span><b class="num">'+(total?Math.round(l/total*1000)/10:0)+'%</b></div><div class="chart-legend-row"><span><i class="dot y"></i>Non entrati</span><b class="num">'+skipRate+'%</b></div></div></div></div>'+ 
-      '<div class="chart-box"><div class="chart-title">Andamento win rate</div><div class="chart-sub">Evoluzione giornaliera cumulativa sugli ingressi del periodo.</div>'+renderTrend((performanceStats.daily||[]).map(function(x){return {label:x.label,v:Number(x.winRate||0)}}))+'</div>'+ 
+      '<div class="chart-box"><div class="chart-title">Andamento win rate</div><div class="chart-sub">Evoluzione giornaliera cumulativa sugli ingressi del periodo.</div>'+renderTrend((performanceStats.daily||[]).map(function(x){return {label:x.label,v:Number(x.winRate||0),entered:Number(x.entered||0),wins:Number(x.wins||0),losses:Number(x.losses||0)}}))+'</div>'+ 
       scoreValidationHtml()+
       minuteValidationHtml()+
       performanceTable('Rendimento per strategia','Ordina le colonne oppure apri una strategia per vedere le partite che compongono il dato.',performanceStats.byStrategy,'strategy')+
@@ -287,6 +296,25 @@
     var mb=e.target.closest('[data-minute-bucket]');if(mb){minuteDetailFilter=mb.getAttribute('data-minute-bucket')||null;renderStats();setTimeout(function(){var el=document.querySelector('.minute-detail');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},20);return}
     if(e.target.closest('[data-minute-detail-close]')){minuteDetailFilter=null;renderStats()}
   }
+
+  function showTrendTooltip(target,ev){
+    var tip=document.getElementById('trendTooltip');if(!tip||!target)return;
+    tip.textContent=target.getAttribute('data-trend-tip')||'';
+    tip.classList.add('show');
+    var wrap=tip.closest('.trend-wrap'),wr=wrap.getBoundingClientRect();
+    var x=(ev&&ev.clientX!=null?ev.clientX:wr.left+wr.width/2)-wr.left;
+    var y=(ev&&ev.clientY!=null?ev.clientY:wr.top+wr.height/2)-wr.top;
+    tip.style.left=Math.max(12,Math.min(wr.width-12,x))+'px';
+    tip.style.top=Math.max(28,Math.min(wr.height-6,y-12))+'px';
+  }
+  function hideTrendTooltip(){var tip=document.getElementById('trendTooltip');if(tip)tip.classList.remove('show')}
+  document.addEventListener('pointerover',function(e){var t=e.target.closest&&e.target.closest('.trend-point-group');if(t)showTrendTooltip(t,e)});
+  document.addEventListener('pointermove',function(e){var t=e.target.closest&&e.target.closest('.trend-point-group');if(t)showTrendTooltip(t,e)});
+  document.addEventListener('pointerout',function(e){var t=e.target.closest&&e.target.closest('.trend-point-group');if(t&&!e.relatedTarget?.closest?.('.trend-point-group'))hideTrendTooltip()});
+  document.addEventListener('focusin',function(e){var t=e.target.closest&&e.target.closest('.trend-point-group');if(t)showTrendTooltip(t)});
+  document.addEventListener('focusout',function(e){var t=e.target.closest&&e.target.closest('.trend-point-group');if(t)hideTrendTooltip()});
+  document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('.trend-point-group');if(t){e.preventDefault();showTrendTooltip(t,e)}});
+
   document.addEventListener('click',statsUiClick);
 
   function renderStrategies(){

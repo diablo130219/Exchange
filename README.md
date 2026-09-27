@@ -1,29 +1,20 @@
-# EasyBet — Step 30
+# EasyBet — Step 31
 
-Correzione Over 1.5 FT: un gol non può trasformare automaticamente `ATTENDI` in `VERDE`.
+Migliorata la leggibilità del grafico `Andamento win rate`.
 
-## Nuova regola
-Se Over 1.5 FT NON era già VERDE prima del primo gol:
+Passando il mouse sopra ogni puntino viene mostrato:
+- data
+- win rate
+- numero di ingressi
+- vinte
+- perse
 
-1. quando arriva il gol, EasyBet passa a `RIVALUTA POST-GOL`;
-2. aspetta almeno 4 minuti dal gol;
-3. dopo i 4 minuti richiede nuova produzione offensiva costruita DOPO il gol:
-   - +0.12 xG, oppure
-   - +1 tiro in porta, oppure
-   - +2 tiri totali;
-4. soltanto dopo questa conferma il normale motore può tornare a produrre un VERDE.
+Il puntino si ingrandisce quando è attivo.
 
-Se il segnale era già VERDE prima del gol, il primo segnale resta valido e non viene annullato.
+Il tooltip funziona anche con:
+- focus da tastiera
+- click/tap su dispositivi touch
 
-## Frontend
-La protezione funziona sia in inserimento manuale sia con GoalDir usando la memoria locale della partita.
+È presente anche il tooltip SVG nativo come fallback.
 
-## Backend
-`/api/live-stats` applica la stessa protezione in modo persistente.
-Sono aggiunte colonne automatiche su Neon per:
-- ultimo numero di gol osservato;
-- minuto del gol che ha avviato la rivalutazione;
-- minuto minimo di rivalutazione;
-- baseline xG/SOT/tiri al momento del gol.
-
-Questo impedisce anche a Telegram e agli snapshot di registrare un falso VERDE immediatamente dopo il gol.
+Nessuna modifica ai calcoli statistici: cambia soltanto la leggibilità del grafico.
