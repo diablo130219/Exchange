@@ -1252,3 +1252,126 @@ html:not([data-theme="light"]) body .la-proof-chip{background:#20242a;color:#c8d
 
 /* STEP 5 — Dashboard priorità LIVE */
 .live-priority-dashboard{display:none;margin:0 0 18px}.live-priority-dashboard.show{display:block}.live-priority-shell{border:1px solid rgba(243,210,113,.20);border-radius:20px;padding:15px;background:linear-gradient(180deg,rgba(243,210,113,.045),rgba(255,255,255,.008));box-shadow:0 14px 34px rgba(0,0,0,.16)}.live-priority-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:12px}.live-priority-head h3{margin:0;color:#f3d271;font-size:.94rem;letter-spacing:.02em}.live-priority-head p{margin:4px 0 0;color:#918878;font-size:.66rem}.live-priority-updated{color:#7f7668;font:600 .61rem 'IBM Plex Mono',monospace;white-space:nowrap}.live-priority-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.live-priority-kpi{border:1px solid #302b22;border-radius:13px;padding:10px 11px;background:#0f0f0d;min-width:0}.live-priority-kpi small{display:block;color:#8f8676;font-size:.56rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em}.live-priority-kpi strong{display:block;margin-top:4px;font-size:1.18rem}.live-priority-kpi.green strong{color:#70e5a2}.live-priority-kpi.yellow strong{color:#f1d479}.live-priority-kpi.blue strong{color:#8fc0ff}.live-priority-kpi.gold strong{color:#f3d271}.live-priority-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:11px}.live-priority-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;border:1px solid #302b22;border-radius:13px;padding:10px;background:#10100e;cursor:pointer;transition:.17s ease}.live-priority-item:hover{transform:translateY(-1px);border-color:rgba(243,210,113,.38);background:#14120e}.live-priority-rank{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#1b1812;color:#f3d271;font:900 .68rem 'IBM Plex Mono',monospace;border:1px solid rgba(243,210,113,.20)}.live-priority-copy{min-width:0}.live-priority-copy b{display:block;font-size:.70rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.live-priority-copy span{display:block;margin-top:3px;color:#8f8676;font-size:.57rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.live-priority-state{padding:5px 7px;border-radius:999px;font-size:.55rem;font-weight:900;white-space:nowrap;border:1px solid #3a3429;color:#b8ae9e}.live-priority-state.green{color:#92edb5;border-color:rgba(49,217,121,.35);background:rgba(49,217,121,.08)}.live-priority-state.yellow{color:#f2dc89;border-color:rgba(232,196,71,.35);background:rgba(232,196,71,.08)}.live-priority-state.neutral{color:#b6c8e5;border-color:rgba(105,167,255,.28);background:rgba(105,167,255,.06)}.live-priority-empty{margin-top:11px;border:1px dashed #312c23;border-radius:13px;padding:14px;text-align:center;color:#82796b;font-size:.66rem}html[data-theme="light"] body .live-priority-shell{background:linear-gradient(180deg,#fffdf8,#f7f1e7);border-color:#dfcfaa;box-shadow:0 12px 28px rgba(93,69,20,.07)}html[data-theme="light"] body .live-priority-head p,html[data-theme="light"] body .live-priority-updated,html[data-theme="light"] body .live-priority-kpi small,html[data-theme="light"] body .live-priority-copy span{color:#756b5c}html[data-theme="light"] body .live-priority-kpi,html[data-theme="light"] body .live-priority-item{background:#fff;border-color:#ddd2bd}html[data-theme="light"] body .live-priority-item:hover{background:#fffaf0;border-color:#c8a94e}html[data-theme="light"] body .live-priority-rank{background:#f7eed8;color:#8a690d;border-color:#d9c27a}@media(max-width:980px){.live-priority-list{grid-template-columns:1fr 1fr}.live-priority-kpis{grid-template-columns:1fr 1fr}}@media(max-width:620px){.live-priority-head{align-items:flex-start;flex-direction:column}.live-priority-list{grid-template-columns:1fr}.live-priority-kpis{grid-template-columns:1fr 1fr}.live-priority-updated{white-space:normal}}
+
+/* =========================================================
+   STEP 13 — LIVE ANALYZER FULL SCREEN
+   Obiettivo: usare tutta la finestra, senza tagli, anche con zoom browser.
+   ========================================================= */
+body.live-analyzer-open{overflow:hidden!important}
+
+.live-analyzer-overlay{
+  inset:0!important;
+  padding:0!important;
+  align-items:stretch!important;
+  justify-content:stretch!important;
+  overflow:hidden!important;
+}
+
+.live-analyzer-overlay.open{display:flex!important}
+
+.live-analyzer-modal{
+  width:100vw!important;
+  max-width:none!important;
+  height:100dvh!important;
+  max-height:none!important;
+  margin:0!important;
+  border-radius:0!important;
+  border-left:0!important;
+  border-right:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+
+.la-head{
+  position:sticky!important;
+  top:0!important;
+  z-index:20!important;
+  flex:0 0 auto!important;
+  padding:12px 18px!important;
+  min-height:62px!important;
+  backdrop-filter:blur(14px)!important;
+}
+
+.la-head-actions{flex-wrap:nowrap!important}
+.la-close{flex:0 0 auto!important}
+
+.la-body{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  width:100%!important;
+  max-height:none!important;
+  overflow:hidden!important;
+  display:grid!important;
+  grid-template-columns:minmax(390px,.86fr) minmax(560px,1.14fr)!important;
+  gap:12px!important;
+  padding:10px 12px 12px!important;
+}
+
+.la-panel{
+  min-width:0!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:auto!important;
+  overscroll-behavior:contain!important;
+  scrollbar-width:thin!important;
+  padding:10px!important;
+}
+
+.la-panel:first-child{
+  display:flex!important;
+  flex-direction:column!important;
+}
+
+.la-panel:first-child .la-meta,
+.la-panel:first-child .la-actions,
+.la-panel:first-child .la-auto-status{
+  flex:0 0 auto!important;
+}
+
+.la-panel:first-child .la-textarea{
+  flex:1 1 280px!important;
+  min-height:280px!important;
+  max-height:none!important;
+  resize:none!important;
+}
+
+/* Più spazio alla colonna operativa: segnali + statistiche */
+.la-panel:last-child{
+  padding-bottom:20px!important;
+}
+
+.la-summary{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.la-parsed-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+
+/* Monitor bassi o zoom 120/125%: mantieni tutto accessibile tramite scroll interno. */
+@media (max-height:820px){
+  .la-head{min-height:54px!important;padding:8px 14px!important}
+  .la-title p{display:none!important}
+  .la-body{padding:7px 9px 9px!important;gap:9px!important}
+  .la-panel:first-child .la-textarea{min-height:180px!important;flex-basis:180px!important}
+}
+
+/* Su viewport più stretti il Live Analyzer diventa una pagina verticale completa. */
+@media (max-width:1100px){
+  .live-analyzer-modal{overflow:hidden!important}
+  .la-body{
+    grid-template-columns:1fr!important;
+    overflow:auto!important;
+    align-content:start!important;
+  }
+  .la-panel{overflow:visible!important}
+  .la-panel:first-child .la-textarea{min-height:240px!important;flex:none!important}
+  .la-parsed-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+
+@media (max-width:700px){
+  .la-head{padding:8px 10px!important}
+  .la-head-actions{gap:5px!important}
+  .la-mode-chip{padding:6px 8px!important;font-size:.58rem!important}
+  .la-body{padding:7px!important}
+  .la-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .la-parsed-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .la-meta{grid-template-columns:1fr 1fr!important}
+  .la-meta .la-favorite{grid-column:span 2!important}
+}
