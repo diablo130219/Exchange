@@ -781,7 +781,8 @@ const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;
 const CREST_TTL_MISS_MS = 5 * 60 * 1000; // riprova molto prima i mancanti per evitare placeholder persistenti
 // Versione cache automatica: evita di riusare vecchi risultati errati (es. foto di città).
 // Gli override manuali restano sulla chiave storica e continuano a funzionare.
-const CREST_CACHE_VERSION = 'v6';
+const CREST_CACHE_VERSION = 'v7';
+const THESPORTSDB_API_KEY = process.env.THESPORTSDB_API_KEY || '123';
 
 const CREST_ALIASES = {
   'lahti': ['FC Lahti'],
@@ -913,6 +914,18 @@ const CREST_ALIASES = {
 // restituiscono con immagini generiche. Qui prendiamo lo stemma del club, non
 // una foto della città e non il logo generico della lega.
 const CREST_WIKIDATA_IDS = {
+  'foggia': 'Q139399',
+  'calcio foggia 1920': 'Q139399',
+  'sorrento': 'Q1508747',
+  'sorrento calcio': 'Q1508747',
+  'sd eibar': 'Q770740',
+  'eibar': 'Q770740',
+  'burgos': 'Q852079',
+  'burgos cf': 'Q852079',
+  'perugia': 'Q16344',
+  'ac perugia calcio': 'Q16344',
+  'reggiana': 'Q289707',
+  'ac reggiana 1919': 'Q289707',
   'las palmas': 'Q11979',
   'ud las palmas': 'Q11979',
   'de graafschap': 'Q221927',
@@ -1035,7 +1048,7 @@ async function lookupCrestWikidataById(id, matched){
     const claims=ent&&ent.claims?ent.claims:{};
     const filename=chooseBestWikidataLogoClaim(claims);
     if(!filename) return {url:null,matched:null};
-    const url='https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(filename)+'?width=320';
+    const url='https://commons.wikimedia.org/wiki/Special:Redirect/file/'+encodeURIComponent(filename)+'?width=320';
     return {url,matched:matched||id,source:'wikidata-fixed'};
   }catch(err){
     console.error('Wikidata ID stemma "'+id+'":',err.message);
@@ -1087,7 +1100,7 @@ async function lookupCrestWikidata(name,countryHint){
     const claims=ent&&ent.claims?ent.claims:{};
     const filename=chooseBestWikidataLogoClaim(claims);
     if(!filename) return {url:null,matched:null};
-    const url='https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(filename)+'?width=320';
+    const url='https://commons.wikimedia.org/wiki/Special:Redirect/file/'+encodeURIComponent(filename)+'?width=320';
     return {url,matched:best.label||clean,source:'wikidata'};
   }catch(err){
     console.error('Wikidata dettaglio stemma "'+clean+'":',err.message);
@@ -1138,13 +1151,20 @@ async function lookupCrest(name,countryHint){
   const key=normCrestName(name);
   const queries=crestQueries(name);
 
-  // 1) TheSportsDB PRIMA di tutto: è molto più veloce ed evita di saturare Render
+  // 1) Club già identificati: Wikidata per ID è la strada più precisa e richiede una sola chiamata.
+  const fixedId=CREST_WIKIDATA_IDS[key];
+  if(fixedId){
+    const fixed=await lookupCrestWikidataById(fixedId,name);
+    if(fixed&&fixed.url) return fixed;
+  }
+
+  // 2) TheSportsDB: usiamo la chiave free corrente (123), non la vecchia chiave test 3.
   // con decine di chiamate Wikidata contemporanee quando una pagina contiene molte partite.
   // La scelta resta controllata da nome/alias + paese, così non prendiamo club omonimi a caso.
   let best=null, bestScore=-Infinity;
   for(const query of queries){
     try{
-      const r=await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t='+encodeURIComponent(query), {
+      const r=await fetch('https://www.thesportsdb.com/api/v1/json/'+THESPORTSDB_API_KEY+'/searchteams.php?t='+encodeURIComponent(query), {
         headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}
       });
       if(!r.ok) continue;
@@ -1166,14 +1186,7 @@ async function lookupCrest(name,countryHint){
     return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb'};
   }
 
-  // 2) Per i club noti/ambigui usiamo il QID fissato di Wikidata: una sola chiamata entità.
-  const fixedId=CREST_WIKIDATA_IDS[key];
-  if(fixedId){
-    const fixed=await lookupCrestWikidataById(fixedId,name);
-    if(fixed&&fixed.url) return fixed;
-  }
-
-  // 3) Wikidata dinamico solo come fallback. Evitiamo la vecchia raffica di ricerche
+  // 3) Wikidata dinamico come fallback per i club non ancora mappati.
   // che con 30-60 squadre poteva bloccare il caricamento degli stemmi.
   const wd=await lookupCrestWikidata(name,countryHint);
   if(wd && wd.url) return wd;
