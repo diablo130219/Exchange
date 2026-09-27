@@ -1168,6 +1168,16 @@ app.post('/api/live-stats', async (req, res) => {
         xg: [payload.xgHome, payload.xgAway], sot: [payload.sotHome, payload.sotAway], shots: [payload.shotsHome, payload.shotsAway],
         chances: [payload.chancesHome, payload.chancesAway], boxshots: [payload.boxshotsHome, payload.boxshotsAway], touches: [payload.touchesHome, payload.touchesAway]
       }, 'live-stats', lifecycleNow);
+      // Il segnale appartiene allo storico della partita anche se Telegram e' disattivato.
+      // Non dipende dalla sessione Admin: /api/live-stats ricalcola il segnale sul server.
+      await pool.query(
+        `UPDATE matches SET
+           signal_first_at = COALESCE(signal_first_at, $2),
+           signal_first_level = COALESCE(signal_first_level, $3),
+           signal_first_score = COALESCE(signal_first_score, $4)
+         WHERE id = $1`,
+        [match.id, lifecycleNow, result.level, result.score100 == null ? null : Number(result.score100)]
+      );
     }
 
     const scoreText = (payload.scoreHome !== null && payload.scoreAway !== null)
