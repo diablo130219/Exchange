@@ -128,6 +128,28 @@
   }
 
   function startApp(){
+  function downloadAdminFile(url, fallbackName, button){
+    if(button){ button.disabled = true; button.classList.add('is-loading'); }
+    return fetch(url,{credentials:'same-origin',cache:'no-store'})
+      .then(function(r){
+        if(!r.ok){
+          return r.json().catch(function(){return {};}).then(function(b){throw new Error(b.error||('Errore HTTP '+r.status));});
+        }
+        var cd=String(r.headers.get('content-disposition')||'');
+        var m=cd.match(/filename="([^"]+)"/i);
+        var name=m&&m[1]?m[1]:fallbackName;
+        return r.blob().then(function(blob){return {blob:blob,name:name};});
+      })
+      .then(function(x){
+        var u=URL.createObjectURL(x.blob);
+        var a=document.createElement('a');
+        a.href=u;a.download=x.name;document.body.appendChild(a);a.click();a.remove();
+        setTimeout(function(){URL.revokeObjectURL(u)},1000);
+      })
+      .catch(function(err){window.alert(err.message||'Impossibile scaricare il file.');})
+      .finally(function(){if(button){button.disabled=false;button.classList.remove('is-loading');}});
+  }
+
     var ESITO_LABEL = {
       entrata_vinta: '🟢 Entrata e vinta',
       entrata_persa: '🔴 Entrata e persa',
@@ -541,6 +563,15 @@
     });
 
     // STEP 9 — azioni di massa
+    var backupBtn=document.getElementById('backupBtn');
+    if(backupBtn) backupBtn.addEventListener('click',function(){
+      downloadAdminFile('/api/admin/backup','easybet-backup.json',backupBtn);
+    });
+    var exportCsvBtn=document.getElementById('exportCsvBtn');
+    if(exportCsvBtn) exportCsvBtn.addEventListener('click',function(){
+      downloadAdminFile('/api/admin/export/matches.csv','easybet-partite.csv',exportCsvBtn);
+    });
+
     document.getElementById('bulkSelectVisible').addEventListener('click', function(){
       visibleMatches().forEach(function(m){ selectedIds.add(String(m.id)); });
       render();

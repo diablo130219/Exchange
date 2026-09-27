@@ -1,20 +1,29 @@
 # EasyBet — pacchetto pulito
 
-Pacchetto di produzione con sicurezza Admin rafforzata.
+Versione finale con backup/export Admin.
 
-## Variabili Admin obbligatorie su Render
-- `ADMIN_PIN` — almeno 6 caratteri
-- `ADMIN_SESSION_SECRET` — almeno 32 caratteri casuali
-- `ADMIN_SESSION_HOURS` — durata sessione, ad esempio `12`
+## Backup JSON
+Nell'area Admin è disponibile `Backup JSON`.
 
-## Rafforzamenti Step 26
-- sessione firmata con nonce casuale
-- nessun secret di fallback
-- cookie HttpOnly / SameSite=Strict / Secure su HTTPS
-- blocco delle richieste Admin cross-site
-- limite tentativi login con `Retry-After`
-- cache disabilitata sugli endpoint di autenticazione
-- header HTTP di sicurezza
-- `X-Powered-By` disattivato
+Il file contiene:
+- tutte le partite
+- tutti gli snapshot del primo segnale
+- impostazioni notifiche
+- cache stemmi squadre
+- metadata e conteggi del backup
 
-Le API pubbliche necessarie al Live Analyzer restano invariate.
+Non include PIN, secret, token Telegram, API key o DATABASE_URL.
+
+## CSV partite
+Il pulsante `CSV partite` esporta un file compatibile con Excel con:
+- partita e campionato
+- strategia
+- quota
+- esito
+- lifecycle
+- primo score VERDE
+- minuto del primo segnale
+- statistiche dello snapshot
+- fonte e motivazione del segnale
+
+Entrambe le esportazioni richiedono una sessione Admin valida e non vengono memorizzate nella cache del browser.

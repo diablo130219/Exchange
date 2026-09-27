@@ -206,3 +206,15 @@
   .import-hint{font-size:.72rem;color:var(--text-faint);margin-top:6px;}
 
   @media(max-width:560px){ .navlinks{display:none;} .field-row{grid-template-columns:1fr;} .preview-fields{grid-template-columns:1fr;} }
+
+
+/* ===== Step 27 — Backup / Export ===== */
+.head-actions{flex-wrap:wrap}
+.head-actions .add-btn.is-loading{opacity:.62;cursor:wait;transform:none!important}
+@media(max-width:760px){
+  .head-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .head-actions .add-btn{width:100%;justify-content:center}
+}
+@media(max-width:460px){
+  .head-actions{grid-template-columns:1fr}
+}

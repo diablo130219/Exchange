@@ -176,6 +176,117 @@ app.post('/api/admin/logout', (req, res) => {
   res.setHeader('Set-Cookie', clearAdminCookie(req));
   res.json({ ok: true });
 });
+
+// ---------- backup / export Admin ----------
+app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const [matchesRes, snapshotsRes, alertRes, crestsRes] = await Promise.all([
+      pool.query('SELECT * FROM matches ORDER BY start_at ASC, id ASC'),
+      pool.query('SELECT * FROM signal_snapshots ORDER BY created_at ASC, id ASC'),
+      pool.query("SELECT * FROM alert_settings WHERE id='main'"),
+      pool.query('SELECT * FROM team_crests ORDER BY name_norm ASC')
+    ]);
+
+    const payload = {
+      format: 'easybet-backup',
+      version: 1,
+      exportedAt: Date.now(),
+      exportedAtIso: new Date().toISOString(),
+      counts: {
+        matches: matchesRes.rows.length,
+        signalSnapshots: snapshotsRes.rows.length,
+        teamCrests: crestsRes.rows.length
+      },
+      data: {
+        matches: matchesRes.rows,
+        signalSnapshots: snapshotsRes.rows,
+        alertSettings: alertRes.rows[0] || null,
+        teamCrests: crestsRes.rows
+      }
+    };
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${backupFilename('easybet-backup', 'json')}"`);
+    res.send(JSON.stringify(payload, null, 2));
+  } catch (err) {
+    console.error('Backup EasyBet:', err);
+    res.status(500).json({ error: 'Impossibile creare il backup.' });
+  }
+});
+
+app.get('/api/admin/export/matches.csv', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        m.id,
+        m.data,
+        m.start_at,
+        m.campionato,
+        m.casa,
+        m.trasferta,
+        m.tipo_giocata,
+        m.quota_ingresso,
+        m.esito_manuale,
+        m.live_started_at,
+        m.signal_first_at,
+        m.signal_first_level,
+        m.signal_first_score,
+        m.outcome_set_at,
+        ss.minute AS signal_minute,
+        ss.score_home AS signal_score_home,
+        ss.score_away AS signal_score_away,
+        ss.xg_home,
+        ss.xg_away,
+        ss.sot_home,
+        ss.sot_away,
+        ss.shots_home,
+        ss.shots_away,
+        ss.chances_home,
+        ss.chances_away,
+        ss.boxshots_home,
+        ss.boxshots_away,
+        ss.touches_home,
+        ss.touches_away,
+        ss.source AS signal_source,
+        ss.summary AS signal_summary
+      FROM matches m
+      LEFT JOIN LATERAL (
+        SELECT s.*
+        FROM signal_snapshots s
+        WHERE s.match_id = m.id
+          AND LOWER(COALESCE(s.level,'')) = 'verde'
+        ORDER BY s.created_at ASC
+        LIMIT 1
+      ) ss ON TRUE
+      ORDER BY m.start_at ASC, m.id ASC
+    `);
+
+    const columns = [
+      'id','data','start_at','campionato','casa','trasferta','tipo_giocata',
+      'quota_ingresso','esito_manuale','live_started_at','signal_first_at',
+      'signal_first_level','signal_first_score','outcome_set_at','signal_minute',
+      'signal_score_home','signal_score_away','xg_home','xg_away','sot_home','sot_away',
+      'shots_home','shots_away','chances_home','chances_away','boxshots_home','boxshots_away',
+      'touches_home','touches_away','signal_source','signal_summary'
+    ];
+
+    const lines = [columns.map(csvCell).join(',')];
+    rows.forEach(row => {
+      lines.push(columns.map(c => csvCell(row[c])).join(','));
+    });
+
+    const csv = '\uFEFF' + lines.join('\r\n');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${backupFilename('easybet-partite', 'csv')}"`);
+    res.send(csv);
+  } catch (err) {
+    console.error('Export CSV EasyBet:', err);
+    res.status(500).json({ error: 'Impossibile creare il CSV.' });
+  }
+});
+
 // EasyBet pubblico è la home del servizio; l'area Admin resta separata e protetta.
 app.use(express.static(path.join(__dirname, 'public'), { index: 'easybet.html' }));
 
@@ -579,6 +690,24 @@ app.get('/api/performance-stats', async (req, res) => {
     res.status(500).json({ error: 'Errore nel calcolo delle statistiche performance.' });
   }
 });
+
+
+function csvCell(value) {
+  if (value == null) return '';
+  const text = String(value);
+  if (/[",\n\r]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
+function backupFilename(prefix, ext) {
+  const d = new Date();
+  const stamp =
+    d.getFullYear() +
+    String(d.getMonth() + 1).padStart(2, '0') +
+    String(d.getDate()).padStart(2, '0') + '-' +
+    String(d.getHours()).padStart(2, '0') +
+    String(d.getMinutes()).padStart(2, '0');
+  return `${prefix}-${stamp}.${ext}`;
+}
 
 // ---------- EasyBet state (initial load + polling sync) ----------
 app.get('/api/state', async (req, res) => {
