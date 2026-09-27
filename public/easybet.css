@@ -1490,3 +1490,49 @@ body.snapshot-open{overflow:hidden}
 #grid.home-history .finished-card.esito-non_entrata.no-signal .status{filter:saturate(.72);opacity:.92}
 html[data-theme="light"] body #grid.home-history .finished-card{background:linear-gradient(180deg,#fffdfa,#f7f2e8)!important}
 @media(max-width:560px){#grid.home-history .finished-card{min-height:0!important}.finished-signal-note{min-height:44px}.finished-action-row{min-height:36px}.finished-snapshot-btn,.finished-snapshot-placeholder{height:36px}}
+
+
+/* ===== Step 25 — colori esiti/statistiche visibili anche in Light ===== */
+/* Le vecchie regole Light assegnavano un colore generico a tutte le celle
+   e coprivano verde/rosso/giallo del rendimento. */
+html[data-theme="light"] body .stats-table td.good{
+  color:var(--theme-green)!important;
+  font-weight:900!important;
+}
+html[data-theme="light"] body .stats-table td.bad{
+  color:var(--theme-red)!important;
+  font-weight:900!important;
+}
+html[data-theme="light"] body .stats-table td.warn{
+  color:var(--theme-yellow)!important;
+  font-weight:900!important;
+}
+
+/* KPI: vinte/perse/non entrate */
+html[data-theme="light"] body .stat-box.win .stat-value{color:var(--theme-green)!important}
+html[data-theme="light"] body .stat-box.loss .stat-value{color:var(--theme-red)!important}
+html[data-theme="light"] body .stat-box.skip .stat-value{color:var(--theme-yellow)!important}
+
+/* Validazione score e minuto */
+html[data-theme="light"] body .score-bucket.good>strong,
+html[data-theme="light"] body .minute-bucket.good>strong{
+  color:var(--theme-green)!important;
+}
+html[data-theme="light"] body .score-bucket.bad>strong,
+html[data-theme="light"] body .minute-bucket.bad>strong{
+  color:var(--theme-red)!important;
+}
+html[data-theme="light"] body .score-bucket.warn>strong,
+html[data-theme="light"] body .minute-bucket.warn>strong{
+  color:var(--theme-yellow)!important;
+}
+
+/* Esiti nei drill-down */
+html[data-theme="light"] body .stats-detail-outcome.win{color:var(--theme-green)!important;background:var(--theme-green-soft)!important}
+html[data-theme="light"] body .stats-detail-outcome.loss{color:var(--theme-red)!important;background:var(--theme-red-soft)!important}
+html[data-theme="light"] body .stats-detail-outcome.skip{color:var(--theme-yellow)!important;background:var(--theme-yellow-soft)!important}
+
+/* Legenda/grafico: conserva i colori semantici */
+html[data-theme="light"] body .dot.g{background:var(--theme-green)!important}
+html[data-theme="light"] body .dot.r{background:var(--theme-red)!important}
+html[data-theme="light"] body .dot.y{background:var(--theme-yellow)!important}

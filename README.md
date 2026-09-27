@@ -1,22 +1,20 @@
-# EasyBet
+# EasyBet — pacchetto pulito
 
-Pacchetto pulito di produzione.
+Include il fix Step 25 per la modalità Light.
 
-## Struttura
-- `public/` — sito EasyBet + area Admin + asset frontend
-- `server.js` — API/server Express
-- `db.js` — database Neon/PostgreSQL
-- `strategie-live.js` — motore unico strategie
-- `scheduler.js` — scheduler notifiche
-- `telegram.js` — integrazione Telegram
-- `render.yaml` — configurazione Render
-- `.env.example` — elenco variabili ambiente
-- `package.json` / `package-lock.json` — dipendenze Node
+## Fix Step 25
+Nella pagina Statistiche i colori semantici non vengono più coperti dal colore testo generico della modalità Light:
 
-Sono stati rimossi dal pacchetto di produzione:
-- vecchi file di documentazione STEP/V2
-- immagini demo Telegram non usate dal runtime
-- vecchia cartella Supabase
-- vecchio script di migrazione a Supabase
+- verde = rendimento positivo / vinta
+- rosso = rendimento negativo / persa
+- giallo = intermedio / non entrata
 
-Nessun dato del database Neon viene cancellato da questa pulizia.
+Il fix si applica a:
+- tabelle rendimento per strategia e campionato
+- KPI
+- validazione Score 0–100
+- storico per minuto
+- dettagli delle partite
+- legenda dei grafici
+
+Dark mode invariata.
