@@ -1251,6 +1251,9 @@ body:not([data-theme="light"]) .la-proof-chip{background:#20242a;color:#c8d0d8;b
   #grid.pronostici-summary-mode .pstrategy-titlebox{grid-template-columns:50px minmax(0,1fr)!important;gap:10px!important}
   #grid.pronostici-summary-mode .pstrategy-icon{width:50px!important;height:50px!important}
 }
+
+/* STEP 5 — Dashboard priorità LIVE */
+.live-priority-dashboard{display:none;margin:0 0 18px}.live-priority-dashboard.show{display:block}.live-priority-shell{border:1px solid rgba(243,210,113,.20);border-radius:20px;padding:15px;background:linear-gradient(180deg,rgba(243,210,113,.045),rgba(255,255,255,.008));box-shadow:0 14px 34px rgba(0,0,0,.16)}.live-priority-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:12px}.live-priority-head h3{margin:0;color:#f3d271;font-size:.94rem;letter-spacing:.02em}.live-priority-head p{margin:4px 0 0;color:#918878;font-size:.66rem}.live-priority-updated{color:#7f7668;font:600 .61rem 'IBM Plex Mono',monospace;white-space:nowrap}.live-priority-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.live-priority-kpi{border:1px solid #302b22;border-radius:13px;padding:10px 11px;background:#0f0f0d;min-width:0}.live-priority-kpi small{display:block;color:#8f8676;font-size:.56rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em}.live-priority-kpi strong{display:block;margin-top:4px;font-size:1.18rem}.live-priority-kpi.green strong{color:#70e5a2}.live-priority-kpi.yellow strong{color:#f1d479}.live-priority-kpi.blue strong{color:#8fc0ff}.live-priority-kpi.gold strong{color:#f3d271}.live-priority-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:11px}.live-priority-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;border:1px solid #302b22;border-radius:13px;padding:10px;background:#10100e;cursor:pointer;transition:.17s ease}.live-priority-item:hover{transform:translateY(-1px);border-color:rgba(243,210,113,.38);background:#14120e}.live-priority-rank{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#1b1812;color:#f3d271;font:900 .68rem 'IBM Plex Mono',monospace;border:1px solid rgba(243,210,113,.20)}.live-priority-copy{min-width:0}.live-priority-copy b{display:block;font-size:.70rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.live-priority-copy span{display:block;margin-top:3px;color:#8f8676;font-size:.57rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.live-priority-state{padding:5px 7px;border-radius:999px;font-size:.55rem;font-weight:900;white-space:nowrap;border:1px solid #3a3429;color:#b8ae9e}.live-priority-state.green{color:#92edb5;border-color:rgba(49,217,121,.35);background:rgba(49,217,121,.08)}.live-priority-state.yellow{color:#f2dc89;border-color:rgba(232,196,71,.35);background:rgba(232,196,71,.08)}.live-priority-state.neutral{color:#b6c8e5;border-color:rgba(105,167,255,.28);background:rgba(105,167,255,.06)}.live-priority-empty{margin-top:11px;border:1px dashed #312c23;border-radius:13px;padding:14px;text-align:center;color:#82796b;font-size:.66rem}body[data-theme="light"] .live-priority-shell{background:linear-gradient(180deg,#fffdf8,#f7f1e7);border-color:#dfcfaa;box-shadow:0 12px 28px rgba(93,69,20,.07)}body[data-theme="light"] .live-priority-head p,body[data-theme="light"] .live-priority-updated,body[data-theme="light"] .live-priority-kpi small,body[data-theme="light"] .live-priority-copy span{color:#756b5c}body[data-theme="light"] .live-priority-kpi,body[data-theme="light"] .live-priority-item{background:#fff;border-color:#ddd2bd}body[data-theme="light"] .live-priority-item:hover{background:#fffaf0;border-color:#c8a94e}body[data-theme="light"] .live-priority-rank{background:#f7eed8;color:#8a690d;border-color:#d9c27a}@media(max-width:980px){.live-priority-list{grid-template-columns:1fr 1fr}.live-priority-kpis{grid-template-columns:1fr 1fr}}@media(max-width:620px){.live-priority-head{align-items:flex-start;flex-direction:column}.live-priority-list{grid-template-columns:1fr}.live-priority-kpis{grid-template-columns:1fr 1fr}.live-priority-updated{white-space:normal}}
 </style>
 
 </head>
@@ -1291,6 +1294,7 @@ body:not([data-theme="light"]) .la-proof-chip{background:#20242a;color:#c8d0d8;b
       <button class="pill" data-f="non_entrata">● Non entrate</button>
       <button class="pill" data-f="">In attesa</button>
     </div></div>
+    <div class="live-priority-dashboard" id="livePriorityDashboard"></div>
     <div class="live-searchbar" id="liveSearchBar">
       <label class="live-searchbox" for="liveSearchInput">
         <span class="search-ico">⌕</span>
@@ -1582,8 +1586,44 @@ body:not([data-theme="light"]) .la-proof-chip{background:#20242a;color:#c8d0d8;b
     grid.classList.add('home-history');
     grid.innerHTML=html||'<div class="empty">Nessuna partita terminata disponibile.</div>';
   }
+  function livePriorityLevel(m){
+    var raw=String(m.liveLastLevel||'').trim().toLowerCase();
+    if(raw.indexOf('verde')!==-1||raw==='green')return 'green';
+    if(raw.indexOf('giall')!==-1||raw.indexOf('attendi')!==-1||raw==='yellow')return 'yellow';
+    return 'neutral';
+  }
+  function livePriorityFresh(m){
+    var ts=Number(m.liveLastUpdated||0);return ts>0&&(Date.now()-ts)<=12*60*1000;
+  }
+  function livePriorityAge(m){
+    var ts=Number(m.liveLastUpdated||0);if(!ts)return 'nessuna lettura recente';
+    var min=Math.max(0,Math.round((Date.now()-ts)/60000));
+    if(min<1)return 'aggiornato ora';if(min===1)return 'aggiornato 1 min fa';return 'aggiornato '+min+' min fa';
+  }
+  function priorityScore(m){
+    var level=livePriorityLevel(m),score=level==='green'?300:level==='yellow'?200:100;
+    if(livePriorityFresh(m))score+=35;
+    var elapsed=Math.max(0,(Date.now()-Number(m.startAt||0))/60000);
+    if(elapsed>=15&&elapsed<=65)score+=25;
+    if(elapsed>65&&elapsed<=82)score+=10;
+    return score;
+  }
+  function renderLivePriorityDashboard(){
+    var el=document.getElementById('livePriorityDashboard');if(!el)return;
+    if(currentView!=='live'){el.classList.remove('show');el.innerHTML='';return}
+    var live=matches.filter(isLive),now=Date.now();
+    var green=live.filter(function(m){return livePriorityLevel(m)==='green'});
+    var yellow=live.filter(function(m){return livePriorityLevel(m)==='yellow'});
+    var upcoming30=matches.filter(function(m){var d=Number(m.startAt)-now;return isUpcoming(m)&&d>0&&d<=30*60*1000});
+    var priorities=live.slice().sort(function(a,b){var d=priorityScore(b)-priorityScore(a);return d||Number(a.startAt)-Number(b.startAt)}).slice(0,6);
+    var list=priorities.map(function(m,i){var lv=livePriorityLevel(m),label=lv==='green'?'VERDE':lv==='yellow'?'QUASI PRONTO':'DA CONTROLLARE',sub=[m.campionato||'Campionato',laPrettyStrategy?laPrettyStrategy(m.tipoGiocata||m.liveStrategy||''):String(m.tipoGiocata||'') ,livePriorityAge(m)].filter(Boolean).join(' • ');return '<button type="button" class="live-priority-item js-priority-open" data-match-key="'+escAttr(liveAnalyzerMatchKey(m))+'"><span class="live-priority-rank">'+String(i+1).padStart(2,'0')+'</span><span class="live-priority-copy"><b>'+esc((m.casa||'')+' – '+(m.trasferta||''))+'</b><span>'+esc(sub)+'</span></span><span class="live-priority-state '+lv+'">'+label+'</span></button>'}).join('');
+    el.innerHTML='<div class="live-priority-shell"><div class="live-priority-head"><div><h3>⚡ Cosa devo guardare adesso</h3><p>EasyBet mette in cima le partite LIVE più interessanti in base all’ultimo stato disponibile.</p></div><div class="live-priority-updated">'+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})+'</div></div><div class="live-priority-kpis"><div class="live-priority-kpi gold"><small>LIVE ORA</small><strong>'+live.length+'</strong></div><div class="live-priority-kpi green"><small>SEGNALI VERDI</small><strong>'+green.length+'</strong></div><div class="live-priority-kpi yellow"><small>QUASI PRONTI</small><strong>'+yellow.length+'</strong></div><div class="live-priority-kpi blue"><small>ENTRO 30 MIN</small><strong>'+upcoming30.length+'</strong></div></div>'+(list?'<div class="live-priority-list">'+list+'</div>':'<div class="live-priority-empty">Nessuna partita LIVE da prioritizzare in questo momento.</div>')+'</div>';
+    el.classList.add('show');
+  }
+
   function render(){
     updateViewUI();
+    renderLivePriorityDashboard();
     var grid=document.getElementById('grid'),dash=document.getElementById('statsDashboard'),board=document.getElementById('strategiesBoard'),advice=document.getElementById('adviceBoard');
     board.classList.remove('show');board.innerHTML='';advice.classList.remove('show');advice.innerHTML='';
     if(currentView==='statistiche'){renderStats();return}
@@ -1602,6 +1642,7 @@ body:not([data-theme="light"]) .la-proof-chip{background:#20242a;color:#c8d0d8;b
     if(currentView==='live'){grid.classList.add('live-mode')}
     grid.innerHTML=list.map(renderMatchCard).join('')
   }
+  document.addEventListener('click',function(e){var b=e.target.closest('.js-priority-open');if(!b)return;var key=b.getAttribute('data-match-key');var m=matches.find(function(x){return liveAnalyzerMatchKey(x)===key});if(m)openLiveAnalyzer(m)});
   var loadInProgress=false,hasLoadedOnce=false,loadWatchdog=null;
   function normalizeMatchesPayload(s){
     if(Array.isArray(s)) return s;
