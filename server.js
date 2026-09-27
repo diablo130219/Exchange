@@ -781,7 +781,7 @@ const CREST_TTL_HIT_MS = 30 * 24 * 60 * 60 * 1000;
 const CREST_TTL_MISS_MS = 5 * 60 * 1000; // riprova molto prima i mancanti per evitare placeholder persistenti
 // Versione cache automatica: evita di riusare vecchi risultati errati (es. foto di città).
 // Gli override manuali restano sulla chiave storica e continuano a funzionare.
-const CREST_CACHE_VERSION = 'v5';
+const CREST_CACHE_VERSION = 'v6';
 
 const CREST_ALIASES = {
   'lahti': ['FC Lahti'],
@@ -1047,10 +1047,10 @@ async function lookupCrestWikidata(name,countryHint){
   const clean=String(name||'').trim();
   if(!clean) return {url:null,matched:null};
   const queries=crestQueries(clean);
-  const langs=['en','it'];
+  const langs=['en'];
   let best=null,bestScore=-Infinity;
   for(const lang of langs){
-    for(const q of queries){
+    for(const q of queries.slice(0,2)){
       try{
         const searchUrl='https://www.wikidata.org/w/api.php?action=wbsearchentities&search='+encodeURIComponent(q)+'&language='+lang+'&uselang='+lang+'&type=item&limit=10&format=json&origin=*';
         const sr=await fetch(searchUrl,{headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}});
@@ -1136,46 +1136,49 @@ async function lookupCrestWikipedia(name,countryHint){
 
 async function lookupCrest(name,countryHint){
   const key=normCrestName(name);
+  const queries=crestQueries(name);
 
-  // 1) Club noti/ambigui: QID Wikidata fissato. È la fonte più sicura.
+  // 1) TheSportsDB PRIMA di tutto: è molto più veloce ed evita di saturare Render
+  // con decine di chiamate Wikidata contemporanee quando una pagina contiene molte partite.
+  // La scelta resta controllata da nome/alias + paese, così non prendiamo club omonimi a caso.
+  let best=null, bestScore=-Infinity;
+  for(const query of queries){
+    try{
+      const r=await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t='+encodeURIComponent(query), {
+        headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}
+      });
+      if(!r.ok) continue;
+      const data=await r.json();
+      const teams=(data&&Array.isArray(data.teams)?data.teams:[]).filter(t=>t&&t.strBadge);
+      for(const team of teams){
+        if(team.strSport && normCrestName(team.strSport)!=='soccer') continue;
+        // Se il provider dichiara il paese e noi lo conosciamo, deve combaciare.
+        if(countryHint && team.strCountry && !countriesMatch(team.strCountry,countryHint)) continue;
+        const score=crestCandidateScore(team,name,query,countryHint);
+        if(score>bestScore){bestScore=score;best=team;}
+      }
+      // Se troviamo un match fortissimo, non continuiamo a fare chiamate inutili.
+      if(best && bestScore>=140) break;
+    }catch(err){ console.error('Lookup SportsDB stemma "'+query+'":',err.message); }
+  }
+  // Soglia abbastanza alta da evitare falsi positivi, ma non richiede più l'uguaglianza perfetta.
+  if(best && best.strBadge && bestScore>=85){
+    return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb'};
+  }
+
+  // 2) Per i club noti/ambigui usiamo il QID fissato di Wikidata: una sola chiamata entità.
   const fixedId=CREST_WIKIDATA_IDS[key];
   if(fixedId){
     const fixed=await lookupCrestWikidataById(fixedId,name);
     if(fixed&&fixed.url) return fixed;
   }
 
-  // 2) Wikidata prima dei motori fuzzy: cerchiamo un'entità descritta come club/team di calcio
-  // e chiediamo esplicitamente logo/stemma. Questo evita città, leghe e club omonimi.
+  // 3) Wikidata dinamico solo come fallback. Evitiamo la vecchia raffica di ricerche
+  // che con 30-60 squadre poteva bloccare il caricamento degli stemmi.
   const wd=await lookupCrestWikidata(name,countryHint);
   if(wd && wd.url) return wd;
 
-  // 3) TheSportsDB solo con corrispondenza FORTE del nome. In precedenza la ricerca fuzzy
-  // poteva restituire un club diverso dello stesso Paese e quindi uno stemma sbagliato.
-  const queries=crestQueries(name);
-  const allowedNames=new Set(queries.map(normCrestName));
-  allowedNames.add(key);
-  let best=null, bestScore=-Infinity;
-  for(const query of queries){
-    try{
-      const r=await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t='+encodeURIComponent(query));
-      if(!r.ok) continue;
-      const data=await r.json();
-      const teams=(data&&Array.isArray(data.teams)?data.teams:[]).filter(t=>t&&t.strBadge);
-      for(const team of teams){
-        if(team.strSport && normCrestName(team.strSport)!=='soccer') continue;
-        if(countryHint && team.strCountry && !countriesMatch(team.strCountry,countryHint)) continue;
-        const teamNames=[team.strTeam,team.strTeamShort].filter(Boolean).map(normCrestName);
-        const alternates=String(team.strAlternate||'').split(/[,;/|]+/).map(normCrestName).filter(Boolean);
-        const exact=[...teamNames,...alternates].some(n=>allowedNames.has(n));
-        if(!exact) continue;
-        const score=crestCandidateScore(team,name,query,countryHint)+100;
-        if(score>bestScore){bestScore=score;best=team;}
-      }
-    }catch(err){ console.error('Lookup stemma "'+query+'":',err.message); }
-  }
-  if(best && best.strBadge) return {url:best.strBadge,matched:best.strTeam||null,source:'sportsdb-exact'};
-
-  // 4) Wikipedia è l'ultima spiaggia e resta sottoposta al controllo sul titolo del club.
+  // 4) Wikipedia ultima risorsa, con controllo sul titolo del club.
   return await lookupCrestWikipedia(name,countryHint);
 }
 
