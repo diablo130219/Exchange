@@ -265,7 +265,7 @@
     ];
     return '<div class="lifecycle-strip" aria-label="Percorso partita">'+steps.map(function(s){var done=!!x[s[0]],cur=x.current===s[0];return '<div class="lifecycle-step '+s[0]+(done?' done':'')+(cur?' current':'')+'"><b>'+s[1]+'</b><small>'+esc(s[2])+'</small></div>'}).join('')+'</div>';
   }
-  function markLifecycle(m,event,extra){if(!m||!m.id)return;var body=Object.assign({event:event},extra||{});fetch('/api/matches/'+encodeURIComponent(m.id)+'/lifecycle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.ok?r.json():null}).then(function(updated){if(!updated)return;var idx=matches.findIndex(function(x){return String(x.id)===String(updated.id)});if(idx>=0)matches[idx]=Object.assign({},matches[idx],updated)}).catch(function(){})}
+  function markLifecycle(m,event,extra){if(!m||!m.id)return Promise.resolve(null);var body=Object.assign({event:event},extra||{});return fetch('/api/matches/'+encodeURIComponent(m.id)+'/lifecycle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.ok?r.json():null}).then(function(updated){if(!updated)return null;var idx=matches.findIndex(function(x){return String(x.id)===String(updated.id)});if(idx>=0)matches[idx]=Object.assign({},matches[idx],updated);render();return updated}).catch(function(){return null})}
   function laSignalSnapshotPayload(parsed,minute,score){function pair(v){return Array.isArray(v)?[v[0]==null?null:Number(v[0]),v[1]==null?null:Number(v[1])]:[null,null]}return{minute:Number.isFinite(Number(minute))?Number(minute):null,score:String(score||''),xg:pair(parsed.xg),sot:pair(parsed.sot),shots:pair(parsed.shots),chances:pair(parsed.big),boxshots:pair(parsed.boxshots),touches:pair(parsed.touches)}}
   function renderMatchCard(m){
       var e=m.esitoManuale||'',status=e?e:'attesa',camp=esc(m.campionato||'Campionato'),q=esc(m.quotaIngresso||'—'),str=esc(m.tipoGiocata||'Da definire');
@@ -296,16 +296,32 @@
   }
   function livePriorityLevel(m){
     var raw=String(m.liveLastLevel||'').trim().toLowerCase();
-    if(raw.indexOf('verde')!==-1||raw==='green')return 'green';
-    if(raw.indexOf('giall')!==-1||raw.indexOf('attendi')!==-1||raw==='yellow')return 'yellow';
+    // Se abbiamo uno stato live corrente, questo ha la precedenza.
+    if(raw){
+      if(raw.indexOf('verde')!==-1||raw==='green')return 'green';
+      if(raw.indexOf('giall')!==-1||raw.indexOf('attendi')!==-1||raw==='yellow')return 'yellow';
+      if(raw.indexOf('rosso')!==-1||raw==='red')return 'neutral';
+    }
+    // Fallback robusto: se il primo VERDE è già stato registrato nella timeline,
+    // la dashboard non deve continuare a mostrare "DA CONTROLLARE".
+    var first=String(m.signalFirstLevel||'').trim().toLowerCase();
+    if(m.signalFirstAt&&(first===''||first.indexOf('verde')!==-1||first==='green'))return 'green';
     return 'neutral';
   }
   function livePriorityFresh(m){
     var ts=Number(m.liveLastUpdated||0);return ts>0&&(Date.now()-ts)<=12*60*1000;
   }
   function livePriorityAge(m){
-    var ts=Number(m.liveLastUpdated||0);if(!ts)return 'nessuna lettura recente';
+    var ts=Number(m.liveLastUpdated||0);
+    var fromSignal=false;
+    if(!ts&&m.signalFirstAt){ts=Number(m.signalFirstAt||0);fromSignal=true}
+    if(!ts)return 'nessuna lettura recente';
     var min=Math.max(0,Math.round((Date.now()-ts)/60000));
+    if(fromSignal){
+      if(min<1)return 'segnale registrato ora';
+      if(min===1)return 'segnale registrato 1 min fa';
+      return 'segnale registrato '+min+' min fa';
+    }
     if(min<1)return 'aggiornato ora';if(min===1)return 'aggiornato 1 min fa';return 'aggiornato '+min+' min fa';
   }
   function priorityScore(m){
@@ -451,7 +467,19 @@
   function laPersistStateFromForm(){if(!liveAnalyzerCurrentKey)return;var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{},fg=document.getElementById('laFirstGoal'),odds={ht:(document.getElementById('laOddHT')||{}).value||'',ft:(document.getElementById('laOddFT')||{}).value||'',lay:(document.getElementById('laOddLay')||{}).value||'',fav:(document.getElementById('laOddFav')||{}).value||''};st.minute=(document.getElementById('laMinute')||{}).value||'';st.score=(document.getElementById('laScore')||{}).value||'';st.favorite=(document.getElementById('laFavorite')||{}).value||'none';st.raw=(document.getElementById('laRaw')||{}).value||'';st.odds=odds;if(fg&&String(fg.value||'').trim()!==''){var n=Number(String(fg.value).replace(/[^0-9.]/g,''));if(Number.isFinite(n)){st.firstGoalObservedMinute=n;st.earlyGoalBefore25=n<25}}else{st.firstGoalObservedMinute=null;st.earlyGoalBefore25=false}st.updatedAt=Date.now();liveAnalyzerState[liveAnalyzerCurrentKey]=st;laSaveStoredStates()}
   function laScorePairText(v){var m=String(v||'').match(/(\d+)\s*[-:]\s*(\d+)/);return m?[Number(m[1]),Number(m[2])]:[null,null]}
   function laManualPayload(parsed){function pair(v){return Array.isArray(v)?[v[0]==null?null:Number(v[0]),v[1]==null?null:Number(v[1])]:[null,null]}var sc=laScorePairText((document.getElementById('laScore')||{}).value),xg=pair(parsed.xg),sot=pair(parsed.sot),big=pair(parsed.big),shots=pair(parsed.shots),box=pair(parsed.boxshots),touch=pair(parsed.touches);return{casa:(document.getElementById('laHome')||{}).value||'',trasferta:(document.getElementById('laAway')||{}).value||'',minute:Number((document.getElementById('laMinute')||{}).value)||null,scoreHome:sc[0],scoreAway:sc[1],xgHome:xg[0],xgAway:xg[1],sotHome:sot[0],sotAway:sot[1],chancesHome:big[0],chancesAway:big[1],shotsHome:shots[0],shotsAway:shots[1],boxshotsHome:box[0],boxshotsAway:box[1],touchesHome:touch[0],touchesAway:touch[1]}}
-  function laSyncManualSignal(parsed){var payload=laManualPayload(parsed);if(!payload.casa||!payload.trasferta)return Promise.resolve(null);return fetch('/api/live-stats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.ok?r.json():null}).then(function(d){if(d&&d.level){var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{};st.serverLevel=d.level;st.serverScore=d.score100;st.serverSummary=d.summary||'';st.updatedAt=Date.now();liveAnalyzerState[liveAnalyzerCurrentKey]=st;laSaveStoredStates();setTimeout(load,120)}return d}).catch(function(){return null})}
+  function laSyncManualSignal(parsed){var payload=laManualPayload(parsed);if(!payload.casa||!payload.trasferta)return Promise.resolve(null);return fetch('/api/live-stats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.ok?r.json():null}).then(function(d){if(d&&d.level){var now=Date.now(),st=liveAnalyzerState[liveAnalyzerCurrentKey]||{};st.serverLevel=d.level;st.serverScore=d.score100;st.serverSummary=d.summary||'';st.updatedAt=now;liveAnalyzerState[liveAnalyzerCurrentKey]=st;laSaveStoredStates();
+      // Aggiorna subito la card/dashboard senza aspettare il prossimo refresh API.
+      var idx=matches.findIndex(function(x){return liveAnalyzerMatchKey(x)===liveAnalyzerCurrentKey});
+      if(idx>=0){
+        matches[idx]=Object.assign({},matches[idx],{liveLastLevel:d.level,liveLastScore:d.score100,liveLastSummary:d.summary||'',liveLastUpdated:now});
+        if(String(d.level||'').toLowerCase()==='verde'&&!matches[idx].signalFirstAt){
+          matches[idx].signalFirstAt=now;matches[idx].signalFirstLevel='verde';matches[idx].signalFirstScore=d.score100;
+        }
+      }
+      render();
+      // Riallinea poi i dati col database; un secondo refresh copre anche eventuali latenze DB/rete.
+      setTimeout(load,350);setTimeout(load,1200)
+    }return d}).catch(function(){return null})}
   function laMiniIcon(label){var map={'xG':'↗','xGOT':'◎','Possesso':'◔','Tiri':'▥','Tiri in porta':'◉','Big chances':'★','Corner':'⚑','Tiri in area':'▣','Tocchi area':'☝','xA':'↗','Tiri bloccati':'▦','Parate':'◒'};return map[label]||'•'}
 
   function laPrettyStrategy(name){var s=String(name||'').trim();if(!s)return '';return s.replace(/0\.5HT/ig,'0.5 HT').replace(/1\.5FT/ig,'1.5 FT').replace(/\s+/g,' ')}
