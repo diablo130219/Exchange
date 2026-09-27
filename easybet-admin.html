@@ -3,10 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function(){
+  try{
+    var t=localStorage.getItem('easybet-theme');
+    t=(t==='light'||t==='dark')?t:'dark';
+    document.documentElement.setAttribute('data-theme',t);
+  }catch(e){
+    document.documentElement.setAttribute('data-theme','dark');
+  }
+})();
+</script>
+
 <title>EasyBet — Gestione</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+html{background:#070707}html[data-theme="light"]{background:#e9e5dc}html[data-theme="dark"]{background:#070707}
   :root{
     --bg:#0B0A08;
     --surface:#161310;
@@ -31,7 +44,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:radial-gradient(ellipse at top, #17130d 0%, var(--bg) 55%);color:var(--text);font-family:'Sora',ui-sans-serif,system-ui,sans-serif;min-height:100vh;transition:background .25s ease,color .25s ease;}
-  body[data-theme="light"]{
+  html[data-theme="light"] body{
     --bg:#eee8dc;
     --surface:#fffdfa;
     --surface-2:#f6f1e8;
@@ -53,23 +66,23 @@
     --neutro-soft:#eef0f4;
     --shadow:0 1px 2px rgba(76,56,18,.06),0 16px 36px -18px rgba(76,56,18,.18);
   }
-  body[data-theme="light"]{background:radial-gradient(ellipse at top, #f9f5ec 0%, var(--bg) 60%);}
+  html[data-theme="light"] body{background:radial-gradient(ellipse at top, #f9f5ec 0%, var(--bg) 60%);}
   a{color:inherit;}
   .theme-toggle{background:var(--surface);border:1px solid var(--border-strong);color:var(--gold-bright);font-size:.9rem;padding:8px 13px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:700;display:inline-flex;align-items:center;gap:8px;}
   .theme-toggle:hover{border-color:var(--gold-deep);box-shadow:0 8px 18px rgba(217,180,74,.14);}
-  body[data-theme="light"] .navbar{background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(247,241,230,.82));}
-  body[data-theme="light"] .hero{background:linear-gradient(180deg, rgba(217,180,74,.10), transparent 70%);}
-  body[data-theme="light"] .pin-box, body[data-theme="light"] .modal{background:var(--surface);}
-  body[data-theme="light"] .date-section{background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(247,243,235,.94));}
-  body[data-theme="light"] .card{background:radial-gradient(ellipse at 50% 115%, rgba(217,180,74,.07), transparent 60%), linear-gradient(180deg,#fffefb 0%,#f6f0e6 100%);}
-  body[data-theme="light"] .card.esito-entrata_vinta{background:radial-gradient(ellipse at 50% 115%, rgba(63,190,107,.12), transparent 60%), linear-gradient(180deg,#fffefb 0%,#f4f8f4 100%);}
-  body[data-theme="light"] .card.esito-entrata_persa{background:radial-gradient(ellipse at 50% 115%, rgba(225,92,77,.10), transparent 60%), linear-gradient(180deg,#fffefb 0%,#fbf3f1 100%);}
-  body[data-theme="light"] .card.esito-non_entrata{background:radial-gradient(ellipse at 50% 115%, rgba(232,193,59,.12), transparent 60%), linear-gradient(180deg,#fffefb 0%,#fbf7ed 100%);}
-  body[data-theme="light"] .date-search{background:#fff;}
-  body[data-theme="light"] .esito-banner.attesa{background:linear-gradient(180deg, rgba(109,116,130,.16), rgba(109,116,130,.05));}
-  body[data-theme="light"] .crest.placeholder{background:#fff;}
-  body[data-theme="light"] .add-btn.ghost-btn{background:#fff;color:var(--text-muted);}
-  body[data-theme="light"] .date-pill.active, body[data-theme="light"] .pill.active{background:linear-gradient(180deg,rgba(240,205,110,.22),rgba(216,173,61,.12));}
+  html[data-theme="light"] body .navbar{background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(247,241,230,.82));}
+  html[data-theme="light"] body .hero{background:linear-gradient(180deg, rgba(217,180,74,.10), transparent 70%);}
+  html[data-theme="light"] body .pin-box, html[data-theme="light"] body .modal{background:var(--surface);}
+  html[data-theme="light"] body .date-section{background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(247,243,235,.94));}
+  html[data-theme="light"] body .card{background:radial-gradient(ellipse at 50% 115%, rgba(217,180,74,.07), transparent 60%), linear-gradient(180deg,#fffefb 0%,#f6f0e6 100%);}
+  html[data-theme="light"] body .card.esito-entrata_vinta{background:radial-gradient(ellipse at 50% 115%, rgba(63,190,107,.12), transparent 60%), linear-gradient(180deg,#fffefb 0%,#f4f8f4 100%);}
+  html[data-theme="light"] body .card.esito-entrata_persa{background:radial-gradient(ellipse at 50% 115%, rgba(225,92,77,.10), transparent 60%), linear-gradient(180deg,#fffefb 0%,#fbf3f1 100%);}
+  html[data-theme="light"] body .card.esito-non_entrata{background:radial-gradient(ellipse at 50% 115%, rgba(232,193,59,.12), transparent 60%), linear-gradient(180deg,#fffefb 0%,#fbf7ed 100%);}
+  html[data-theme="light"] body .date-search{background:#fff;}
+  html[data-theme="light"] body .esito-banner.attesa{background:linear-gradient(180deg, rgba(109,116,130,.16), rgba(109,116,130,.05));}
+  html[data-theme="light"] body .crest.placeholder{background:#fff;}
+  html[data-theme="light"] body .add-btn.ghost-btn{background:#fff;color:var(--text-muted);}
+  html[data-theme="light"] body .date-pill.active, html[data-theme="light"] body .pill.active{background:linear-gradient(180deg,rgba(240,205,110,.22),rgba(216,173,61,.12));}
   ::selection{background:var(--gold-deep);color:#fff;}
 
   /* ---------- PIN gate ---------- */
@@ -424,7 +437,7 @@
   var THEME_KEY = 'easybet-theme';
   function applyTheme(theme){
     var next = theme === 'light' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', next);
+    document.documentElement.setAttribute('data-theme', next);document.body.setAttribute('data-theme', next);
     var btn = document.getElementById('themeToggleAdmin');
     if (btn){
       btn.textContent = next === 'light' ? '🌙 Scuro' : '☀️ Chiaro';
@@ -507,7 +520,7 @@
   var themeToggleAdmin = document.getElementById('themeToggleAdmin');
   if (themeToggleAdmin){
     themeToggleAdmin.addEventListener('click', function(){
-      var next = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       try { localStorage.setItem(THEME_KEY, next); } catch(e){}
       applyTheme(next);
     });
