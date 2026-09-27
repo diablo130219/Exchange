@@ -1,5 +1,0 @@
-[functions.telegram-webhook]
-verify_jwt = false
-
-[functions.notify-due-matches]
-verify_jwt = false
