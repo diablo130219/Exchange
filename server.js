@@ -792,6 +792,69 @@ app.patch('/api/matches/:id', async (req, res) => {
   }
 });
 
+// STEP 9 — azioni di massa Admin
+app.post('/api/matches/bulk', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const ids = Array.isArray(b.ids) ? [...new Set(b.ids.map(String).filter(Boolean))] : [];
+    if (!ids.length) return res.status(400).json({ error: 'Nessuna partita selezionata.' });
+    if (ids.length > 300) return res.status(400).json({ error: 'Troppe partite selezionate in una sola operazione.' });
+
+    const action = String(b.action || 'update').toLowerCase();
+    if (action === 'delete') {
+      const { rowCount } = await pool.query('DELETE FROM matches WHERE id = ANY($1::text[])', [ids]);
+      return res.json({ ok: true, deleted: rowCount, ids });
+    }
+
+    if (action !== 'update') return res.status(400).json({ error: 'Azione di massa non valida.' });
+    const fields = b.fields || {};
+    const sets = [];
+    const vals = [];
+    let i = 1;
+
+    if (Object.prototype.hasOwnProperty.call(fields, 'tipoGiocata')) {
+      sets.push('tipo_giocata = $' + (i++));
+      vals.push(String(fields.tipoGiocata || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'quotaIngresso')) {
+      sets.push('quota_ingresso = $' + (i++));
+      vals.push(String(fields.quotaIngresso || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'botEnabled')) {
+      const enabled = !!fields.botEnabled;
+      sets.push('bot_enabled = $' + (i++)); vals.push(enabled);
+      if (enabled) {
+        sets.push('notified = $' + (i++)); vals.push(false);
+        sets.push('notify_minutes = $' + (i++)); vals.push(10);
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'esitoManuale')) {
+      const v = String(fields.esitoManuale || '').trim();
+      const valid = ['entrata_vinta', 'entrata_persa', 'non_entrata'];
+      const ok = valid.includes(v);
+      sets.push('esito_manuale = $' + (i++)); vals.push(ok ? v : null);
+      sets.push('outcome_set_at = $' + (i++)); vals.push(ok ? Date.now() : null);
+    }
+
+    if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
+    vals.push(ids);
+    const { rows } = await pool.query(
+      'UPDATE matches SET ' + sets.join(', ') + ' WHERE id = ANY($' + i + '::text[]) RETURNING *',
+      vals
+    );
+
+    if (Object.prototype.hasOwnProperty.call(fields, 'botEnabled') && fields.botEnabled === true) {
+      scheduler.checkOnce().catch(function(err){
+        console.error('Errore controllo immediato Telegram dopo modifica massiva:', err.message);
+      });
+    }
+    res.json({ ok: true, updated: rows.length, matches: rows.map(matchOut) });
+  } catch (err) {
+    console.error('bulk matches:', err);
+    res.status(500).json({ error: 'Errore nell’operazione di massa.' });
+  }
+});
+
 // STEP 6 — traccia il passaggio PRE-MATCH → LIVE → SEGNALE → ESITO
 app.post('/api/matches/:id/lifecycle', async (req, res) => {
   try {

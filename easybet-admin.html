@@ -202,6 +202,26 @@
   .icon-btn:hover{border-color:var(--gold-deep);color:var(--gold-bright);}
   .empty{grid-column:1/-1;color:var(--text-faint);font-style:italic;padding:50px 0;text-align:center;}
 
+
+  /* ---------- STEP 9: azioni di massa ---------- */
+  .bulk-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 18px;padding:12px 14px;border:1px solid var(--border-strong);border-radius:14px;background:linear-gradient(180deg,rgba(217,180,74,.07),rgba(255,255,255,.01));box-shadow:var(--shadow);}
+  .bulk-count{min-width:118px;font-size:.76rem;font-weight:800;color:var(--gold-bright);}
+  .bulk-count strong{font-family:'IBM Plex Mono',monospace;font-size:.88rem;}
+  .bulk-sep{width:1px;height:30px;background:var(--border);margin:0 2px;}
+  .bulk-input,.bulk-select{height:36px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface-2);color:var(--text);font-family:inherit;font-size:.73rem;padding:0 10px;outline:none;}
+  .bulk-input:focus,.bulk-select:focus{border-color:var(--gold);}
+  .bulk-input.strategy{width:180px}.bulk-input.quota{width:92px}.bulk-select{max-width:155px}
+  .bulk-btn{height:36px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface);color:var(--text-muted);font-family:inherit;font-size:.72rem;font-weight:700;padding:0 11px;cursor:pointer;white-space:nowrap;}
+  .bulk-btn:hover{border-color:var(--gold-deep);color:var(--gold-bright)}
+  .bulk-btn.primary{background:linear-gradient(180deg,var(--gold-bright),var(--gold-deep));color:#1a1408;border-color:var(--gold-bright)}
+  .bulk-btn.danger{border-color:rgba(225,92,77,.55);color:var(--rosso)}
+  .bulk-btn:disabled,.bulk-input:disabled,.bulk-select:disabled{opacity:.45;cursor:not-allowed}
+  .card-select{position:absolute;left:12px;top:12px;z-index:8;width:26px;height:26px;border-radius:8px;background:rgba(11,10,8,.82);border:1px solid var(--border-strong);display:grid;place-items:center;backdrop-filter:blur(6px)}
+  .card-select input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;margin:0}
+  .card .card-top2{padding-left:30px}
+  .card.is-selected{border-color:var(--gold)!important;box-shadow:0 0 0 1px var(--gold) inset,0 0 24px -8px rgba(217,180,74,.48),var(--shadow)!important}
+  @media(max-width:760px){.bulk-sep{display:none}.bulk-bar{align-items:stretch}.bulk-count{width:100%}.bulk-input.strategy,.bulk-input.quota,.bulk-select{flex:1;min-width:120px;width:auto}.bulk-btn{flex:1}}
+
   /* ---------- modal ---------- */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:500;padding:16px;}
   .modal-backdrop.open{display:flex;}
@@ -293,6 +313,31 @@
       <button class="date-pill" data-datef="oggi">Oggi</button>
       <button class="date-pill" data-datef="domani">Domani</button>
       <button class="date-pill" data-datef="future">Future</button>
+    </div>
+
+
+    <div class="bulk-bar" id="bulkBar">
+      <div class="bulk-count"><strong id="bulkCount">0</strong> selezionate</div>
+      <button type="button" class="bulk-btn" id="bulkSelectVisible">Seleziona visibili</button>
+      <button type="button" class="bulk-btn" id="bulkClear">Deseleziona</button>
+      <span class="bulk-sep"></span>
+      <input class="bulk-input strategy" id="bulkStrategy" type="text" placeholder="Strategia per selezionate">
+      <input class="bulk-input quota" id="bulkQuota" type="text" placeholder="Quota">
+      <select class="bulk-select" id="bulkOutcome">
+        <option value="__keep__">Esito: non cambiare</option>
+        <option value="">Esito: in attesa</option>
+        <option value="entrata_vinta">Entrata • Vinta</option>
+        <option value="entrata_persa">Entrata • Persa</option>
+        <option value="non_entrata">Non entrata</option>
+      </select>
+      <select class="bulk-select" id="bulkBot">
+        <option value="__keep__">Telegram: non cambiare</option>
+        <option value="on">Telegram ON</option>
+        <option value="off">Telegram OFF</option>
+      </select>
+      <button type="button" class="bulk-btn primary" id="bulkApply">Applica</button>
+      <button type="button" class="bulk-btn" id="bulkCopyFirst" title="Copia strategia e quota dalla prima partita selezionata alle altre">Copia 1ª → altre</button>
+      <button type="button" class="bulk-btn danger" id="bulkDelete">Elimina</button>
     </div>
 
     <div class="grid" id="grid"><div class="empty">Caricamento…</div></div>
@@ -492,6 +537,7 @@
 
     var crestCache = {};
     var matches = [];
+    var selectedIds = new Set();
     var currentFilter = 'tutte';
     var currentDateFilter = 'tutte';
 
@@ -611,11 +657,12 @@
 
     function renderCard(m){
       var esito = m.esitoManuale || '';
-      var cls = 'card' + (esito ? ' esito-'+esito : '');
+      var cls = 'card' + (esito ? ' esito-'+esito : '') + (selectedIds.has(String(m.id)) ? ' is-selected' : '');
       var bannerCls = esito ? esito : 'attesa';
       var bannerIcon = esito ? ICON_TROPHY : ICON_HOURGLASS;
       var searchText = [m.casa,m.trasferta,m.campionato,m.tipoGiocata,m.quotaIngresso].filter(Boolean).join(' ').toLowerCase();
       return '<div class="'+cls+'" data-id="'+esc(m.id)+'" data-search="'+esc(searchText)+'">'+
+        '<label class="card-select" title="Seleziona partita"><input type="checkbox" data-role="select" data-id="'+esc(m.id)+'"'+(selectedIds.has(String(m.id))?' checked':'')+'></label>'+
         '<div class="card-top2">'+
           '<div class="league-badge">'+ICON_SHIELD+'<span>'+esc(m.campionato||'—')+'</span></div>'+
           '<div class="kickoff">'+ICON_CLOCK+'<span>'+esc(fmtWhen(m))+'</span></div>'+
@@ -688,11 +735,48 @@
       return true;
     }
 
+    function visibleMatches(){
+      return matches.filter(matchesFilter).filter(matchesDateFilter);
+    }
+
+    function updateBulkUI(){
+      var count = selectedIds.size;
+      var el = document.getElementById('bulkCount');
+      if (el) el.textContent = String(count);
+      ['bulkApply','bulkCopyFirst','bulkDelete','bulkClear'].forEach(function(id){
+        var b=document.getElementById(id); if(b) b.disabled = count===0;
+      });
+      ['bulkStrategy','bulkQuota','bulkOutcome','bulkBot'].forEach(function(id){
+        var x=document.getElementById(id); if(x) x.disabled = count===0;
+      });
+    }
+
+    function bulkRequest(action, fields){
+      var ids = Array.from(selectedIds);
+      if (!ids.length) return Promise.reject(new Error('Seleziona almeno una partita.'));
+      return fetch('/api/matches/bulk', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ids:ids, action:action, fields:fields||{}})
+      }).then(function(r){
+        return r.json().catch(function(){ return {}; }).then(function(d){ if(!r.ok) throw new Error(d.error||'Errore operazione di massa'); return d; });
+      });
+    }
+
+    function reloadAfterBulk(){
+      return fetch('/api/matches').then(function(r){return r.json();}).then(function(data){
+        matches = Array.isArray(data) ? data : [];
+        var valid = new Set(matches.map(function(m){return String(m.id);}));
+        selectedIds.forEach(function(id){ if(!valid.has(id)) selectedIds.delete(id); });
+        render(); updateBulkUI();
+      });
+    }
+
     function render(){
       var grid = document.getElementById('grid');
       var list = matches.filter(matchesFilter).filter(matchesDateFilter);
       if (!list.length){
         grid.innerHTML = '<div class="empty">Nessuna partita in questa vista.</div>';
+        updateBulkUI();
         return;
       }
 
@@ -730,6 +814,7 @@
           '<div class="grid date-grid">' + group.items.map(renderCard).join('') + '<div class="date-search-empty">Nessuna partita trovata per questa ricerca.</div></div>'+
         '</details>';
       }).join('') + '</div>';
+      updateBulkUI();
     }
 
     function filterDateSection(input){
@@ -811,6 +896,13 @@
     // inline esito / bot toggle
     document.getElementById('grid').addEventListener('change', function(e){
       var role = e.target.getAttribute('data-role');
+      if (role === 'select'){
+        var sid = String(e.target.getAttribute('data-id') || '');
+        if (e.target.checked) selectedIds.add(sid); else selectedIds.delete(sid);
+        var card = e.target.closest('.card'); if(card) card.classList.toggle('is-selected', e.target.checked);
+        updateBulkUI();
+        return;
+      }
       var id = e.target.getAttribute('data-id');
       if (!role || !id) return;
       var payload = {};
@@ -848,6 +940,55 @@
       var m = matches.find(function(x){ return x.id === id; });
       if (m) openModal(m);
     });
+
+    // STEP 9 — azioni di massa
+    document.getElementById('bulkSelectVisible').addEventListener('click', function(){
+      visibleMatches().forEach(function(m){ selectedIds.add(String(m.id)); });
+      render();
+    });
+    document.getElementById('bulkClear').addEventListener('click', function(){ selectedIds.clear(); render(); });
+
+    document.getElementById('bulkApply').addEventListener('click', function(){
+      var fields = {};
+      var strategy = document.getElementById('bulkStrategy').value.trim();
+      var quota = document.getElementById('bulkQuota').value.trim();
+      var outcome = document.getElementById('bulkOutcome').value;
+      var bot = document.getElementById('bulkBot').value;
+      if (strategy) fields.tipoGiocata = strategy;
+      if (quota) fields.quotaIngresso = quota;
+      if (outcome !== '__keep__') fields.esitoManuale = outcome;
+      if (bot !== '__keep__') fields.botEnabled = bot === 'on';
+      if (!Object.keys(fields).length){ window.alert('Scegli almeno una modifica da applicare.'); return; }
+      var n=selectedIds.size;
+      if(!window.confirm('Applicare le modifiche a '+n+' partite selezionate?')) return;
+      bulkRequest('update',fields).then(function(){
+        document.getElementById('bulkStrategy').value='';
+        document.getElementById('bulkQuota').value='';
+        document.getElementById('bulkOutcome').value='__keep__';
+        document.getElementById('bulkBot').value='__keep__';
+        return reloadAfterBulk();
+      }).catch(function(err){ window.alert(err.message); });
+    });
+
+    document.getElementById('bulkCopyFirst').addEventListener('click', function(){
+      var ids=Array.from(selectedIds);
+      if(ids.length<2){ window.alert('Seleziona almeno due partite.'); return; }
+      var source=matches.find(function(m){return String(m.id)===ids[0];});
+      if(!source){ window.alert('Partita sorgente non trovata.'); return; }
+      var targetIds=ids.slice(1);
+      if(!window.confirm('Copiare strategia "'+(source.tipoGiocata||'')+'" e quota "'+(source.quotaIngresso||'')+'" dalla prima selezionata alle altre '+targetIds.length+'?')) return;
+      fetch('/api/matches/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:targetIds,action:'update',fields:{tipoGiocata:source.tipoGiocata||'',quotaIngresso:source.quotaIngresso||''}})})
+        .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;});})
+        .then(reloadAfterBulk).catch(function(err){window.alert(err.message);});
+    });
+
+    document.getElementById('bulkDelete').addEventListener('click', function(){
+      var n=selectedIds.size;
+      if(!n) return;
+      if(!window.confirm('Eliminare definitivamente '+n+' partite selezionate?\n\nQuesta operazione non può essere annullata.')) return;
+      bulkRequest('delete',{}).then(function(){ selectedIds.clear(); return reloadAfterBulk(); }).catch(function(err){window.alert(err.message);});
+    });
+    updateBulkUI();
 
     // ---------------- modal ----------------
     var backdrop = document.getElementById('modalBackdrop');
