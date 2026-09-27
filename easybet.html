@@ -1298,6 +1298,7 @@ body:not([data-theme="light"]) .la-proof-chip{background:#20242a;color:#c8d0d8;b
     <div class="grid" id="grid"><div class="empty">Caricamento…</div></div><div class="strategies-board" id="strategiesBoard"></div><div class="advice-board" id="adviceBoard"></div><div class="stats-dashboard" id="statsDashboard"></div>
   </section>
 </div>
+<script src="/strategie-live.js"></script>
 <script>
 (function(){
   var themeToggle=document.getElementById('themeToggle');
@@ -1655,149 +1656,16 @@ body:not([data-theme="light"]) .la-proof-chip{background:#20242a;color:#c8d0d8;b
   function laSum(p){return p&&p[0]!=null&&p[1]!=null?p[0]+p[1]:null}function laDiff(p){return p&&p[0]!=null&&p[1]!=null?p[0]-p[1]:null}function laR(v){return v==null?null:Math.round((v+Number.EPSILON)*100)/100}function laFmt(p,s){s=s||'';return p&&p[0]!=null&&p[1]!=null?laR(p[0])+s+' – '+laR(p[1])+s:'N/D'}
   function laSig(name,state,reason,why,criteria){return{name:name,state:state,reason:reason,why:why,criteria:criteria||[]}}
   function laAnalyzeStats(m,min,sc,favSel,homeName,awayName,odds){
-    odds=odds||{};
-    var xg=laSum(m.xg),sot=laSum(m.sot),shots=laSum(m.shots),big=laSum(m.big),box=laSum(m.boxshots),touches=laSum(m.touches);
-    var goals=0,sm=String(sc||'').match(/(\d+)\s*[-:]\s*(\d+)/);if(sm)goals=Number(sm[1])+Number(sm[2]);
-    var minuteText=String(min==null?'':min).trim();
-    var isHT=/^(ht|intervallo|half\s*time)$/i.test(minuteText);
-    var minuteN=isHT?45:laNum(min);
-    function line(label,value,pass,weight){return [label,!!pass,value!=null,weight||1]}
-    function weighted(list){
-      var available=list.filter(function(x){return x[2]});
-      var totalW=available.reduce(function(a,x){return a+(x[3]||1)},0);
-      var passW=available.filter(function(x){return x[1]}).reduce(function(a,x){return a+(x[3]||1)},0);
-      var passed=available.filter(function(x){return x[1]}).length;
-      return {checks:available.map(function(x){return [x[0],x[1]]}),available:available.length,passed:passed,score:totalW?passW/totalW:0,totalWeight:totalW};
+    var engine=window.EasyBetLiveStrategies;
+    if(!engine||typeof engine.analyzeAll!=='function'){
+      return [laSig('Over 0.5 HT','DATI','Motore strategie non disponibile.','Ricarica la pagina.'),laSig('Over 1.5 FT','DATI','Motore strategie non disponibile.','Ricarica la pagina.'),laSig('Banca X','DATI','Motore strategie non disponibile.','Ricarica la pagina.'),laSig('Segna favorita','DATI','Motore strategie non disponibile.','Ricarica la pagina.')];
     }
-    function oddNum(v){var n=Number(String(v==null?'':v).replace(',','.'));return Number.isFinite(n)&&n>1?n:null}
-    function oddText(v){var n=oddNum(v);return n==null?'':(' • quota '+n.toFixed(2))}
-    function softState(name,score,checks,greenAt,strongAt,waitAt,reasonBase,whyBase,core){
-      if(checks.available<2)return laSig(name,'DATI','Dati live insufficienti per una lettura affidabile.','Servono almeno 2 indicatori disponibili; le metriche mancanti vengono ignorate.',checks.checks);
-      if(score>=greenAt&&(core!==false))return laSig(name,'VERDE',reasonBase+' '+checks.passed+'/'+checks.available+' criteri disponibili.','Punteggio adattivo: '+Math.round(score*100)+'%. '+whyBase,checks.checks);
-      if(score>=strongAt)return laSig(name,'ATTENDI FORTE','Segnale vicino all’ingresso: '+checks.passed+'/'+checks.available+' criteri disponibili.','Punteggio adattivo: '+Math.round(score*100)+'%. Manca una conferma forte.',checks.checks);
-      if(score>=waitAt)return laSig(name,'ATTENDI','Segnali presenti ma ancora incompleti: '+checks.passed+'/'+checks.available+'.','Punteggio adattivo: '+Math.round(score*100)+'%. '+whyBase,checks.checks);
-      return laSig(name,'NO BET','Indicatori disponibili ancora troppo deboli.','Punteggio adattivo: '+Math.round(score*100)+'%. Le metriche assenti non penalizzano.',checks.checks);
-    }
-
-    var htOdds=oddNum(odds.ht),ftOdds=oddNum(odds.ft),layOdds=oddNum(odds.lay),favOdds=oddNum(odds.fav);
-    var q=weighted([
-      line('xG',xg,xg!=null&&xg>=0.55,1.4),
-      line('SOT',sot,sot!=null&&sot>=2,1.5),
-      line('Big chances',big,big!=null&&big>=1,1.1),
-      line('Tiri area',box,box!=null&&box>=5,1.0),
-      line('Tocchi area',touches,touches!=null&&touches>=10,0.7),
-      line('Tiri',shots,shots!=null&&shots>=6,1.0),
-      line('Quota',htOdds,htOdds!=null&&htOdds>=1.55&&htOdds<=2.10,0.6)
-    ]);
-    var s=weighted([
-      line('xG',xg,xg!=null&&xg>=0.85,1.4),
-      line('SOT',sot,sot!=null&&sot>=3,1.5),
-      line('Big chances',big,big!=null&&big>=1,1.0),
-      line('Tiri area',box,box!=null&&box>=6,1.0),
-      line('Tocchi area',touches,touches!=null&&touches>=12,0.7),
-      line('Tiri',shots,shots!=null&&shots>=7,1.0),
-      line('Quota',ftOdds,ftOdds!=null&&ftOdds>=1.55,0.7)
-    ]);
-    var coreHT=(sot!=null&&sot>=2)||(shots!=null&&shots>=7)||(xg!=null&&xg>=0.60);
-    var coreFT=(sot!=null&&sot>=3)||(shots!=null&&shots>=8)||(xg!=null&&xg>=0.90);
-    var ht,ft;
-    if(minuteN==null)ht=laSig('Over 0.5 HT','DATI','Inserisci il minuto della partita.','Finestra principale 15’–30’.');
-    else if(minuteN<15)ht=laSig('Over 0.5 HT','ATTENDI','Non ancora in zona operativa.','La finestra EasyBet parte indicativamente dal 15°.');
-    else if(minuteN>32)ht=laSig('Over 0.5 HT','NO BET','Finestra operativa superata.','Non inseguire il mercato troppo tardi.');
-    else if(goals>0)ht=laSig('Over 0.5 HT','CHIUSA','C’è già almeno un gol nel match.','La condizione Over 0.5 è raggiunta.');
-    else ht=softState('Over 0.5 HT',q.score,q,0.60,0.46,0.30,'Pressione live compatibile con l’ingresso.','SOT '+(sot??'N/D')+' • Tiri '+(shots??'N/D')+' • xG '+(laR(xg)??'N/D')+oddText(htOdds),coreHT);
-
-    var goalState=(liveAnalyzerCurrentKey&&liveAnalyzerState[liveAnalyzerCurrentKey])||{},earlyGoalBefore25=!!goalState.earlyGoalBefore25,firstGoalKnown=goalState.firstGoalObservedMinute!=null&&Number.isFinite(Number(goalState.firstGoalObservedMinute));
-    var pressureReal=(big!=null&&big>=1)||(box!=null&&box>=6)||(touches!=null&&touches>=12)||(shots!=null&&shots>=8);
-    var pressureStrong=((big!=null&&big>=1)?1:0)+((box!=null&&box>=8)?1:0)+((touches!=null&&touches>=15)?1:0)+((shots!=null&&shots>=10)?1:0)>=2;
-    var midChecks=weighted([
-      line('xG ≥ 1.20',xg,xg!=null&&xg>=1.20,1.5),
-      line('SOT ≥ 4',sot,sot!=null&&sot>=4,1.6),
-      line('Pressione reale',pressureReal,pressureReal,1.3),
-      line('Big chances',big,big!=null&&big>=1,1.0),
-      line('Tiri ≥ 9',shots,shots!=null&&shots>=9,1.0),
-      line('Quota',ftOdds,ftOdds!=null&&ftOdds>=1.55,0.7)
-    ]);
-    var lateChecks=weighted([
-      line('xG ≥ 1.55',xg,xg!=null&&xg>=1.55,1.5),
-      line('SOT ≥ 5',sot,sot!=null&&sot>=5,1.6),
-      line('Big chance',big,big!=null&&big>=1,1.1),
-      line('Produzione forte',pressureStrong,pressureStrong,1.3),
-      line('Tiri ≥ 11',shots,shots!=null&&shots>=11,1.0),
-      line('Quota',ftOdds,ftOdds!=null&&ftOdds>=1.60,0.7)
-    ]);
-    if(goals>=2)ft=laSig('Over 1.5 FT','CHIUSA','Sono già stati segnati almeno 2 gol.','La condizione Over 1.5 è raggiunta.');
-    else if(goals>0&&!firstGoalKnown)ft=laSig('Over 1.5 FT','DATI GOL','Inserisci il minuto del primo gol.','Con inserimento manuale EasyBet deve sapere quando è arrivato il primo gol: se è prima del 25° l’Over 1.5 FT diventa INGIOCABILE.');
-    else if(earlyGoalBefore25&&goals>0)ft=laSig('Over 1.5 FT','INGIOCABILE','Gol arrivato prima del 25° minuto.','Regola EasyBet: il primo gol è arrivato troppo presto; il mercato resta escluso perché la quota è già stata compressa.');
-    else if(minuteN!=null&&minuteN<20)ft=laSig('Over 1.5 FT','ATTENDI','Match ancora presto per il filtro principale.','Finestra operativa principale 20’–45’.');
-    else if(minuteN!=null&&minuteN<=45)ft=softState('Over 1.5 FT',s.score,s,0.60,0.47,0.30,'Volume offensivo sufficiente.','Finestra 20’–45’ con criteri pesati'+oddText(ftOdds)+'.',coreFT);
-    else if(minuteN!=null&&minuteN<=55){
-      var midCore=((xg!=null&&xg>=1.20)?1:0)+((sot!=null&&sot>=4)?1:0)+(pressureReal?1:0)>=2;
-      ft=softState('Over 1.5 FT',midChecks.score,midChecks,0.64,0.50,0.34,'Finestra estesa con pressione convincente.','46’–55’: bastano 2 segnali forti su 3 principali; non serve che tutte le metriche siano presenti'+oddText(ftOdds)+'.',midCore);
-    }else if(minuteN!=null&&minuteN<=60){
-      var lateCore=((xg!=null&&xg>=1.55)?1:0)+((sot!=null&&sot>=5)?1:0)+((big!=null&&big>=1)?1:0)+(pressureStrong?1:0)>=3;
-      ft=softState('Over 1.5 FT',lateChecks.score,lateChecks,0.72,0.58,0.42,'Scenario molto forte nonostante il minuto avanzato.','56’–60’: servono almeno 3 segnali forti tra xG, SOT, big chance e produzione offensiva'+oddText(ftOdds)+'.',lateCore);
-    }else if(minuteN!=null&&minuteN>60)ft=laSig('Over 1.5 FT','NO BET','Finestra operativa chiusa.','Dopo il 60° minuto non vengono aperti nuovi ingressi Over 1.5 FT.');
-    else ft=laSig('Over 1.5 FT','DATI','Inserisci il minuto della partita.','Finestra operativa 20’–60’.');
-
-    var dxg=laDiff(m.xg),dsot=laDiff(m.sot),dshots=laDiff(m.shots),dtouch=laDiff(m.touches),dbig=laDiff(m.big);
-    var layDyn=weighted([
-      line('ΔxG',dxg,dxg!=null&&Math.abs(dxg)>=0.30,1.5),
-      line('ΔSOT',dsot,dsot!=null&&Math.abs(dsot)>=1,1.5),
-      line('ΔTiri',dshots,dshots!=null&&Math.abs(dshots)>=3,1.0),
-      line('ΔTocchi area',dtouch,dtouch!=null&&Math.abs(dtouch)>=6,0.8),
-      line('ΔBig chances',dbig,dbig!=null&&Math.abs(dbig)>=1,1.1),
-      line('Quota Lay X',layOdds,layOdds!=null&&layOdds>=1.70&&layOdds<=2.50,0.7)
-    ]),lay;
-    if(isHT){
-      if(!sm||Number(sm[1])!==Number(sm[2])||!((Number(sm[1])===0&&Number(sm[2])===0)||(Number(sm[1])===1&&Number(sm[2])===1)))lay=laSig('Banca X','NON ATTIVA','Intervallo raggiunto, ma il risultato non è 0-0 o 1-1.','La strategia Banca X viene preparata a HT solo se il pareggio è 0-0 o 1-1.');
-      else if(layDyn.available<2)lay=laSig('Banca X','DATI','Intervallo: dati insufficienti per misurare la fragilità del pareggio.','Servono almeno 2 indicatori comparativi disponibili prima di preparare l’ingresso nel secondo tempo.',layDyn.checks);
-      else if(layDyn.score>=0.55)lay=laSig('Banca X','ATTENDI FORTE','Pareggio fragile: strategia idonea per il secondo tempo.','Attendi la ripresa e la quota Lay X a 2.00 o inferiore. Punteggio adattivo '+Math.round(layDyn.score*100)+'%'+oddText(layOdds)+'.',layDyn.checks);
-      else if(layDyn.score>=0.40)lay=laSig('Banca X','ATTENDI','Pareggio interessante ma ancora da confermare.','La strategia resta osservata nel secondo tempo; attendi maggiore squilibrio e quota Lay X ≤ 2.00.',layDyn.checks);
-      else lay=laSig('Banca X','NO BET','Pareggio ancora troppo stabile a HT.','Può essere rivalutato nei primi minuti del secondo tempo solo se la pressione aumenta sensibilmente.',layDyn.checks);
-    }else if(minuteN!=null&&minuteN<45)lay=laSig('Banca X','VALUTA A HT','Strategia da valutare all’intervallo.','Prima dell’HT non viene emesso un NO BET: la lettura parte sullo 0-0 o 1-1 e l’ingresso avviene nel secondo tempo.');
-    else if(minuteN===45)lay=laSig('Banca X','ATTENDI HT','Attendo la fine effettiva del primo tempo.','Il 45° può includere recupero. In manuale, quando è davvero intervallo scrivi HT nel campo Minuto.');
-    else if(minuteN!=null&&minuteN>45){
-      if(!sm||!((Number(sm[1])===0&&Number(sm[2])===0)||(Number(sm[1])===1&&Number(sm[2])===1)))lay=laSig('Banca X','NON ATTIVA','Il risultato non è 0-0 o 1-1.','Il pareggio target della strategia non è più presente, quindi non si apre un nuovo Lay X.');
-      else if(layDyn.available<2)lay=laSig('Banca X','DATI','Secondo tempo: dati insufficienti per valutare il Lay X.','Servono almeno 2 indicatori comparativi disponibili.',layDyn.checks);
-      else if(layDyn.score>=0.55){
-        if(layOdds==null)lay=laSig('Banca X','ATTESA QUOTA','Pareggio fragile: condizioni live confermate.','Inserisci la quota Lay X corrente. Il segnale può diventare VERDE solo con quota 2.00 o inferiore.',layDyn.checks);
-        else if(layOdds>2.0001)lay=laSig('Banca X','ATTESA QUOTA','Pareggio fragile, ma la quota Lay X è ancora troppo alta.','Quota live '+layOdds.toFixed(2)+' • attendi 2.00 o inferiore prima dell’ingresso.',layDyn.checks);
-        else lay=laSig('Banca X','VERDE','Pareggio fragile nel secondo tempo e quota idonea.','Condizioni live confermate • quota Lay X '+layOdds.toFixed(2)+' ≤ 2.00.',layDyn.checks);
-      }
-      else if(layDyn.score>=0.40)lay=laSig('Banca X','ATTENDI FORTE','Pareggio sotto pressione nel secondo tempo.','Vicino all’ingresso: serve ulteriore conferma; quando i dati saranno sufficienti servirà comunque quota Lay X ≤ 2.00.',layDyn.checks);
-      else if(layDyn.score>=0.25)lay=laSig('Banca X','ATTENDI','C’è qualche squilibrio, ma non abbastanza netto.','Continua a monitorare il secondo tempo e la quota Lay X.',layDyn.checks);
-      else lay=laSig('Banca X','NO BET','Il pareggio appare ancora abbastanza stabile.','Nessun ingresso finché pressione e squilibrio non aumentano.',layDyn.checks);
-    }else lay=laSig('Banca X','DATI','Inserisci il minuto o HT.','La strategia viene preparata a HT e giocata nel secondo tempo con quota Lay X ≤ 2.00.');
-
-    var homeDyn=weighted([
-      line('ΔxG',dxg,dxg!=null&&dxg>=0.25,1.5),
-      line('ΔSOT',dsot,dsot!=null&&dsot>=1,1.5),
-      line('ΔTiri',dshots,dshots!=null&&dshots>=3,1.0),
-      line('ΔTocchi area',dtouch,dtouch!=null&&dtouch>=6,0.8),
-      line('ΔBig chances',dbig,dbig!=null&&dbig>=1,1.1),
-      line('Quota favorita',favOdds,favOdds!=null&&favOdds>=1.55&&favOdds<=2.50,0.7)
-    ]);
-    var awayDyn=weighted([
-      line('ΔxG',dxg,dxg!=null&&dxg<=-0.25,1.5),
-      line('ΔSOT',dsot,dsot!=null&&dsot<=-1,1.5),
-      line('ΔTiri',dshots,dshots!=null&&dshots<=-3,1.0),
-      line('ΔTocchi area',dtouch,dtouch!=null&&dtouch<=-6,0.8),
-      line('ΔBig chances',dbig,dbig!=null&&dbig<=-1,1.1),
-      line('Quota favorita',favOdds,favOdds!=null&&favOdds>=1.55&&favOdds<=2.50,0.7)
-    ]),fav;
-    if(favSel==='none'){
-      var side=homeDyn.passed>awayDyn.passed?(homeName||'Casa'):awayDyn.passed>homeDyn.passed?(awayName||'Ospite'):'Nessuna';
-      fav=laSig('Segna favorita','DATI','Favorita pre-match non indicata. Dominante: '+side+'.','Seleziona Casa o Ospite per valutare la strategia.',homeDyn.passed>=awayDyn.passed?homeDyn.checks:awayDyn.checks);
-    }else{
-      var ih=favSel==='home',name=ih?(homeName||'Casa'):(awayName||'Ospite'),fd=ih?homeDyn:awayDyn;
-      if(fd.available<2)fav=laSig('Segna favorita','DATI','Dati insufficienti per valutare '+name+'.','Servono almeno 2 indicatori comparativi disponibili.',fd.checks);
-      else if(fd.score>=0.58)fav=laSig('Segna favorita','VERDE',name+' sta confermando superiorità offensiva.','Punteggio adattivo '+Math.round(fd.score*100)+'%'+oddText(favOdds)+'. Non servono tutti i criteri insieme.',fd.checks);
-      else if(fd.score>=0.42)fav=laSig('Segna favorita','ATTENDI FORTE',name+' è vicina alla conferma del segnale.','Punteggio adattivo '+Math.round(fd.score*100)+'%'+oddText(favOdds)+'.',fd.checks);
-      else if(fd.score>=0.28)fav=laSig('Segna favorita','ATTENDI',name+' mostra qualche segnale di superiorità.','Punteggio adattivo '+Math.round(fd.score*100)+'%.',fd.checks);
-      else fav=laSig('Segna favorita','NO BET',name+' non sta mostrando sufficiente superiorità.','Punteggio adattivo '+Math.round(fd.score*100)+'%.',fd.checks);
-    }
-    return [ht,ft,lay,fav]
+    var goalState=(liveAnalyzerCurrentKey&&liveAnalyzerState[liveAnalyzerCurrentKey])||{};
+    return engine.analyzeAll(m,{
+      minute:min,score:sc,favorite:favSel,homeName:homeName,awayName:awayName,odds:odds||{},
+      earlyGoalBefore25:!!goalState.earlyGoalBefore25,
+      firstGoalKnown:goalState.firstGoalObservedMinute!=null&&Number.isFinite(Number(goalState.firstGoalObservedMinute))
+    });
   }
   function laSignalCoverage(x){var cc=(x.criteria||[]),total=cc.length,ok=cc.filter(function(c){return c[1]}).length,pct=total?Math.round(ok/total*100):null,label='';if(x.state==='VERDE')label='Conferma live';else if(x.state==='ATTENDI FORTE')label='Vicino all’ingresso';else if(x.state==='ATTESA QUOTA')label='Dati ok • attesa quota';else if(x.state==='NO BET'||x.state==='INGIOCABILE')label='Filtro non superato';else if(x.state==='VALUTA A HT'||x.state==='ATTENDI HT')label='Valutazione a HT';else if(x.state==='NON ATTIVA'||x.state==='CHIUSA')label='Strategia non attiva';else label='Valutazione live';return {ok:ok,total:total,pct:pct,label:label}}
 

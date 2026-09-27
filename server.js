@@ -1269,6 +1269,13 @@ app.post('/api/cron/telegram', async (req, res) => {
   }
 });
 
+
+// Motore condiviso delle strategie LIVE: stesso file usato dal backend e dal browser.
+app.get('/strategie-live.js', function(req, res){
+  res.type('application/javascript');
+  res.sendFile(path.join(__dirname, 'strategie-live.js'));
+});
+
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
 // Fallback per qualsiasi GET non-API su un percorso sconosciuto: manda alla pagina
