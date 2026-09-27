@@ -95,6 +95,83 @@ function alertSettingsOut(row) {
   return { notifyMinutes: Number(row.notify_minutes) || 10 };
 }
 
+
+// ---------- statistiche performance pronostici ----------
+function perfPct(n, d) { return d ? Math.round((Number(n) / Number(d)) * 1000) / 10 : 0; }
+function perfQuota(v) {
+  const n = Number(String(v == null ? '' : v).replace(',', '.').trim());
+  return Number.isFinite(n) && n > 1 ? n : null;
+}
+function perfOutcome(v) {
+  v = String(v || '').trim();
+  return ['entrata_vinta', 'entrata_persa', 'non_entrata'].includes(v) ? v : '';
+}
+function perfStrategyLabel(v) {
+  const raw = String(v || '').trim();
+  const s = raw.toUpperCase().replace(',', '.');
+  if (/OVER\s*1\.?5/.test(s)) return 'OVER 1.5 FT';
+  if (/OVER\s*0\.?5\s*(HT|1T)/.test(s)) return 'OVER 0.5 HT';
+  if (/BANCA\s*(LA\s*)?X|LAY\s*X/.test(s)) return 'BANCA LA X';
+  if (/SEGNA\s*(LA\s*)?FAVORITA|FAVORITA/.test(s)) return 'SEGNA LA FAVORITA';
+  if (/SEGNO\s*1|\b1\b/.test(s)) return 'SEGNO 1';
+  return raw || 'Senza strategia';
+}
+function perfDateKeyRome(ms) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(new Date(Number(ms)));
+    const m = Object.fromEntries(parts.map(p => [p.type, p.value]));
+    return `${m.year}-${m.month}-${m.day}`;
+  } catch (_) {
+    return new Date(Number(ms)).toISOString().slice(0, 10);
+  }
+}
+function perfAccumulator(label) {
+  return { label, total: 0, entered: 0, wins: 0, losses: 0, skipped: 0, quotaSum: 0, quotaCount: 0 };
+}
+function perfAdd(acc, row) {
+  const outcome = perfOutcome(row.esito_manuale);
+  if (!outcome) return;
+  acc.total++;
+  if (outcome === 'entrata_vinta') { acc.wins++; acc.entered++; }
+  else if (outcome === 'entrata_persa') { acc.losses++; acc.entered++; }
+  else if (outcome === 'non_entrata') acc.skipped++;
+  if (outcome !== 'non_entrata') {
+    const q = perfQuota(row.quota_ingresso);
+    if (q != null) { acc.quotaSum += q; acc.quotaCount++; }
+  }
+}
+function perfFinish(acc) {
+  return {
+    label: acc.label,
+    total: acc.total,
+    entered: acc.entered,
+    wins: acc.wins,
+    losses: acc.losses,
+    skipped: acc.skipped,
+    winRate: perfPct(acc.wins, acc.entered),
+    entryRate: perfPct(acc.entered, acc.total),
+    skipRate: perfPct(acc.skipped, acc.total),
+    avgQuota: acc.quotaCount ? Math.round((acc.quotaSum / acc.quotaCount) * 100) / 100 : null
+  };
+}
+function perfGroup(rows, keyFn) {
+  const map = new Map();
+  rows.forEach(row => {
+    if (!perfOutcome(row.esito_manuale)) return;
+    const key = String(keyFn(row) || 'Senza dato').trim() || 'Senza dato';
+    if (!map.has(key)) map.set(key, perfAccumulator(key));
+    perfAdd(map.get(key), row);
+  });
+  return Array.from(map.values()).map(perfFinish).sort((a, b) => b.total - a.total || b.entered - a.entered || a.label.localeCompare(b.label));
+}
+function perfPeriod(rows, fromMs, label) {
+  const a = perfAccumulator(label);
+  rows.forEach(row => { if (Number(row.start_at) >= fromMs) perfAdd(a, row); });
+  return perfFinish(a);
+}
+
 // ---------- public matches feed (lightweight: used by EasyBet public page) ----------
 app.get('/api/matches', async (req, res) => {
   try {
@@ -103,6 +180,44 @@ app.get('/api/matches', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nel caricamento delle partite.' });
+  }
+});
+
+
+// ---------- statistiche performance aggregate (calcolate dal DB, nessun dato duplicato) ----------
+app.get('/api/performance-stats', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT id, data, campionato, casa, trasferta, tipo_giocata, start_at, quota_ingresso, esito_manuale
+      FROM matches
+      WHERE esito_manuale IS NOT NULL AND esito_manuale <> ''
+      ORDER BY start_at ASC
+    `);
+    const now = Date.now();
+    const overallAcc = perfAccumulator('Totale');
+    rows.forEach(row => perfAdd(overallAcc, row));
+    const overall = perfFinish(overallAcc);
+    const periods = {
+      today: perfPeriod(rows.filter(r => perfDateKeyRome(r.start_at) === perfDateKeyRome(now)), 0, 'Oggi'),
+      last7: perfPeriod(rows, now - 7 * 86400000, 'Ultimi 7 giorni'),
+      last30: perfPeriod(rows, now - 30 * 86400000, 'Ultimi 30 giorni'),
+      all: overall
+    };
+    const byStrategy = perfGroup(rows, r => perfStrategyLabel(r.tipo_giocata));
+    const byLeague = perfGroup(rows, r => r.campionato || 'Senza campionato');
+    const dailyMap = new Map();
+    rows.forEach(row => {
+      const outcome = perfOutcome(row.esito_manuale);
+      if (!outcome) return;
+      const key = perfDateKeyRome(row.start_at);
+      if (!dailyMap.has(key)) dailyMap.set(key, perfAccumulator(key));
+      perfAdd(dailyMap.get(key), row);
+    });
+    const daily = Array.from(dailyMap.values()).map(perfFinish).sort((a,b) => a.label.localeCompare(b.label)).slice(-60);
+    res.json({ generatedAt: now, overall, periods, byStrategy, byLeague, daily });
+  } catch (err) {
+    console.error('performance-stats:', err);
+    res.status(500).json({ error: 'Errore nel calcolo delle statistiche performance.' });
   }
 });
 

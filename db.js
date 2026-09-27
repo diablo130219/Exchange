@@ -99,6 +99,9 @@ async function migrate() {
     ON CONFLICT (id) DO NOTHING;
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_start_at ON matches (start_at);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_esito_manuale ON matches (esito_manuale);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_tipo_giocata ON matches (tipo_giocata);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_campionato ON matches (campionato);`);
 
   // --- Segnali Live (profili di ingresso VERDE/GIALLO/ROSSO da bookmarklet FlashScore) ---
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_strategy TEXT;`);
