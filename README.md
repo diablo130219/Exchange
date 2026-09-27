@@ -1,20 +1,20 @@
 # EasyBet — pacchetto pulito
 
-Include il fix Step 25 per la modalità Light.
+Pacchetto di produzione con sicurezza Admin rafforzata.
 
-## Fix Step 25
-Nella pagina Statistiche i colori semantici non vengono più coperti dal colore testo generico della modalità Light:
+## Variabili Admin obbligatorie su Render
+- `ADMIN_PIN` — almeno 6 caratteri
+- `ADMIN_SESSION_SECRET` — almeno 32 caratteri casuali
+- `ADMIN_SESSION_HOURS` — durata sessione, ad esempio `12`
 
-- verde = rendimento positivo / vinta
-- rosso = rendimento negativo / persa
-- giallo = intermedio / non entrata
+## Rafforzamenti Step 26
+- sessione firmata con nonce casuale
+- nessun secret di fallback
+- cookie HttpOnly / SameSite=Strict / Secure su HTTPS
+- blocco delle richieste Admin cross-site
+- limite tentativi login con `Retry-After`
+- cache disabilitata sugli endpoint di autenticazione
+- header HTTP di sicurezza
+- `X-Powered-By` disattivato
 
-Il fix si applica a:
-- tabelle rendimento per strategia e campionato
-- KPI
-- validazione Score 0–100
-- storico per minuto
-- dettagli delle partite
-- legenda dei grafici
-
-Dark mode invariata.
+Le API pubbliche necessarie al Live Analyzer restano invariate.

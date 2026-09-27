@@ -37,10 +37,18 @@
       .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, body:j}; }); })
       .then(function(x){
         if(!x.body.configured){
-          pinSub.textContent = 'Sicurezza non configurata: imposta ADMIN_PIN sul server';
           pinBtn.disabled = true;
           pinInput.disabled = true;
-          pinError.textContent = 'Su Render aggiungi la variabile ambiente ADMIN_PIN e ridistribuisci il servizio.';
+          if(!x.body.pinOk){
+            pinSub.textContent = 'Sicurezza non configurata: ADMIN_PIN non valido';
+            pinError.textContent = 'Su Render imposta ADMIN_PIN con almeno 6 caratteri.';
+          }else if(!x.body.secretOk){
+            pinSub.textContent = 'Sicurezza non configurata: manca il secret di sessione';
+            pinError.textContent = 'Su Render imposta ADMIN_SESSION_SECRET con almeno 32 caratteri casuali e ridistribuisci.';
+          }else{
+            pinSub.textContent = 'Sicurezza Admin non configurata';
+            pinError.textContent = 'Controlla le variabili ambiente su Render.';
+          }
           return;
         }
         pinBtn.disabled = false; pinInput.disabled = false;

@@ -8,7 +8,17 @@ const liveStrategie = require('./strategie-live');
 
 const app = express();
 app.set('trust proxy', 1);
-app.use(express.json());
+app.disable('x-powered-by');
+app.use(express.json({ limit: '1mb' }));
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  next();
+});
 
 // ---------- sicurezza Admin ----------
 // L'admin non si affida piu' a un PIN salvato nel browser: il PIN viene verificato
@@ -17,10 +27,20 @@ app.use(express.json());
 const ADMIN_COOKIE = 'easybet_admin';
 const ADMIN_SESSION_MS = Math.max(15 * 60 * 1000, Number(process.env.ADMIN_SESSION_HOURS || 12) * 60 * 60 * 1000);
 const ADMIN_PIN = String(process.env.ADMIN_PIN || '');
-const ADMIN_SESSION_SECRET = String(process.env.ADMIN_SESSION_SECRET || ADMIN_PIN || 'easybet-change-me');
+const ADMIN_SESSION_SECRET = String(process.env.ADMIN_SESSION_SECRET || '');
+const ADMIN_PIN_OK = ADMIN_PIN.length >= 6;
+const ADMIN_SECRET_OK = ADMIN_SESSION_SECRET.length >= 32;
+const ADMIN_SECURITY_READY = ADMIN_PIN_OK && ADMIN_SECRET_OK;
 const ADMIN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const ADMIN_LOGIN_MAX_ATTEMPTS = 5;
 const adminLoginAttempts = new Map();
+const adminLoginCleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [key, rec] of adminLoginAttempts.entries()) {
+    if (!rec || now - Number(rec.startedAt || 0) > ADMIN_LOGIN_WINDOW_MS * 2) adminLoginAttempts.delete(key);
+  }
+}, ADMIN_LOGIN_WINDOW_MS);
+if (adminLoginCleanupTimer.unref) adminLoginCleanupTimer.unref();
 
 function safeEqualText(a, b) {
   const aa = Buffer.from(String(a || ''));
@@ -39,19 +59,30 @@ function parseCookies(req) {
   });
   return out;
 }
-function signAdminSession(exp) {
-  return crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(String(exp)).digest('hex');
+function signAdminSession(payload) {
+  return crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(String(payload)).digest('hex');
 }
 function makeAdminToken() {
-  const exp = Date.now() + ADMIN_SESSION_MS;
-  return exp + '.' + signAdminSession(exp);
+  const iat = Date.now();
+  const exp = iat + ADMIN_SESSION_MS;
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const payload = iat + '.' + exp + '.' + nonce;
+  return payload + '.' + signAdminSession(payload);
 }
 function validAdminToken(token) {
+  if (!ADMIN_SECURITY_READY) return false;
   const parts = String(token || '').split('.');
-  if (parts.length !== 2) return false;
-  const exp = Number(parts[0]);
-  if (!Number.isFinite(exp) || exp <= Date.now()) return false;
-  return safeEqualText(parts[1], signAdminSession(exp));
+  if (parts.length !== 4) return false;
+  const iat = Number(parts[0]);
+  const exp = Number(parts[1]);
+  const nonce = String(parts[2] || '');
+  const sig = String(parts[3] || '');
+  if (!Number.isFinite(iat) || !Number.isFinite(exp)) return false;
+  if (iat > Date.now() + 60 * 1000 || exp <= Date.now()) return false;
+  if (exp - iat > ADMIN_SESSION_MS + 60 * 1000) return false;
+  if (!/^[a-f0-9]{32}$/i.test(nonce)) return false;
+  const payload = iat + '.' + exp + '.' + nonce;
+  return safeEqualText(sig, signAdminSession(payload));
 }
 function adminCookieOptions(req) {
   const secure = req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https';
@@ -70,10 +101,28 @@ function clearAdminCookie(req) {
   ].filter(Boolean).join('; ');
 }
 function requireAdmin(req, res, next) {
-  if (!ADMIN_PIN) return res.status(503).json({ error: 'ADMIN_PIN non configurato sul server.' });
+  if (!ADMIN_SECURITY_READY) return res.status(503).json({ error: 'Sicurezza Admin non configurata correttamente.' });
   const token = parseCookies(req)[ADMIN_COOKIE];
   if (!validAdminToken(token)) return res.status(401).json({ error: 'Accesso admin richiesto.' });
   next();
+}
+function requireSameSiteAdmin(req, res, next) {
+  const fetchSite = String(req.headers['sec-fetch-site'] || '').toLowerCase();
+  if (fetchSite === 'cross-site') return res.status(403).json({ error: 'Richiesta cross-site bloccata.' });
+
+  const origin = String(req.headers.origin || '').trim();
+  if (origin) {
+    try {
+      const u = new URL(origin);
+      const host = String(req.headers.host || '').toLowerCase();
+      if (String(u.host || '').toLowerCase() !== host) {
+        return res.status(403).json({ error: 'Origine non autorizzata.' });
+      }
+    } catch (_) {
+      return res.status(403).json({ error: 'Origine non valida.' });
+    }
+  }
+  requireAdmin(req, res, next);
 }
 function loginKey(req) {
   return String(req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
@@ -92,16 +141,33 @@ function noteFailedLogin(req) {
 }
 function clearFailedLogin(req) { adminLoginAttempts.delete(loginKey(req)); }
 
+app.use('/api/admin', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+});
 app.get('/api/admin/status', (req, res) => {
-  const configured = !!ADMIN_PIN;
-  const authenticated = configured && validAdminToken(parseCookies(req)[ADMIN_COOKIE]);
-  res.json({ configured, authenticated, sessionHours: Math.round(ADMIN_SESSION_MS / 3600000 * 10) / 10 });
+  const authenticated = ADMIN_SECURITY_READY && validAdminToken(parseCookies(req)[ADMIN_COOKIE]);
+  res.json({
+    configured: ADMIN_SECURITY_READY,
+    authenticated,
+    pinOk: ADMIN_PIN_OK,
+    secretOk: ADMIN_SECRET_OK,
+    sessionHours: Math.round(ADMIN_SESSION_MS / 3600000 * 10) / 10
+  });
 });
 app.post('/api/admin/login', (req, res) => {
-  if (!ADMIN_PIN) return res.status(503).json({ error: 'Configura ADMIN_PIN nelle variabili ambiente del server.' });
-  if (!loginAllowed(req)) return res.status(429).json({ error: 'Troppi tentativi. Riprova tra qualche minuto.' });
+  if (!ADMIN_PIN_OK) return res.status(503).json({ error: 'Configura ADMIN_PIN con almeno 6 caratteri.' });
+  if (!ADMIN_SECRET_OK) return res.status(503).json({ error: 'Configura ADMIN_SESSION_SECRET con almeno 32 caratteri casuali.' });
+  if (!loginAllowed(req)) {
+    res.setHeader('Retry-After', String(Math.ceil(ADMIN_LOGIN_WINDOW_MS / 1000)));
+    return res.status(429).json({ error: 'Troppi tentativi. Riprova tra qualche minuto.' });
+  }
   const pin = String((req.body || {}).pin || '');
-  if (!safeEqualText(pin, ADMIN_PIN)) { noteFailedLogin(req); return res.status(401).json({ error: 'PIN errato.' }); }
+  if (!safeEqualText(pin, ADMIN_PIN)) {
+    noteFailedLogin(req);
+    return res.status(401).json({ error: 'PIN errato.' });
+  }
   clearFailedLogin(req);
   res.setHeader('Set-Cookie', ADMIN_COOKIE + '=' + encodeURIComponent(makeAdminToken()) + '; ' + adminCookieOptions(req));
   res.json({ ok: true });
@@ -786,7 +852,7 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
 });
 
 // ---------- avvisi partite (Telegram) ----------
-app.post('/api/matches', requireAdmin, async (req, res) => {
+app.post('/api/matches', requireSameSiteAdmin, async (req, res) => {
   try {
     const b = req.body || {};
     if (!b.casa || !b.trasferta) return res.status(400).json({ error: 'Squadre mancanti.' });
@@ -807,7 +873,7 @@ app.post('/api/matches', requireAdmin, async (req, res) => {
   }
 });
 
-app.patch('/api/matches/:id', requireAdmin, async (req, res) => {
+app.patch('/api/matches/:id', requireSameSiteAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const fields = req.body || {};
@@ -916,7 +982,7 @@ app.patch('/api/matches/:id', requireAdmin, async (req, res) => {
 });
 
 // STEP 9 — azioni di massa Admin
-app.post('/api/matches/bulk', requireAdmin, async (req, res) => {
+app.post('/api/matches/bulk', requireSameSiteAdmin, async (req, res) => {
   try {
     const b = req.body || {};
     const ids = Array.isArray(b.ids) ? [...new Set(b.ids.map(String).filter(Boolean))] : [];
@@ -979,7 +1045,7 @@ app.post('/api/matches/bulk', requireAdmin, async (req, res) => {
 });
 
 // STEP 6 — traccia il passaggio PRE-MATCH → LIVE → SEGNALE → ESITO
-app.post('/api/matches/:id/lifecycle', requireAdmin, async (req, res) => {
+app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const event = String((req.body || {}).event || '').trim().toLowerCase();
@@ -1018,7 +1084,7 @@ app.post('/api/matches/:id/lifecycle', requireAdmin, async (req, res) => {
   }
 });
 
-app.delete('/api/matches/:id', requireAdmin, async (req, res) => {
+app.delete('/api/matches/:id', requireSameSiteAdmin, async (req, res) => {
   try {
     const { rowCount } = await pool.query('DELETE FROM matches WHERE id = $1', [req.params.id]);
     if (!rowCount) return res.status(404).json({ error: 'Partita non trovata.' });
@@ -1029,7 +1095,7 @@ app.delete('/api/matches/:id', requireAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/matches/:id/test-alert', requireAdmin, async (req, res) => {
+app.post('/api/matches/:id/test-alert', requireSameSiteAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM matches WHERE id = $1', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Partita non trovata.' });
@@ -1720,7 +1786,7 @@ app.get('/api/team-crest', async (req, res) => {
 });
 
 // Override manuale dall'admin. URL vuoto o "AUTO" = torna alla ricerca automatica.
-app.put('/api/team-crest', requireAdmin, async (req,res)=>{
+app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
   try{
     const name=String((req.body||{}).name||'').trim();
     const campionato=String((req.body||{}).campionato||'').trim();
@@ -1745,7 +1811,7 @@ app.put('/api/team-crest', requireAdmin, async (req,res)=>{
   }catch(err){ console.error(err); res.status(500).json({error:'Errore nel salvataggio dello stemma.'}); }
 });
 
-app.put('/api/alert-settings', requireAdmin, async (req, res) => {
+app.put('/api/alert-settings', requireSameSiteAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       "UPDATE alert_settings SET notify_minutes = $1 WHERE id='main' RETURNING *",
