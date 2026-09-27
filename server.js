@@ -7,7 +7,109 @@ const scheduler = require('./scheduler');
 const liveStrategie = require('./strategie-live');
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json());
+
+// ---------- sicurezza Admin ----------
+// L'admin non si affida piu' a un PIN salvato nel browser: il PIN viene verificato
+// sul server tramite ADMIN_PIN e, dopo il login, viene emesso un cookie HttpOnly
+// firmato e valido per un periodo limitato.
+const ADMIN_COOKIE = 'easybet_admin';
+const ADMIN_SESSION_MS = Math.max(15 * 60 * 1000, Number(process.env.ADMIN_SESSION_HOURS || 12) * 60 * 60 * 1000);
+const ADMIN_PIN = String(process.env.ADMIN_PIN || '');
+const ADMIN_SESSION_SECRET = String(process.env.ADMIN_SESSION_SECRET || ADMIN_PIN || 'easybet-change-me');
+const ADMIN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const ADMIN_LOGIN_MAX_ATTEMPTS = 5;
+const adminLoginAttempts = new Map();
+
+function safeEqualText(a, b) {
+  const aa = Buffer.from(String(a || ''));
+  const bb = Buffer.from(String(b || ''));
+  if (aa.length !== bb.length) return false;
+  return crypto.timingSafeEqual(aa, bb);
+}
+function parseCookies(req) {
+  const out = {};
+  String(req.headers.cookie || '').split(';').forEach(part => {
+    const i = part.indexOf('=');
+    if (i < 0) return;
+    const k = part.slice(0, i).trim();
+    const v = part.slice(i + 1).trim();
+    if (k) out[k] = decodeURIComponent(v);
+  });
+  return out;
+}
+function signAdminSession(exp) {
+  return crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(String(exp)).digest('hex');
+}
+function makeAdminToken() {
+  const exp = Date.now() + ADMIN_SESSION_MS;
+  return exp + '.' + signAdminSession(exp);
+}
+function validAdminToken(token) {
+  const parts = String(token || '').split('.');
+  if (parts.length !== 2) return false;
+  const exp = Number(parts[0]);
+  if (!Number.isFinite(exp) || exp <= Date.now()) return false;
+  return safeEqualText(parts[1], signAdminSession(exp));
+}
+function adminCookieOptions(req) {
+  const secure = req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https';
+  return [
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    'Max-Age=' + Math.floor(ADMIN_SESSION_MS / 1000),
+    secure ? 'Secure' : ''
+  ].filter(Boolean).join('; ');
+}
+function clearAdminCookie(req) {
+  const secure = req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https';
+  return [
+    ADMIN_COOKIE + '=', 'Path=/', 'HttpOnly', 'SameSite=Strict', 'Max-Age=0', secure ? 'Secure' : ''
+  ].filter(Boolean).join('; ');
+}
+function requireAdmin(req, res, next) {
+  if (!ADMIN_PIN) return res.status(503).json({ error: 'ADMIN_PIN non configurato sul server.' });
+  const token = parseCookies(req)[ADMIN_COOKIE];
+  if (!validAdminToken(token)) return res.status(401).json({ error: 'Accesso admin richiesto.' });
+  next();
+}
+function loginKey(req) {
+  return String(req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+}
+function loginAllowed(req) {
+  const key = loginKey(req), now = Date.now();
+  const rec = adminLoginAttempts.get(key);
+  if (!rec || now - rec.startedAt > ADMIN_LOGIN_WINDOW_MS) { adminLoginAttempts.set(key, { startedAt: now, count: 0 }); return true; }
+  return rec.count < ADMIN_LOGIN_MAX_ATTEMPTS;
+}
+function noteFailedLogin(req) {
+  const key = loginKey(req), now = Date.now();
+  let rec = adminLoginAttempts.get(key);
+  if (!rec || now - rec.startedAt > ADMIN_LOGIN_WINDOW_MS) rec = { startedAt: now, count: 0 };
+  rec.count += 1; adminLoginAttempts.set(key, rec);
+}
+function clearFailedLogin(req) { adminLoginAttempts.delete(loginKey(req)); }
+
+app.get('/api/admin/status', (req, res) => {
+  const configured = !!ADMIN_PIN;
+  const authenticated = configured && validAdminToken(parseCookies(req)[ADMIN_COOKIE]);
+  res.json({ configured, authenticated, sessionHours: Math.round(ADMIN_SESSION_MS / 3600000 * 10) / 10 });
+});
+app.post('/api/admin/login', (req, res) => {
+  if (!ADMIN_PIN) return res.status(503).json({ error: 'Configura ADMIN_PIN nelle variabili ambiente del server.' });
+  if (!loginAllowed(req)) return res.status(429).json({ error: 'Troppi tentativi. Riprova tra qualche minuto.' });
+  const pin = String((req.body || {}).pin || '');
+  if (!safeEqualText(pin, ADMIN_PIN)) { noteFailedLogin(req); return res.status(401).json({ error: 'PIN errato.' }); }
+  clearFailedLogin(req);
+  res.setHeader('Set-Cookie', ADMIN_COOKIE + '=' + encodeURIComponent(makeAdminToken()) + '; ' + adminCookieOptions(req));
+  res.json({ ok: true });
+});
+app.post('/api/admin/logout', (req, res) => {
+  res.setHeader('Set-Cookie', clearAdminCookie(req));
+  res.json({ ok: true });
+});
 // La pagina pubblica (easybet.html) è la home del sito: il Taccuino (index.html) contiene
 // dati personali (saldo, casse, giocate) ed è raggiungibile solo direttamente, dietro PIN.
 app.use(express.static(path.join(__dirname, 'public'), { index: 'easybet.html' }));
@@ -663,7 +765,7 @@ app.put('/api/settings', async (req, res) => {
 });
 
 // ---------- avvisi partite (Telegram) ----------
-app.post('/api/matches', async (req, res) => {
+app.post('/api/matches', requireAdmin, async (req, res) => {
   try {
     const b = req.body || {};
     if (!b.casa || !b.trasferta) return res.status(400).json({ error: 'Squadre mancanti.' });
@@ -684,7 +786,7 @@ app.post('/api/matches', async (req, res) => {
   }
 });
 
-app.patch('/api/matches/:id', async (req, res) => {
+app.patch('/api/matches/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const fields = req.body || {};
@@ -793,7 +895,7 @@ app.patch('/api/matches/:id', async (req, res) => {
 });
 
 // STEP 9 — azioni di massa Admin
-app.post('/api/matches/bulk', async (req, res) => {
+app.post('/api/matches/bulk', requireAdmin, async (req, res) => {
   try {
     const b = req.body || {};
     const ids = Array.isArray(b.ids) ? [...new Set(b.ids.map(String).filter(Boolean))] : [];
@@ -856,7 +958,7 @@ app.post('/api/matches/bulk', async (req, res) => {
 });
 
 // STEP 6 — traccia il passaggio PRE-MATCH → LIVE → SEGNALE → ESITO
-app.post('/api/matches/:id/lifecycle', async (req, res) => {
+app.post('/api/matches/:id/lifecycle', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const event = String((req.body || {}).event || '').trim().toLowerCase();
@@ -895,7 +997,7 @@ app.post('/api/matches/:id/lifecycle', async (req, res) => {
   }
 });
 
-app.delete('/api/matches/:id', async (req, res) => {
+app.delete('/api/matches/:id', requireAdmin, async (req, res) => {
   try {
     const { rowCount } = await pool.query('DELETE FROM matches WHERE id = $1', [req.params.id]);
     if (!rowCount) return res.status(404).json({ error: 'Partita non trovata.' });
@@ -906,7 +1008,7 @@ app.delete('/api/matches/:id', async (req, res) => {
   }
 });
 
-app.post('/api/matches/:id/test-alert', async (req, res) => {
+app.post('/api/matches/:id/test-alert', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM matches WHERE id = $1', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Partita non trovata.' });
@@ -1587,7 +1689,7 @@ app.get('/api/team-crest', async (req, res) => {
 });
 
 // Override manuale dall'admin. URL vuoto o "AUTO" = torna alla ricerca automatica.
-app.put('/api/team-crest', async (req,res)=>{
+app.put('/api/team-crest', requireAdmin, async (req,res)=>{
   try{
     const name=String((req.body||{}).name||'').trim();
     const campionato=String((req.body||{}).campionato||'').trim();
@@ -1612,7 +1714,7 @@ app.put('/api/team-crest', async (req,res)=>{
   }catch(err){ console.error(err); res.status(500).json({error:'Errore nel salvataggio dello stemma.'}); }
 });
 
-app.put('/api/alert-settings', async (req, res) => {
+app.put('/api/alert-settings', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       "UPDATE alert_settings SET notify_minutes = $1 WHERE id='main' RETURNING *",

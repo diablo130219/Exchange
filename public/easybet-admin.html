@@ -269,7 +269,7 @@
     <input id="pinInput" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
     <button class="pin-btn" id="pinBtn">Sblocca</button>
     <div class="pin-error" id="pinError"></div>
-    <button class="pin-reset" id="pinReset">PIN dimenticato? Reimposta accesso</button>
+    <button class="pin-reset" id="pinReset">Problemi con il PIN?</button>
   </div>
 </div>
 
@@ -433,16 +433,7 @@
     }
   }
   try { applyTheme(localStorage.getItem(THEME_KEY) || 'dark'); } catch(e){ applyTheme('dark'); }
-  // ---------------- PIN gate ----------------
-  var LS_HASH = 'easybet_pin_h';
-  var SS_UNLOCK = 'easybet_unlocked';
-
-  function simpleHash(s){
-    var h = 5381;
-    for (var i=0;i<s.length;i++){ h = ((h*33) ^ s.charCodeAt(i)) >>> 0; }
-    return String(h);
-  }
-
+  // ---------------- accesso Admin lato server ----------------
   var pinGate = document.getElementById('pinGate');
   var appEl = document.getElementById('app');
   var pinInput = document.getElementById('pinInput');
@@ -451,54 +442,66 @@
   var pinSub = document.getElementById('pinSub');
   var pinReset = document.getElementById('pinReset');
 
-  function isSetup(){ return !!localStorage.getItem(LS_HASH); }
-
-  function refreshPinMode(){
-    if (isSetup()){
-      pinSub.textContent = 'Inserisci il PIN per accedere';
-      pinBtn.textContent = 'Sblocca';
-    } else {
-      pinSub.textContent = 'Prima volta qui: scegli un PIN (4-8 cifre) per proteggere questa pagina';
-      pinBtn.textContent = 'Imposta PIN';
-    }
-  }
-
   function showApp(){
     pinGate.style.display = 'none';
     appEl.style.display = 'block';
     initAppOnce();
   }
 
+  function showGate(message){
+    appEl.style.display = 'none';
+    pinGate.style.display = 'flex';
+    if(message) pinSub.textContent = message;
+  }
+
+  function checkAdminSession(){
+    fetch('/api/admin/status', { credentials:'same-origin', cache:'no-store' })
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, body:j}; }); })
+      .then(function(x){
+        if(!x.body.configured){
+          pinSub.textContent = 'Sicurezza non configurata: imposta ADMIN_PIN sul server';
+          pinBtn.disabled = true;
+          pinInput.disabled = true;
+          pinError.textContent = 'Su Render aggiungi la variabile ambiente ADMIN_PIN e ridistribuisci il servizio.';
+          return;
+        }
+        pinBtn.disabled = false; pinInput.disabled = false;
+        if(x.body.authenticated) showApp();
+        else showGate('Inserisci il PIN admin');
+      })
+      .catch(function(){
+        showGate('Impossibile verificare la sessione admin');
+        pinError.textContent = 'Controlla che il server sia raggiungibile.';
+      });
+  }
+
   function tryUnlock(){
     var v = pinInput.value.trim();
     pinError.textContent = '';
-    if (!v){ pinError.textContent = 'Inserisci un PIN.'; return; }
-    if (!isSetup()){
-      if (v.length < 4){ pinError.textContent = 'Usa almeno 4 cifre/caratteri.'; return; }
-      localStorage.setItem(LS_HASH, simpleHash(v));
-      sessionStorage.setItem(SS_UNLOCK, '1');
-      showApp();
-      return;
-    }
-    if (simpleHash(v) === localStorage.getItem(LS_HASH)){
-      sessionStorage.setItem(SS_UNLOCK, '1');
-      showApp();
-    } else {
-      pinError.textContent = 'PIN errato.';
-      pinInput.value = '';
-    }
+    if (!v){ pinError.textContent = 'Inserisci il PIN.'; return; }
+    pinBtn.disabled = true;
+    fetch('/api/admin/login', {
+      method:'POST',
+      credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pin:v})
+    }).then(function(r){
+      return r.json().catch(function(){return {};}).then(function(j){ return {ok:r.ok,status:r.status,body:j}; });
+    }).then(function(x){
+      pinBtn.disabled = false;
+      if(x.ok){ pinInput.value=''; showApp(); return; }
+      pinError.textContent = x.body.error || (x.status===429 ? 'Troppi tentativi. Riprova più tardi.' : 'Accesso negato.');
+      pinInput.value=''; pinInput.focus();
+    }).catch(function(){
+      pinBtn.disabled = false;
+      pinError.textContent = 'Errore di collegamento al server.';
+    });
   }
 
   pinBtn.addEventListener('click', tryUnlock);
   pinInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') tryUnlock(); });
   pinReset.addEventListener('click', function(){
-    if (confirm('Questo cancella il PIN attuale da questo browser e te ne farà scegliere uno nuovo. Continuare?')){
-      localStorage.removeItem(LS_HASH);
-      sessionStorage.removeItem(SS_UNLOCK);
-      pinInput.value = '';
-      pinError.textContent = '';
-      refreshPinMode();
-    }
+    alert('Il PIN non è più salvato nel browser. Per cambiarlo modifica ADMIN_PIN nelle variabili ambiente del server e ridistribuisci il servizio.');
   });
 
   var themeToggleAdmin = document.getElementById('themeToggleAdmin');
@@ -511,14 +514,24 @@
   }
 
   document.getElementById('lockBtn').addEventListener('click', function(){
-    sessionStorage.removeItem(SS_UNLOCK);
-    location.reload();
+    fetch('/api/admin/logout', {method:'POST',credentials:'same-origin'})
+      .finally(function(){ location.reload(); });
   });
 
-  refreshPinMode();
-  if (isSetup() && sessionStorage.getItem(SS_UNLOCK) === '1'){
-    showApp();
-  }
+  checkAdminSession();
+
+  // Se la sessione scade mentre l'admin è aperto, blocca nuovamente la pagina.
+  var nativeFetch = window.fetch.bind(window);
+  window.fetch = function(){
+    var args = arguments;
+    var url = String(args[0] || '');
+    return nativeFetch.apply(window, args).then(function(resp){
+      if(resp.status === 401 && url.indexOf('/api/admin/login') === -1 && url.indexOf('/api/admin/status') === -1){
+        showGate('Sessione scaduta. Inserisci di nuovo il PIN admin.');
+      }
+      return resp;
+    });
+  };
 
   // ---------------- app ----------------
   var appInited = false;
