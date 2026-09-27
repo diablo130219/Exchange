@@ -110,6 +110,10 @@ async function migrate() {
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_level TEXT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_summary TEXT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_updated BIGINT;`);
+  // --- STEP 8: stato notifiche Telegram LIVE intelligenti ---
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_score INTEGER;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_notified_at BIGINT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_deterioration_alert_sent BOOLEAN NOT NULL DEFAULT false;`);
   // Colonne di un tentativo precedente (soglie semplici tiri/occasioni/corner), non più usate:
   // rimangono nel DB se già create in precedenza ma il codice non le legge più.
 

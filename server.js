@@ -68,6 +68,9 @@ function matchOut(row) {
     liveLastLevel: row.live_last_level || '',
     liveLastSummary: row.live_last_summary || '',
     liveLastUpdated: row.live_last_updated === null || row.live_last_updated === undefined ? null : Number(row.live_last_updated),
+    liveLastScore: row.live_last_score === null || row.live_last_score === undefined ? null : Number(row.live_last_score),
+    liveLastNotifiedAt: row.live_last_notified_at === null || row.live_last_notified_at === undefined ? null : Number(row.live_last_notified_at),
+    liveDeteriorationAlertSent: !!row.live_deterioration_alert_sent,
     quotaIngresso: row.quota_ingresso || '',
     esitoManuale: row.esito_manuale || '',
     botEnabled: row.bot_enabled === false ? false : true,
@@ -720,6 +723,9 @@ app.patch('/api/matches/:id', async (req, res) => {
         sets.push('live_last_level = $' + (i++)); vals.push(null);
         sets.push('live_last_summary = $' + (i++)); vals.push(null);
         sets.push('live_last_updated = $' + (i++)); vals.push(null);
+        sets.push('live_last_score = $' + (i++)); vals.push(null);
+        sets.push('live_last_notified_at = $' + (i++)); vals.push(null);
+        sets.push('live_deterioration_alert_sent = $' + (i++)); vals.push(false);
       }
     }
     if (Object.prototype.hasOwnProperty.call(fields, 'casa')) {
@@ -950,38 +956,45 @@ app.post('/api/live-stats', async (req, res) => {
     if (!casa || !trasferta) return res.status(400).json({ error: 'Squadre mancanti.' });
 
     const payload = {
-      scoreHome: numOrNull(b.scoreHome),
-      scoreAway: numOrNull(b.scoreAway),
-      xgHome: numOrNull(b.xgHome),
-      xgAway: numOrNull(b.xgAway),
-      sotHome: numOrNull(b.sotHome),
-      sotAway: numOrNull(b.sotAway),
-      chancesHome: numOrNull(b.chancesHome),
-      chancesAway: numOrNull(b.chancesAway),
-      shotsHome: numOrNull(b.shotsHome),
-      shotsAway: numOrNull(b.shotsAway),
-      boxshotsHome: numOrNull(b.boxshotsHome),
-      boxshotsAway: numOrNull(b.boxshotsAway),
-      touchesHome: numOrNull(b.touchesHome),
-      touchesAway: numOrNull(b.touchesAway),
+      scoreHome: numOrNull(b.scoreHome), scoreAway: numOrNull(b.scoreAway),
+      xgHome: numOrNull(b.xgHome), xgAway: numOrNull(b.xgAway),
+      sotHome: numOrNull(b.sotHome), sotAway: numOrNull(b.sotAway),
+      chancesHome: numOrNull(b.chancesHome), chancesAway: numOrNull(b.chancesAway),
+      shotsHome: numOrNull(b.shotsHome), shotsAway: numOrNull(b.shotsAway),
+      boxshotsHome: numOrNull(b.boxshotsHome), boxshotsAway: numOrNull(b.boxshotsAway),
+      touchesHome: numOrNull(b.touchesHome), touchesAway: numOrNull(b.touchesAway),
       minute: numOrNull(b.minute)
     };
 
+    // STEP 8: continuiamo a seguire il match anche DOPO il primo VERDE.
+    // live_alert_sent blocca solo un secondo alert VERDE, non il monitoraggio.
     const { rows } = await pool.query(
-      `SELECT * FROM matches WHERE live_alert_sent = false AND live_strategy IS NOT NULL`
+      `SELECT * FROM matches
+       WHERE live_strategy IS NOT NULL
+         AND esito_manuale IS NULL
+       ORDER BY ABS(start_at - $1) ASC`,
+      [Date.now()]
     );
     const match = rows.find(function (r) {
       return teamNamesMatch(r.casa, casa) && teamNamesMatch(r.trasferta, trasferta);
     });
     if (!match) return res.json({ sent: false, reason: 'no-match' });
 
+    const previousLevel = String(match.live_last_level || '').toLowerCase();
+    const previousScore = match.live_last_score == null ? null : Number(match.live_last_score);
     const result = liveStrategie.classify(match.live_strategy, payload, match);
     if (result.error) return res.json({ sent: false, reason: result.error });
 
     const lifecycleNow = Date.now();
     await pool.query(
-      'UPDATE matches SET live_last_level = $1, live_last_summary = $2, live_last_updated = $3, live_started_at = COALESCE(live_started_at, $3) WHERE id = $4',
-      [result.level, result.summary, lifecycleNow, match.id]
+      `UPDATE matches
+       SET live_last_level = $1,
+           live_last_summary = $2,
+           live_last_updated = $3,
+           live_last_score = $4,
+           live_started_at = COALESCE(live_started_at, $3)
+       WHERE id = $5`,
+      [result.level, result.summary, lifecycleNow, result.score100 == null ? null : Number(result.score100), match.id]
     );
 
     if (result.level === 'verde' && result.gateOk) {
@@ -990,27 +1003,75 @@ app.post('/api/live-stats', async (req, res) => {
         xg: [payload.xgHome, payload.xgAway], sot: [payload.sotHome, payload.sotAway], shots: [payload.shotsHome, payload.shotsAway],
         chances: [payload.chancesHome, payload.chancesAway], boxshots: [payload.boxshotsHome, payload.boxshotsAway], touches: [payload.touchesHome, payload.touchesAway]
       }, 'live-stats', lifecycleNow);
+    }
+
+    const scoreText = (payload.scoreHome !== null && payload.scoreAway !== null)
+      ? payload.scoreHome + '-' + payload.scoreAway : 'N/D';
+    const minuteText = payload.minute == null ? 'N/D' : (Math.round(payload.minute) + "'");
+    const total = (a, b) => (a == null || b == null) ? null : Number(a) + Number(b);
+    const xgTotal = total(payload.xgHome, payload.xgAway);
+    const sotTotal = total(payload.sotHome, payload.sotAway);
+    const shotsTotal = total(payload.shotsHome, payload.shotsAway);
+    const metricsLine = [
+      'xG ' + (xgTotal == null ? 'N/D' : xgTotal.toFixed(2)),
+      'SOT ' + (sotTotal == null ? 'N/D' : sotTotal),
+      'Tiri ' + (shotsTotal == null ? 'N/D' : shotsTotal)
+    ].join(' • ');
+
+    // 1) Un solo alert VERDE per match/strategia.
+    if (result.level === 'verde' && result.gateOk && !match.live_alert_sent && match.bot_enabled !== false) {
       const league = match.campionato ? ' (' + escapeHtmlLite(match.campionato) + ')' : '';
       const tipo = match.tipo_giocata ? escapeHtmlLite(match.tipo_giocata) : '—';
-      const punteggio = (payload.scoreHome !== null && payload.scoreAway !== null)
-        ? ('\n📍 Risultato attuale: ' + payload.scoreHome + '-' + payload.scoreAway) : '';
-      const text = '🟢 <b>Segnale LIVE — ' + escapeHtmlLite(result.label) + '</b>' + league + '\n' +
-        escapeHtmlLite(match.casa) + ' - ' + escapeHtmlLite(match.trasferta) + '\n' +
-        '👉 ' + tipo + punteggio + '\n' +
-        '🎯 Score EasyBet: ' + (result.score100 == null ? 'N/D' : result.score100 + '/100') + '\n' +
-        '📊 ' + escapeHtmlLite(result.summary);
+      const text = '🟢 <b>SEGNALE LIVE — ' + escapeHtmlLite(result.label) + '</b>' + league + '\n' +
+        '<b>' + escapeHtmlLite(match.casa) + ' - ' + escapeHtmlLite(match.trasferta) + '</b>\n' +
+        '⏱ ' + minuteText + ' • 📍 ' + scoreText + '\n' +
+        '👉 ' + tipo + '\n' +
+        '🎯 <b>' + (result.score100 == null ? 'N/D' : result.score100 + '/100') + '</b> • ' + escapeHtmlLite(metricsLine);
       const sentTo = await telegram.broadcast(text);
       await pool.query(
         `UPDATE matches SET live_alert_sent = true,
+          live_last_notified_at = $2,
           signal_first_at = COALESCE(signal_first_at, $2),
           signal_first_level = COALESCE(signal_first_level, $3),
           signal_first_score = COALESCE(signal_first_score, $4)
          WHERE id = $1`,
         [match.id, lifecycleNow, result.level, result.score100 == null ? null : Number(result.score100)]
       );
-      return res.json({ sent: true, sentTo, level: result.level, score100: result.score100, summary: result.summary, match: { casa: match.casa, trasferta: match.trasferta } });
+      return res.json({ sent: true, kind: 'green', sentTo, level: result.level, score100: result.score100, summary: result.summary, match: { casa: match.casa, trasferta: match.trasferta } });
     }
-    return res.json({ sent: false, level: result.level, score100: result.score100, summary: result.summary, matched: { casa: match.casa, trasferta: match.trasferta } });
+
+    // 2) Dopo un VERDE: massimo un alert di deterioramento realmente importante.
+    // Niente notifiche per normali oscillazioni VERDE↔GIALLO.
+    const drasticScoreDrop = previousScore != null && result.score100 != null && previousScore >= 65 && result.score100 <= 40 && (previousScore - result.score100) >= 25;
+    const becameRedAfterSignal = !!match.live_alert_sent && previousLevel && previousLevel !== 'rosso' && result.level === 'rosso';
+    const shouldWarnDeterioration = match.bot_enabled !== false && !!match.live_alert_sent && !match.live_deterioration_alert_sent && (becameRedAfterSignal || drasticScoreDrop);
+
+    if (shouldWarnDeterioration) {
+      const text = '⚠️ <b>SEGNALE LIVE PEGGIORATO</b>\n' +
+        '<b>' + escapeHtmlLite(match.casa) + ' - ' + escapeHtmlLite(match.trasferta) + '</b>\n' +
+        '⏱ ' + minuteText + ' • 📍 ' + scoreText + '\n' +
+        '🎯 Score: <b>' + (result.score100 == null ? 'N/D' : result.score100 + '/100') + '</b>\n' +
+        '📉 ' + escapeHtmlLite(metricsLine) + '\n' +
+        '<i>Il segnale iniziale resta nello storico; questo avviso indica solo un deterioramento marcato.</i>';
+      const sentTo = await telegram.broadcast(text);
+      await pool.query(
+        `UPDATE matches
+         SET live_deterioration_alert_sent = true,
+             live_last_notified_at = $2
+         WHERE id = $1`,
+        [match.id, lifecycleNow]
+      );
+      return res.json({ sent: true, kind: 'deterioration', sentTo, level: result.level, score100: result.score100, summary: result.summary });
+    }
+
+    return res.json({
+      sent: false,
+      reason: match.live_alert_sent ? 'already-green-alerted' : 'no-important-change',
+      level: result.level,
+      score100: result.score100,
+      summary: result.summary,
+      matched: { casa: match.casa, trasferta: match.trasferta }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nel controllo delle statistiche live.' });
