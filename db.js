@@ -118,6 +118,15 @@ async function migrate() {
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS esito_manuale TEXT;`); // null|'entrata_vinta'|'entrata_persa'|'non_entrata'
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS bot_enabled BOOLEAN NOT NULL DEFAULT true;`);
 
+  // --- STEP 6: timeline PRE-MATCH → LIVE → SEGNALE → ESITO ---
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_started_at BIGINT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS signal_first_at BIGINT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS signal_first_level TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS signal_first_score INTEGER;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS outcome_set_at BIGINT;`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_live_started_at ON matches (live_started_at);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_signal_first_at ON matches (signal_first_at);`);
+
   // --- Stemmi squadre (cache per le pagine schede) ---
   await pool.query(`
     CREATE TABLE IF NOT EXISTS team_crests (

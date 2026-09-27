@@ -70,7 +70,12 @@ function matchOut(row) {
     liveLastUpdated: row.live_last_updated === null || row.live_last_updated === undefined ? null : Number(row.live_last_updated),
     quotaIngresso: row.quota_ingresso || '',
     esitoManuale: row.esito_manuale || '',
-    botEnabled: row.bot_enabled === false ? false : true
+    botEnabled: row.bot_enabled === false ? false : true,
+    liveStartedAt: row.live_started_at === null || row.live_started_at === undefined ? null : Number(row.live_started_at),
+    signalFirstAt: row.signal_first_at === null || row.signal_first_at === undefined ? null : Number(row.signal_first_at),
+    signalFirstLevel: row.signal_first_level || '',
+    signalFirstScore: row.signal_first_score === null || row.signal_first_score === undefined ? null : Number(row.signal_first_score),
+    outcomeSetAt: row.outcome_set_at === null || row.outcome_set_at === undefined ? null : Number(row.outcome_set_at)
   };
 }
 function escapeHtmlLite(s) {
@@ -742,7 +747,9 @@ app.patch('/api/matches/:id', async (req, res) => {
     if (Object.prototype.hasOwnProperty.call(fields, 'esitoManuale')) {
       const v = String(fields.esitoManuale || '').trim();
       const valid = ['entrata_vinta', 'entrata_persa', 'non_entrata'];
-      sets.push('esito_manuale = $' + (i++)); vals.push(valid.indexOf(v) !== -1 ? v : null);
+      const isValidOutcome = valid.indexOf(v) !== -1;
+      sets.push('esito_manuale = $' + (i++)); vals.push(isValidOutcome ? v : null);
+      sets.push('outcome_set_at = $' + (i++)); vals.push(isValidOutcome ? Date.now() : null);
     }
     if (Object.prototype.hasOwnProperty.call(fields, 'botEnabled')) {
       sets.push('bot_enabled = $' + (i++)); vals.push(!!fields.botEnabled);
@@ -776,6 +783,42 @@ app.patch('/api/matches/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nell\'aggiornamento della partita.' });
+  }
+});
+
+// STEP 6 — traccia il passaggio PRE-MATCH → LIVE → SEGNALE → ESITO
+app.post('/api/matches/:id/lifecycle', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const event = String((req.body || {}).event || '').trim().toLowerCase();
+    const now = Date.now();
+    if (event === 'live') {
+      const { rows } = await pool.query(
+        'UPDATE matches SET live_started_at = COALESCE(live_started_at, $1) WHERE id = $2 RETURNING *',
+        [now, id]
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'Partita non trovata.' });
+      return res.json(matchOut(rows[0]));
+    }
+    if (event === 'signal') {
+      const score = Number((req.body || {}).score);
+      const level = String((req.body || {}).level || 'verde').trim().toLowerCase();
+      const { rows } = await pool.query(
+        `UPDATE matches SET
+          live_started_at = COALESCE(live_started_at, $1),
+          signal_first_at = COALESCE(signal_first_at, $1),
+          signal_first_level = COALESCE(signal_first_level, $2),
+          signal_first_score = COALESCE(signal_first_score, $3)
+         WHERE id = $4 RETURNING *`,
+        [now, level || 'verde', Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null, id]
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'Partita non trovata.' });
+      return res.json(matchOut(rows[0]));
+    }
+    return res.status(400).json({ error: 'Evento lifecycle non valido.' });
+  } catch (err) {
+    console.error('lifecycle:', err);
+    res.status(500).json({ error: 'Errore nel tracciamento lifecycle.' });
   }
 });
 
@@ -860,9 +903,10 @@ app.post('/api/live-stats', async (req, res) => {
     const result = liveStrategie.classify(match.live_strategy, payload, match);
     if (result.error) return res.json({ sent: false, reason: result.error });
 
+    const lifecycleNow = Date.now();
     await pool.query(
-      'UPDATE matches SET live_last_level = $1, live_last_summary = $2, live_last_updated = $3 WHERE id = $4',
-      [result.level, result.summary, Date.now(), match.id]
+      'UPDATE matches SET live_last_level = $1, live_last_summary = $2, live_last_updated = $3, live_started_at = COALESCE(live_started_at, $3) WHERE id = $4',
+      [result.level, result.summary, lifecycleNow, match.id]
     );
 
     if (result.level === 'verde' && result.gateOk) {
@@ -876,7 +920,14 @@ app.post('/api/live-stats', async (req, res) => {
         '🎯 Score EasyBet: ' + (result.score100 == null ? 'N/D' : result.score100 + '/100') + '\n' +
         '📊 ' + escapeHtmlLite(result.summary);
       const sentTo = await telegram.broadcast(text);
-      await pool.query('UPDATE matches SET live_alert_sent = true WHERE id = $1', [match.id]);
+      await pool.query(
+        `UPDATE matches SET live_alert_sent = true,
+          signal_first_at = COALESCE(signal_first_at, $2),
+          signal_first_level = COALESCE(signal_first_level, $3),
+          signal_first_score = COALESCE(signal_first_score, $4)
+         WHERE id = $1`,
+        [match.id, lifecycleNow, result.level, result.score100 == null ? null : Number(result.score100)]
+      );
       return res.json({ sent: true, sentTo, level: result.level, score100: result.score100, summary: result.summary, match: { casa: match.casa, trasferta: match.trasferta } });
     }
     return res.json({ sent: false, level: result.level, score100: result.score100, summary: result.summary, matched: { casa: match.casa, trasferta: match.trasferta } });
