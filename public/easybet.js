@@ -214,6 +214,28 @@
     performanceStatsLoading=true;
     fetch('/api/performance-stats?period='+encodeURIComponent(statsPeriod)+'&ts='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(d){performanceStats=d;performanceStatsLoading=false;if(currentView==='statistiche')renderStats()}).catch(function(e){console.warn('EasyBet performance stats:',e);performanceStatsLoading=false;if(currentView==='statistiche')renderStats()});
   }
+
+  function scoreSampleLabel(v){return v==='robusto'?'campione robusto':v==='medio'?'campione medio':'campione piccolo'}
+  function scoreValidationHtml(){
+    var sv=performanceStats&&performanceStats.scoreValidation;
+    if(!sv||!Array.isArray(sv.buckets))return '';
+    var buckets=sv.buckets,has=buckets.some(function(x){return Number(x.total||0)>0});
+    if(!has)return '<div class="score-validation-panel"><div class="score-validation-head"><div><small>VALIDAZIONE SCORE</small><h3>Score EasyBet vs risultati reali</h3><p>Servono segnali conclusi con score registrato per iniziare la calibrazione.</p></div></div><div class="stats-empty compact">Nessun campione disponibile nel periodo selezionato.</div></div>';
+    var maxEntered=Math.max.apply(null,buckets.map(function(x){return Number(x.entered||0)}).concat([1]));
+    return '<div class="score-validation-panel">'+
+      '<div class="score-validation-head"><div><small>VALIDAZIONE SCORE 0–100</small><h3>Lo score più alto sta davvero performando meglio?</h3><p>Confronto sui primi segnali VERDI registrati e successivamente conclusi. Il win rate usa solo ingressi effettivi.</p></div><div class="score-validation-total"><b>'+Number(sv.totalEntered||0)+'</b><span>ingressi con score</span></div></div>'+
+      '<div class="score-buckets">'+buckets.map(function(x){var wr=Number(x.winRate||0),entered=Number(x.entered||0),w=Number(x.wins||0),l=Number(x.losses||0),skip=Number(x.skipped||0),bar=Math.max(4,Math.round(entered/maxEntered*100));return '<button type="button" class="score-bucket '+performanceClass(wr)+'" data-score-bucket="'+escAttr(x.label)+'"><div class="score-bucket-top"><span>SCORE '+esc(x.label)+'</span><em>'+scoreSampleLabel(x.sample)+'</em></div><strong>'+wr+'%</strong><small>win rate · '+w+'V / '+l+'P</small><div class="score-bucket-bar"><i style="width:'+bar+'%"></i></div><div class="score-bucket-foot"><span>'+entered+' ingressi</span><span>'+skip+' non entrati</span></div></button>'}).join('')+'</div>'+
+      '<div class="score-validation-note"><b>Come leggerlo:</b> lo Score EasyBet misura quanto bene il live soddisfa i criteri della strategia, non è una probabilità di vincita. Questa sezione serve a verificare sui tuoi dati se fasce di score più alte corrispondono davvero a risultati migliori. I campioni piccoli vanno interpretati con cautela.</div>'+
+      scoreDetailHtml()+
+    '</div>';
+  }
+  function scoreDetailHtml(){
+    if(!scoreDetailFilter||!performanceStats||!performanceStats.scoreValidation)return '';
+    var d=performanceStats.scoreValidation.details||[],bucket=scoreDetailFilter;
+    d=d.filter(function(x){return String(x.bucket||'')===bucket});
+    return '<div class="score-detail"><div class="score-detail-head"><div><small>FASCIA SCORE</small><h4>'+esc(bucket)+'</h4><p>'+d.length+' segnali conclusi nel periodo</p></div><button type="button" data-score-detail-close>×</button></div><div class="score-detail-list">'+(d.length?d.map(function(x){var dt=x.startAt?new Date(x.startAt):null;return '<div class="score-detail-row"><div><b>'+esc((x.casa||'Casa')+' – '+(x.trasferta||'Ospite'))+'</b><span>'+esc(x.strategy||'')+' · '+esc(x.campionato||'')+' · '+(dt?dt.toLocaleDateString('it-IT'):'—')+'</span></div><div><strong>'+Number(x.score||0)+'/100</strong><span class="stats-detail-outcome '+statsOutcomeClass(x.outcome)+'">'+statsOutcomeLabel(x.outcome)+'</span></div></div>'}).join(''):'<div class="stats-empty compact">Nessuna partita.</div>')+'</div></div>';
+  }
+
   function renderStats(){
     var dash=document.getElementById('statsDashboard'),grid=document.getElementById('grid');grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');grid.classList.add('view-hidden');grid.style.display='none';dash.classList.add('show');
     if(!performanceStats||!performanceStats.selected||performanceStats.selected.key!==statsPeriod){dash.innerHTML=statsPeriodButtons()+'<div class="stats-loading">Caricamento statistiche…</div>';loadPerformanceStats(false);return}
@@ -227,16 +249,19 @@
       '<div class="stat-box rate"><div class="stat-label">Win rate ingressi</div><div class="stat-value num">'+winRate+'%</div><div class="stat-foot">'+w+' vinte su '+entered+' ingressi · '+entryRate+'% ingresso</div></div>'+ 
       '<div class="chart-box"><div class="chart-title">Distribuzione esiti</div><div class="chart-sub">Presa, perdita e non entrati nel periodo selezionato.</div><div class="donut-wrap"><div class="donut"><div class="donut-center"><div><strong class="num">'+total+'</strong><span>conclusi</span></div></div></div><div class="chart-legend"><div class="chart-legend-row"><span><i class="dot g"></i>Presa</span><b class="num">'+(total?Math.round(w/total*1000)/10:0)+'%</b></div><div class="chart-legend-row"><span><i class="dot r"></i>Perdita</span><b class="num">'+(total?Math.round(l/total*1000)/10:0)+'%</b></div><div class="chart-legend-row"><span><i class="dot y"></i>Non entrati</span><b class="num">'+skipRate+'%</b></div></div></div></div>'+ 
       '<div class="chart-box"><div class="chart-title">Andamento win rate</div><div class="chart-sub">Evoluzione giornaliera cumulativa sugli ingressi del periodo.</div>'+renderTrend((performanceStats.daily||[]).map(function(x){return {label:x.label,v:Number(x.winRate||0)}}))+'</div>'+ 
+      scoreValidationHtml()+
       performanceTable('Rendimento per strategia','Ordina le colonne oppure apri una strategia per vedere le partite che compongono il dato.',performanceStats.byStrategy,'strategy')+
       performanceTable('Rendimento per campionato','Confronto per competizione nel periodo selezionato.',performanceStats.byLeague,'league')+
       '<div class="stats-note">Il win rate considera solo gli ingressi effettivi (vinte + perse). “Non entrati” resta separato, così puoi distinguere la qualità del segnale dalla frequenza con cui la strategia raggiunge le condizioni operative.</div>'+statsDetailHtml();
     dash.innerHTML=content;
   }
   function statsUiClick(e){
-    var p=e.target.closest('[data-stats-period]');if(p){statsPeriod=p.getAttribute('data-stats-period')||'30d';statsDetailFilter=null;performanceStats=null;renderStats();return}
+    var p=e.target.closest('[data-stats-period]');if(p){statsPeriod=p.getAttribute('data-stats-period')||'30d';statsDetailFilter=null;scoreDetailFilter=null;performanceStats=null;renderStats();return}
     var so=e.target.closest('[data-stats-sort]');if(so){var type=so.getAttribute('data-stats-sort'),key=so.getAttribute('data-stats-key'),cfg=statsSort[type]||{key:'total',dir:'desc'};statsSort[type]={key:key,dir:cfg.key===key&&cfg.dir==='desc'?'asc':'desc'};renderStats();return}
     var dr=e.target.closest('[data-stats-drill]');if(dr){statsDetailFilter={type:dr.getAttribute('data-stats-drill'),label:dr.getAttribute('data-stats-label')||''};renderStats();setTimeout(function(){var el=document.querySelector('.stats-detail-panel');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},20);return}
-    if(e.target.closest('[data-stats-detail-close]')){statsDetailFilter=null;renderStats()}
+    if(e.target.closest('[data-stats-detail-close]')){statsDetailFilter=null;renderStats();return}
+    var sb=e.target.closest('[data-score-bucket]');if(sb){scoreDetailFilter=sb.getAttribute('data-score-bucket')||null;renderStats();setTimeout(function(){var el=document.querySelector('.score-detail');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},20);return}
+    if(e.target.closest('[data-score-detail-close]')){scoreDetailFilter=null;renderStats()}
   }
   document.addEventListener('click',statsUiClick);
 

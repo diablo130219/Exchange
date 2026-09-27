@@ -282,6 +282,85 @@ function perfPeriod(rows, fromMs, label) {
   return perfFinish(a);
 }
 
+function scoreBucketLabel(score) {
+  const n = Number(score);
+  if (!Number.isFinite(n)) return 'N/D';
+  if (n < 60) return '0–59';
+  if (n < 70) return '60–69';
+  if (n < 80) return '70–79';
+  if (n < 90) return '80–89';
+  return '90–100';
+}
+function scoreBucketOrder(label) {
+  return ({'0–59':0,'60–69':1,'70–79':2,'80–89':3,'90–100':4,'N/D':5})[label] ?? 99;
+}
+function scoreValidation(rows) {
+  const map = new Map();
+  const byStrategyMap = new Map();
+  const details = [];
+  rows.forEach(row => {
+    const outcome = perfOutcome(row.esito_manuale);
+    const score = row.signal_first_score == null ? null : Number(row.signal_first_score);
+    if (!outcome || !Number.isFinite(score)) return;
+    const bucket = scoreBucketLabel(score);
+    const strategy = perfStrategyLabel(row.tipo_giocata);
+    if (!map.has(bucket)) map.set(bucket, { label: bucket, total:0, entered:0, wins:0, losses:0, skipped:0, scoreSum:0 });
+    const a = map.get(bucket);
+    a.total++; a.scoreSum += score;
+    if (outcome === 'entrata_vinta') { a.wins++; a.entered++; }
+    else if (outcome === 'entrata_persa') { a.losses++; a.entered++; }
+    else if (outcome === 'non_entrata') a.skipped++;
+
+    if (!byStrategyMap.has(strategy)) byStrategyMap.set(strategy, new Map());
+    const sm = byStrategyMap.get(strategy);
+    if (!sm.has(bucket)) sm.set(bucket, { label: bucket, total:0, entered:0, wins:0, losses:0, skipped:0, scoreSum:0 });
+    const sa = sm.get(bucket);
+    sa.total++; sa.scoreSum += score;
+    if (outcome === 'entrata_vinta') { sa.wins++; sa.entered++; }
+    else if (outcome === 'entrata_persa') { sa.losses++; sa.entered++; }
+    else if (outcome === 'non_entrata') sa.skipped++;
+
+    details.push({
+      id: row.id,
+      casa: row.casa || '',
+      trasferta: row.trasferta || '',
+      campionato: row.campionato || '',
+      startAt: Number(row.start_at) || 0,
+      strategy,
+      score: Math.round(score),
+      bucket,
+      quota: perfQuota(row.quota_ingresso),
+      outcome
+    });
+  });
+  function finish(a) {
+    return {
+      label: a.label,
+      total: a.total,
+      entered: a.entered,
+      wins: a.wins,
+      losses: a.losses,
+      skipped: a.skipped,
+      winRate: perfPct(a.wins, a.entered),
+      entryRate: perfPct(a.entered, a.total),
+      avgScore: a.total ? Math.round(a.scoreSum / a.total * 10) / 10 : null,
+      sample: a.entered >= 30 ? 'robusto' : a.entered >= 10 ? 'medio' : 'piccolo'
+    };
+  }
+  const buckets = Array.from(map.values()).map(finish).sort((a,b) => scoreBucketOrder(a.label)-scoreBucketOrder(b.label));
+  const byStrategy = Array.from(byStrategyMap.entries()).map(([strategy, sm]) => ({
+    strategy,
+    buckets: Array.from(sm.values()).map(finish).sort((a,b) => scoreBucketOrder(a.label)-scoreBucketOrder(b.label))
+  })).sort((a,b) => a.strategy.localeCompare(b.strategy));
+  return {
+    totalSignals: details.length,
+    totalEntered: buckets.reduce((n,x)=>n+x.entered,0),
+    buckets,
+    byStrategy,
+    details: details.sort((a,b)=>b.startAt-a.startAt)
+  };
+}
+
 // ---------- public matches feed (lightweight: used by EasyBet public page) ----------
 app.get('/api/matches', async (req, res) => {
   try {
@@ -298,7 +377,8 @@ app.get('/api/matches', async (req, res) => {
 app.get('/api/performance-stats', async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT id, data, campionato, casa, trasferta, tipo_giocata, start_at, quota_ingresso, esito_manuale
+      SELECT id, data, campionato, casa, trasferta, tipo_giocata, start_at, quota_ingresso, esito_manuale,
+             signal_first_at, signal_first_level, signal_first_score
       FROM matches
       WHERE esito_manuale IS NOT NULL AND esito_manuale <> ''
       ORDER BY start_at ASC
@@ -351,7 +431,8 @@ app.get('/api/performance-stats', async (req, res) => {
       quota: perfQuota(row.quota_ingresso),
       outcome: perfOutcome(row.esito_manuale) || ''
     })).sort((a,b) => b.startAt - a.startAt);
-    res.json({ generatedAt: now, overall, periods, selected:{ key: requestedPeriod, label: selectedLabel, overall: selectedOverall }, byStrategy, byLeague, daily, details });
+    const scoreValidationData = scoreValidation(selectedRows.filter(r => r.signal_first_at && r.signal_first_score != null));
+    res.json({ generatedAt: now, overall, periods, selected:{ key: requestedPeriod, label: selectedLabel, overall: selectedOverall }, byStrategy, byLeague, daily, details, scoreValidation: scoreValidationData });
   } catch (err) {
     console.error('performance-stats:', err);
     res.status(500).json({ error: 'Errore nel calcolo delle statistiche performance.' });
