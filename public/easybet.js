@@ -302,7 +302,8 @@
       else if(currentView==='live'){icon='●';label='Live'}
       else{icon='⏱';label='Da iniziare'}
       var analyzerBtn=currentView==='live'?'<button type="button" class="live-analyze-btn js-live-analyze" data-match-key="'+esc(liveAnalyzerMatchKey(m))+'">⚡ ANALIZZA LIVE</button>':'';
-      return '<article class="card'+(e?' esito-'+e:'')+'"><div class="card-head"><div class="league"><small>Campionato</small>'+camp+'</div><div class="time"><small>Ora</small><strong class="num">'+esc(fmtTime(m))+'</strong></div></div><div class="date num">'+esc(fmtDate(m))+'</div><div class="matchup"><div class="team"><div class="role">Casa</div>'+crestImg(m.casa,m.campionato)+'<div class="team-name">'+esc(m.casa||'Squadra casa')+'</div></div><div class="vs">VS</div><div class="team"><div class="role">Trasferta</div>'+crestImg(m.trasferta,m.campionato)+'<div class="team-name">'+esc(m.trasferta||'Squadra trasferta')+'</div></div></div><div class="info-grid"><div class="info"><label>Quota ingresso</label><strong class="num">'+q+'</strong></div><div class="info strategy"><label>Strategia</label><strong>'+str+'</strong></div></div>'+lifecycleStrip(m)+'<div class="status '+status+'"><span class="status-icon">'+icon+'</span><span class="status-copy"><small>'+ (e?'Esito':currentView==='live'?'Stato':'Stato') +'</small><strong>'+esc(label)+'</strong></span></div>'+analyzerBtn+'</article>'
+      var snapshotBtn=(m.signalFirstAt&&m.id)?'<button type="button" class="signal-snapshot-btn js-signal-snapshot" data-match-id="'+escAttr(m.id)+'">◎ PERCHÉ VERDE?</button>':'';
+      return '<article class="card'+(e?' esito-'+e:'')+'"><div class="card-head"><div class="league"><small>Campionato</small>'+camp+'</div><div class="time"><small>Ora</small><strong class="num">'+esc(fmtTime(m))+'</strong></div></div><div class="date num">'+esc(fmtDate(m))+'</div><div class="matchup"><div class="team"><div class="role">Casa</div>'+crestImg(m.casa,m.campionato)+'<div class="team-name">'+esc(m.casa||'Squadra casa')+'</div></div><div class="vs">VS</div><div class="team"><div class="role">Trasferta</div>'+crestImg(m.trasferta,m.campionato)+'<div class="team-name">'+esc(m.trasferta||'Squadra trasferta')+'</div></div></div><div class="info-grid"><div class="info"><label>Quota ingresso</label><strong class="num">'+q+'</strong></div><div class="info strategy"><label>Strategia</label><strong>'+str+'</strong></div></div>'+lifecycleStrip(m)+'<div class="status '+status+'"><span class="status-icon">'+icon+'</span><span class="status-copy"><small>'+ (e?'Esito':currentView==='live'?'Stato':'Stato') +'</small><strong>'+esc(label)+'</strong></span></div>'+analyzerBtn+snapshotBtn+'</article>'
     }
   function renderFinishedByDate(list,grid){
     var groups={};
@@ -460,6 +461,64 @@
   var liveSearchInput=document.getElementById('liveSearchInput');if(liveSearchInput){liveSearchInput.addEventListener('input',function(){liveSearchQuery=String(this.value||'').trim();render()});}
   document.getElementById('grid').addEventListener('click',function(e){var openBtn=e.target.closest('.js-open-strategy');if(openBtn){currentPronosticiStrategy=openBtn.getAttribute('data-strategy')||null;render();return}var backBtn=e.target.closest('.js-back-pronostici');if(backBtn){currentPronosticiStrategy=null;render()}});
   document.getElementById('grid').addEventListener('click',function(e){var b=e.target.closest('.js-live-analyze');if(!b)return;var key=b.getAttribute('data-match-key');var m=matches.find(function(x){return liveAnalyzerMatchKey(x)===key});if(m)openLiveAnalyzer(m)});
+  document.getElementById('grid').addEventListener('click',function(e){var b=e.target.closest('.js-signal-snapshot');if(!b)return;openSignalSnapshot(b.getAttribute('data-match-id'))});
+
+  /* ===== Snapshot del primo segnale verde ===== */
+  function ssFmtNum(v,d){if(v==null||!Number.isFinite(Number(v)))return 'N/D';var n=Number(v);return d==null?String(n):n.toFixed(d)}
+  function ssPair(v,d){v=Array.isArray(v)?v:[null,null];return '<div class="ss-pair"><span><small>CASA</small><b>'+ssFmtNum(v[0],d)+'</b></span><span><small>OSPITE</small><b>'+ssFmtNum(v[1],d)+'</b></span></div>'}
+  function ssOutcome(m){var e=String(m&&m.esitoManuale||'');if(e==='entrata_vinta')return ['VINTA','win'];if(e==='entrata_persa')return ['PERSA','loss'];if(e==='non_entrata')return ['NON ENTRATA','skip'];return ['IN ATTESA','pending']}
+  function ssFinalScore(m){var a=m&&m.finalScoreHome,b=m&&m.finalScoreAway;if(a!=null&&b!=null)return a+'-'+b;return '—'}
+  function closeSignalSnapshot(){var ov=document.getElementById('signalSnapshotOverlay');if(!ov)return;ov.classList.remove('open');ov.setAttribute('aria-hidden','true')}
+  function openSignalSnapshot(matchId){
+    var ov=document.getElementById('signalSnapshotOverlay'),body=document.getElementById('signalSnapshotBody'),sub=document.getElementById('signalSnapshotSubtitle');
+    if(!ov||!body)return;
+    var m=matches.find(function(x){return String(x.id)===String(matchId)});
+    ov.classList.add('open');ov.setAttribute('aria-hidden','false');
+    document.body.classList.add('snapshot-open');
+    sub.textContent=m?((m.casa||'Casa')+' – '+(m.trasferta||'Ospite')):'Partita';
+    body.innerHTML='<div class="ss-loading">Caricamento snapshot…</div>';
+    fetch('/api/matches/'+encodeURIComponent(matchId)+'/signal-snapshots?ts='+Date.now(),{cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+      .then(function(list){
+        list=Array.isArray(list)?list:[];
+        var snap=list[0]||null;
+        if(!snap){body.innerHTML='<div class="ss-empty"><b>Nessuno snapshot disponibile.</b><span>Il segnale storico esiste, ma per questa partita non è stato salvato il dettaglio statistico del momento verde.</span></div>';return}
+        var out=ssOutcome(m),when=snap.createdAt?new Date(snap.createdAt):null;
+        var score=(snap.scoreHome!=null&&snap.scoreAway!=null)?(snap.scoreHome+'-'+snap.scoreAway):'N/D';
+        var strategy=snap.strategy||((m&&m.tipoGiocata)||'Strategia');
+        var score100=snap.score100==null?'N/D':Math.round(Number(snap.score100))+'/100';
+        var cards=[
+          ['xG',ssPair(snap.xg,2)],
+          ['Tiri in porta',ssPair(snap.sot,0)],
+          ['Tiri totali',ssPair(snap.shots,0)],
+          ['Big chances',ssPair(snap.chances,0)],
+          ['Tiri in area',ssPair(snap.boxshots,0)],
+          ['Tocchi area',ssPair(snap.touches,0)]
+        ];
+        body.innerHTML=
+          '<div class="ss-hero">'+
+            '<div><small>STRATEGIA UFFICIALE</small><h4>'+esc(strategy)+'</h4><p>'+esc(snap.summary||'Condizioni live soddisfatte secondo la strategia pre-match.')+'</p></div>'+
+            '<div class="ss-score"><small>SCORE EASYBET</small><strong>'+esc(score100)+'</strong><span>VERDE</span></div>'+
+          '</div>'+
+          '<div class="ss-context">'+
+            '<div><small>MINUTO</small><b>'+(snap.minute==null?'N/D':Math.round(Number(snap.minute))+"'")+'</b></div>'+
+            '<div><small>RISULTATO AL SEGNALE</small><b>'+esc(score)+'</b></div>'+
+            '<div><small>ORA SNAPSHOT</small><b>'+(when?when.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'—')+'</b></div>'+
+            '<div><small>FONTE</small><b>'+esc(String(snap.source||'').toUpperCase()||'—')+'</b></div>'+
+          '</div>'+
+          '<div class="ss-section-title"><span>DATI AL MOMENTO DEL VERDE</span><em>fotografia congelata: non cambia con i dati successivi</em></div>'+
+          '<div class="ss-metrics">'+cards.map(function(c){return '<div class="ss-metric"><div class="ss-metric-label">'+esc(c[0])+'</div>'+c[1]+'</div>'}).join('')+'</div>'+
+          '<div class="ss-result">'+
+            '<div><small>ESITO FINALE</small><strong class="'+out[1]+'">'+out[0]+'</strong></div>'+
+            '<div><small>RISULTATO FINALE</small><strong>'+ssFinalScore(m)+'</strong></div>'+
+            '<div><small>QUOTA INGRESSO</small><strong>'+esc((m&&m.quotaIngresso)||'—')+'</strong></div>'+
+            '<div><small>SEGNALE REGISTRATO</small><strong>'+(m&&m.signalFirstAt?new Date(Number(m.signalFirstAt)).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—')+'</strong></div>'+
+          '</div>';
+      })
+      .catch(function(){body.innerHTML='<div class="ss-empty"><b>Impossibile caricare lo snapshot.</b><span>Riprova tra qualche secondo.</span></div>'});
+  }
+  document.addEventListener('click',function(e){if(e.target.closest('#signalSnapshotClose')){e.preventDefault();closeSignalSnapshot();document.body.classList.remove('snapshot-open');return}var ov=document.getElementById('signalSnapshotOverlay');if(ov&&e.target===ov){closeSignalSnapshot();document.body.classList.remove('snapshot-open')}});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeSignalSnapshot();document.body.classList.remove('snapshot-open')}});
 
   /* ===== Live Analyzer integrato ===== */
   var LIVE_ANALYZER_STORAGE_KEY='easybet-live-analyzer-state-v1';
