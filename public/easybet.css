@@ -1,11 +1,5 @@
 /* ===== Blocco CSS 1 estratto da easybet.html ===== */
-html{background:#070707}html[data-theme="light"]{background:#e9e5dc}html[data-theme="dark"]{background:#070707}
-:root{
-  --bg:#070707;--panel:#0d0d0c;--panel2:#12110f;--line:#2a2419;
-  --text:#f5f2ea;--muted:#a9a08d;--gold:#d8ad3d;--gold2:#f3d271;
-  --green:#24d86c;--red:#ff4b45;--yellow:#f0c83c;--neutral:#aab1bc;
-}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#070707;font-family:'Sora',sans-serif;color:var(--text)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--theme-page-bg);font-family:'Sora',sans-serif;color:var(--text)}
 a{text-decoration:none;color:inherit}.num{font-family:'IBM Plex Mono',monospace}
 .page-shell{width:min(1500px,calc(100vw - 24px));margin:10px auto 28px;background:var(--bg);border-radius:34px 34px 0 0;overflow:hidden;box-shadow:0 18px 55px rgba(0,0,0,.28)}
 .topbar{height:74px;display:grid;grid-template-columns:240px 1fr 280px;align-items:center;padding:0 24px;border-bottom:1px solid rgba(242,208,110,.14);background:linear-gradient(180deg,#0b0b0a,#080807)}
@@ -37,7 +31,7 @@ a{text-decoration:none;color:inherit}.num{font-family:'IBM Plex Mono',monospace}
 
 /* ===== EASYBET LIGHT / DARK THEME ===== */
 .theme-toggle{width:44px;height:44px;flex:0 0 44px;border-radius:12px;border:1px solid rgba(242,208,110,.32);background:#0f0f0e;color:var(--gold2);display:grid;place-items:center;cursor:pointer;font-size:1.08rem;transition:transform .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}.theme-toggle:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(216,173,61,.18)}.theme-toggle:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
-html[data-theme="light"] body{--bg:#f4f1ea;--panel:#ffffff;--panel2:#f8f5ee;--line:#ddd4c2;--text:#171713;--muted:#746b5d;background:#e9e5dc;color:var(--text)}
+html[data-theme="light"] body{background:var(--theme-page-bg);color:var(--text)}
 html[data-theme="light"] body .page-shell{background:#f4f1ea;box-shadow:0 18px 55px rgba(55,43,20,.12)}
 html[data-theme="light"] body .topbar{background:linear-gradient(180deg,#fff,#f5f1e9);border-bottom-color:rgba(151,112,22,.18)}
 html[data-theme="light"] body .brand-mark{background:linear-gradient(180deg,#fff8df,#ead9a4);color:#8d6500;border-color:rgba(151,112,22,.25);box-shadow:inset 0 1px 0 #fff}
@@ -125,7 +119,7 @@ html[data-theme="light"] body .stats-table td:first-child{color:#211b13}
 html[data-theme="light"] body .stats-loading{background:#fffaf0;border-color:#dcca9e;color:#756b5c}
 html[data-theme="light"] body .stats-empty{border-color:#dcca9e;color:#756b5c;background:#fffaf0}
 
-@media(max-width:560px){html[data-theme="light"] body{background:#ece8df}.theme-toggle{width:42px;height:42px;flex-basis:42px}}
+@media(max-width:560px){html[data-theme="light"] body{background:var(--theme-page-bg)}.theme-toggle{width:42px;height:42px;flex-basis:42px}}
 
 
 

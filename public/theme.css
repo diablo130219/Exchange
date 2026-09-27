@@ -1,0 +1,26 @@
+/* EasyBet — tema centralizzato */
+:root,html[data-theme="dark"]{
+  color-scheme:dark;
+  --theme-page-bg:#070707;--theme-page-bg-soft:#0b0b0a;--theme-surface:#0d0d0c;--theme-surface-2:#12110f;--theme-surface-3:#171510;
+  --theme-border:#2a2419;--theme-border-strong:#43371f;--theme-text:#f5f2ea;--theme-muted:#a9a08d;--theme-faint:#7f7768;
+  --theme-gold:#d8ad3d;--theme-gold-bright:#f3d271;--theme-gold-deep:#8a6d22;
+  --theme-green:#24d86c;--theme-red:#ff4b45;--theme-yellow:#f0c83c;--theme-neutral:#aab1bc;
+  --theme-green-soft:#173422;--theme-red-soft:#46231f;--theme-yellow-soft:#443918;--theme-neutral-soft:#1f3047;
+  --theme-shadow:0 1px 2px rgba(0,0,0,.5),0 14px 34px -14px rgba(0,0,0,.8);
+  --bg:var(--theme-page-bg);--panel:var(--theme-surface);--panel2:var(--theme-surface-2);--line:var(--theme-border);--text:var(--theme-text);--muted:var(--theme-muted);
+  --gold:var(--theme-gold);--gold2:var(--theme-gold-bright);--green:var(--theme-green);--red:var(--theme-red);--yellow:var(--theme-yellow);--neutral:var(--theme-neutral);
+  --surface:var(--theme-surface);--surface-2:var(--theme-surface-2);--border:var(--theme-border);--border-strong:var(--theme-border-strong);
+  --text-muted:var(--theme-muted);--text-faint:var(--theme-faint);--gold-bright:var(--theme-gold-bright);--gold-deep:var(--theme-gold-deep);
+  --win:var(--theme-green);--win-soft:var(--theme-green-soft);--giallo:var(--theme-yellow);--giallo-soft:var(--theme-yellow-soft);--rosso:var(--theme-red);--rosso-soft:var(--theme-red-soft);--neutro:var(--theme-neutral);--neutro-soft:var(--theme-neutral-soft);--shadow:var(--theme-shadow);
+}
+html[data-theme="light"]{
+  color-scheme:light;
+  --theme-page-bg:#eee9df;--theme-page-bg-soft:#f7f2e9;--theme-surface:#fffdfa;--theme-surface-2:#f7f1e6;--theme-surface-3:#fffaf0;
+  --theme-border:#ddd1bc;--theme-border-strong:#d2c09f;--theme-text:#17140f;--theme-muted:#6a604e;--theme-faint:#8a7d68;
+  --theme-gold:#d2a93a;--theme-gold-bright:#c79817;--theme-gold-deep:#b88b18;
+  --theme-green:#259b59;--theme-red:#c84f41;--theme-yellow:#b98500;--theme-neutral:#6d7482;
+  --theme-green-soft:#edf7ef;--theme-red-soft:#ffe9e6;--theme-yellow-soft:#fff4d6;--theme-neutral-soft:#eef0f4;
+  --theme-shadow:0 1px 2px rgba(76,56,18,.06),0 16px 36px -18px rgba(76,56,18,.18);
+}
+html{background:var(--theme-page-bg)}
+body{background-color:var(--theme-page-bg);color:var(--theme-text);transition:background-color .18s ease,color .18s ease}
