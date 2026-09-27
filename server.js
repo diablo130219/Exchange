@@ -873,12 +873,13 @@ app.post('/api/live-stats', async (req, res) => {
       const text = '🟢 <b>Segnale LIVE — ' + escapeHtmlLite(result.label) + '</b>' + league + '\n' +
         escapeHtmlLite(match.casa) + ' - ' + escapeHtmlLite(match.trasferta) + '\n' +
         '👉 ' + tipo + punteggio + '\n' +
+        '🎯 Score EasyBet: ' + (result.score100 == null ? 'N/D' : result.score100 + '/100') + '\n' +
         '📊 ' + escapeHtmlLite(result.summary);
       const sentTo = await telegram.broadcast(text);
       await pool.query('UPDATE matches SET live_alert_sent = true WHERE id = $1', [match.id]);
-      return res.json({ sent: true, sentTo, level: result.level, summary: result.summary, match: { casa: match.casa, trasferta: match.trasferta } });
+      return res.json({ sent: true, sentTo, level: result.level, score100: result.score100, summary: result.summary, match: { casa: match.casa, trasferta: match.trasferta } });
     }
-    return res.json({ sent: false, level: result.level, summary: result.summary, matched: { casa: match.casa, trasferta: match.trasferta } });
+    return res.json({ sent: false, level: result.level, score100: result.score100, summary: result.summary, matched: { casa: match.casa, trasferta: match.trasferta } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nel controllo delle statistiche live.' });

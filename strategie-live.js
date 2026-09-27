@@ -51,8 +51,12 @@
       totalWeight: totalW
     };
   }
+  function score100(score) {
+    if (score === null || score === undefined || !Number.isFinite(Number(score))) return null;
+    return Math.max(0, Math.min(100, Math.round(Number(score) * 100)));
+  }
   function sig(name, state, reason, why, criteria, score) {
-    return { name: name, state: state, reason: reason, why: why, criteria: criteria || [], score: score == null ? null : score };
+    return { name: name, state: state, reason: reason, why: why, criteria: criteria || [], score: score == null ? null : score, score100: score100(score) };
   }
   function oddText(v) {
     var x = oddNum(v);
@@ -311,9 +315,10 @@
     var greenAt = strategyKey === 'layx' ? RULES.layx.state.green : strategyKey === 'backfav' ? RULES.backfav.state.green : rule.state.green;
     var yellowAt = strategyKey === 'layx' ? RULES.layx.state.weak : strategyKey === 'backfav' ? RULES.backfav.state.wait : rule.state.wait;
     var level = (gateOk && core && checks.available >= 2 && checks.score >= greenAt) ? 'verde' : (checks.available >= 2 && checks.score >= yellowAt ? 'giallo' : 'rosso');
-    var summary = 'score ' + Math.round(checks.score * 100) + '% • ' + checks.passed + '/' + checks.available + ' criteri';
-    return { level: level, summary: summary, gateOk: gateOk, score: checks.score, passed: checks.passed, available: checks.available, core: core, label: wanted };
+    var s100 = score100(checks.score);
+    var summary = 'score ' + (s100 == null ? 'N/D' : s100 + '/100') + ' • ' + checks.passed + '/' + checks.available + ' criteri';
+    return { level: level, summary: summary, gateOk: gateOk, score: checks.score, score100: s100, passed: checks.passed, available: checks.available, core: core, label: wanted };
   }
 
-  return { RULES: RULES, analyzeAll: analyzeAll, classify: classify };
+  return { RULES: RULES, analyzeAll: analyzeAll, classify: classify, score100: score100 };
 });
