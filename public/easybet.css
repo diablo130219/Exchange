@@ -1375,3 +1375,36 @@ body.live-analyzer-open{overflow:hidden!important}
   .la-meta{grid-template-columns:1fr 1fr!important}
   .la-meta .la-favorite{grid-column:span 2!important}
 }
+
+/* STEP 14 — Live Analyzer più compatto: Situazione + Pressione nella colonna sinistra */
+.live-analyzer-modal .la-body{grid-template-columns:minmax(520px,.92fr) minmax(680px,1.08fr)!important}
+.live-analyzer-modal .la-panel{min-height:0!important;overflow:auto!important}
+.live-analyzer-modal .la-panel:first-child{display:flex!important;flex-direction:column!important;overflow:auto!important}
+.live-analyzer-modal .la-panel:first-child .la-textarea{flex:0 0 auto!important;min-height:180px!important;height:clamp(180px,27vh,285px)!important;max-height:285px!important;resize:vertical!important}
+.live-analyzer-modal .la-left-situation{margin-top:10px;padding-top:9px;border-top:1px solid rgba(180,145,55,.20)}
+.live-analyzer-modal .la-situation-title{margin-bottom:7px!important}
+.live-analyzer-modal .la-left-situation .la-summary{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important;margin-bottom:7px!important}
+.live-analyzer-modal .la-left-situation .la-stat{min-height:50px!important;padding:6px 8px!important}
+.live-analyzer-modal .la-left-situation .la-summary .strategy-focus{grid-column:1/-1!important;min-height:48px!important;padding:6px 9px!important}
+.live-analyzer-modal .la-left-situation .la-trend-panel{margin-top:0!important}
+.live-analyzer-modal .la-left-situation .la-trend-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+.live-analyzer-modal .la-left-situation .la-trend-card{min-height:62px!important;padding:7px 8px!important}
+.live-analyzer-modal .la-left-situation .la-trend-note{padding:6px 8px!important;margin-top:5px!important}
+.live-analyzer-modal .la-right-panel{display:flex!important;flex-direction:column!important;overflow:auto!important}
+.live-analyzer-modal .la-right-panel .la-signals{margin-top:0!important}
+.live-analyzer-modal .la-right-panel .la-live-section-title{margin-top:0!important;padding-top:0!important}
+.live-analyzer-modal .la-right-panel .la-parsed{margin-top:8px!important}
+@media(max-width:1450px){
+  .live-analyzer-modal .la-body{grid-template-columns:minmax(460px,.9fr) minmax(600px,1.1fr)!important}
+  .live-analyzer-modal .la-left-situation .la-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .live-analyzer-modal .la-left-situation .la-trend-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:1100px){
+  .live-analyzer-modal .la-body{grid-template-columns:1fr!important;overflow:auto!important}
+  .live-analyzer-modal .la-panel{overflow:visible!important}
+  .live-analyzer-modal .la-panel:first-child .la-textarea{height:240px!important;max-height:none!important}
+}
+@media(max-width:700px){
+  .live-analyzer-modal .la-left-situation .la-summary,
+  .live-analyzer-modal .la-left-situation .la-trend-grid{grid-template-columns:1fr!important}
+}
