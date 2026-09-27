@@ -15,9 +15,6 @@ const source = mkPool(sourceUrl);
 const target = mkPool(targetUrl);
 
 const tables = [
-  { name:'casse', pk:'id' },
-  { name:'bets', pk:'id' },
-  { name:'settings', pk:'id' },
   { name:'matches', pk:'id' },
   { name:'subscribers', pk:'chat_id' },
   { name:'alert_settings', pk:'id' },

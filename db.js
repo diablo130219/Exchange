@@ -26,44 +26,10 @@ const pool = new Pool({
 });
 
 async function migrate() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS casse (
-      id TEXT PRIMARY KEY,
-      nome TEXT NOT NULL,
-      saldo_iniziale NUMERIC NOT NULL DEFAULT 0,
-      created_at BIGINT NOT NULL
-    );
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS bets (
-      id TEXT PRIMARY KEY,
-      cassa_id TEXT REFERENCES casse(id) ON DELETE CASCADE,
-      data TEXT,
-      ora TEXT,
-      campionato TEXT,
-      casa TEXT,
-      trasferta TEXT,
-      strategia TEXT,
-      tipo TEXT,
-      quota TEXT,
-      importo TEXT,
-      commissione NUMERIC,
-      ht TEXT,
-      ft TEXT,
-      esito TEXT,
-      created_at BIGINT
-    );
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS settings (
-      id TEXT PRIMARY KEY DEFAULT 'main',
-      strategia TEXT,
-      tipo TEXT,
-      commissione NUMERIC
-    );
-  `);
+  // EasyBet non crea più le vecchie tabelle casse/bets/settings.
+  // Eventuali tabelle già presenti nel database vengono lasciate intatte per sicurezza.
 
-  // --- Avvisi Partite (Telegram) ---
+// --- Avvisi Partite (Telegram) ---
   await pool.query(`
     CREATE TABLE IF NOT EXISTS matches (
       id TEXT PRIMARY KEY,

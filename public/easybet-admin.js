@@ -728,7 +728,7 @@
     });
 
     // ---------------- import elenco (incolla lista partite) ----------------
-    // Stesso formato/parser usato nel Taccuino Exchange: righe "[Campionato]" seguite
+    // Formato importazione EasyBet: righe "[Campionato]" seguite
     // da righe "GG/MM/AAAA HH:MM  Squadra Casa - Squadra Trasferta".
     function toStartAt(dataStr, oraStr){
       var dm = (dataStr||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);

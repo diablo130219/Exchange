@@ -1,39 +1,6 @@
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
-create table if not exists public.casse (
-  id text primary key,
-  nome text not null,
-  saldo_iniziale numeric not null default 0,
-  created_at bigint not null
-);
-
-create table if not exists public.bets (
-  id text primary key,
-  cassa_id text references public.casse(id) on delete cascade,
-  data text,
-  ora text,
-  campionato text,
-  casa text,
-  trasferta text,
-  strategia text,
-  tipo text,
-  quota text,
-  importo text,
-  commissione numeric,
-  ht text,
-  ft text,
-  esito text,
-  created_at bigint
-);
-
-create table if not exists public.settings (
-  id text primary key default 'main',
-  strategia text,
-  tipo text,
-  commissione numeric
-);
-
 create table if not exists public.matches (
   id text primary key,
   data text not null,

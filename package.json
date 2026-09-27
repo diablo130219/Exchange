@@ -1,8 +1,8 @@
 {
-  "name": "taccuino-exchange",
+  "name": "easybet",
   "version": "1.0.0",
   "private": true,
-  "description": "Registro giocate back & lay su exchange, con P/L, saldo cassa e gestione multi-cassa.",
+  "description": "EasyBet: gestione partite, strategie live, segnali, statistiche e notifiche Telegram.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

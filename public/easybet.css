@@ -1470,3 +1470,23 @@ body.snapshot-open{overflow:hidden}
 @media(max-width:1280px){.minute-buckets{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:850px){.minute-buckets{grid-template-columns:repeat(3,minmax(0,1fr))}.minute-detail-list{grid-template-columns:1fr}}
 @media(max-width:600px){.minute-validation-head{align-items:flex-start;flex-direction:column}.minute-validation-total{text-align:left}.minute-buckets{grid-template-columns:1fr 1fr}.minute-bucket-top{align-items:flex-start;flex-direction:column}}
+\n\n/* ===== Step 23 — Partite terminate compatte e coerenti ===== */
+#grid.home-history .finished-card{min-height:468px!important;display:flex!important;flex-direction:column!important;gap:9px!important}
+#grid.home-history .finished-card .status{margin-top:8px!important;min-height:54px!important}
+#grid.home-history .finished-card .status-copy strong{font-size:.86rem!important;line-height:1.08!important;text-align:left!important}
+#grid.home-history .finished-card .lifecycle-strip{margin-top:0!important}
+#grid.home-history .finished-card .lifecycle-step{padding:5px 2px!important}
+#grid.home-history .finished-card .lifecycle-step b{font-size:.52rem!important}
+#grid.home-history .finished-card .lifecycle-step small{font-size:.46rem!important}
+.finished-signal-note{position:relative;z-index:2;display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:center;min-height:46px;padding:8px 10px;border-radius:12px;border:1px solid var(--theme-border);background:var(--theme-surface)}
+.finished-signal-note>span{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:.62rem;font-weight:900}
+.finished-signal-note b{display:block;font-size:.58rem;line-height:1.15}.finished-signal-note small{display:block;margin-top:2px;color:var(--theme-muted);font-size:.48rem;line-height:1.25}
+.finished-signal-note.has-signal{border-color:color-mix(in srgb,var(--theme-green) 34%,var(--theme-border));background:color-mix(in srgb,var(--theme-green-soft) 72%,var(--theme-surface))}.finished-signal-note.has-signal>span{background:var(--theme-green-soft);color:var(--theme-green);border:1px solid color-mix(in srgb,var(--theme-green) 40%,var(--theme-border))}.finished-signal-note.has-signal b{color:var(--theme-green)}
+.finished-signal-note.no-signal>span{background:var(--theme-surface-2);color:var(--theme-neutral);border:1px solid var(--theme-border)}.finished-signal-note.no-signal b{color:var(--theme-muted)}
+.finished-action-row{position:relative;z-index:2;min-height:34px;display:flex;align-items:center}
+.finished-snapshot-btn{width:100%;height:34px;border:1px solid color-mix(in srgb,var(--theme-green) 38%,var(--theme-border));background:linear-gradient(180deg,color-mix(in srgb,var(--theme-green-soft) 90%,var(--theme-surface)),var(--theme-surface));color:var(--theme-green);border-radius:10px;font:850 .54rem 'Sora',sans-serif;letter-spacing:.035em;cursor:pointer;transition:.16s ease}.finished-snapshot-btn:hover{transform:translateY(-1px);border-color:var(--theme-green);box-shadow:0 7px 16px rgba(0,0,0,.07)}
+.finished-snapshot-placeholder{width:100%;height:34px;display:grid;place-items:center;border:1px dashed var(--theme-border);border-radius:10px;color:var(--theme-faint);font-size:.49rem;font-weight:800;letter-spacing:.07em;background:color-mix(in srgb,var(--theme-surface-2) 65%,transparent)}
+#grid.home-history .finished-card.esito-non_entrata.has-signal .status{background:linear-gradient(180deg,color-mix(in srgb,var(--theme-yellow) 55%,#755b11),#6b530e)!important}
+#grid.home-history .finished-card.esito-non_entrata.no-signal .status{filter:saturate(.72);opacity:.92}
+html[data-theme="light"] body #grid.home-history .finished-card{background:linear-gradient(180deg,#fffdfa,#f7f2e8)!important}
+@media(max-width:560px){#grid.home-history .finished-card{min-height:0!important}.finished-signal-note{min-height:44px}.finished-action-row{min-height:36px}.finished-snapshot-btn,.finished-snapshot-placeholder{height:36px}}

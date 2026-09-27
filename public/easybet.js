@@ -344,15 +344,26 @@
   }
   function markLifecycle(m,event,extra){if(!m||!m.id)return Promise.resolve(null);var body=Object.assign({event:event},extra||{});return fetch('/api/matches/'+encodeURIComponent(m.id)+'/lifecycle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.ok?r.json():null}).then(function(updated){if(!updated)return null;var idx=matches.findIndex(function(x){return String(x.id)===String(updated.id)});if(idx>=0)matches[idx]=Object.assign({},matches[idx],updated);render();return updated}).catch(function(){return null})}
   function laSignalSnapshotPayload(parsed,minute,score){function pair(v){return Array.isArray(v)?[v[0]==null?null:Number(v[0]),v[1]==null?null:Number(v[1])]:[null,null]}return{minute:Number.isFinite(Number(minute))?Number(minute):null,score:String(score||''),xg:pair(parsed.xg),sot:pair(parsed.sot),shots:pair(parsed.shots),chances:pair(parsed.big),boxshots:pair(parsed.boxshots),touches:pair(parsed.touches)}}
+  function finishedSignalSummary(m){
+    var hasSignal=!!m.signalFirstAt;
+    if(!hasSignal)return '<div class="finished-signal-note no-signal"><span>○</span><div><b>Nessun segnale registrato</b><small>La strategia pre-match non ha prodotto un VERDE ufficiale.</small></div></div>';
+    var sc=m.signalFirstScore!=null?Math.round(Number(m.signalFirstScore))+'/100':'VERDE';
+    return '<div class="finished-signal-note has-signal"><span>●</span><div><b>Segnale registrato · '+esc(sc)+'</b><small>Primo VERDE della strategia pre-match memorizzato.</small></div></div>';
+  }
+  function finishedOutcomeLabel(m,e){
+    if(e==='non_entrata')return m.signalFirstAt?'NON ENTRATA · SEGNALE AVUTO':'NON ENTRATA · NESSUN SEGNALE';
+    return ESITO_LABEL[e]||'In attesa';
+  }
   function renderMatchCard(m){
       var e=m.esitoManuale||'',status=e?e:'attesa',camp=esc(m.campionato||'Campionato'),q=esc(m.quotaIngresso||'—'),str=esc(m.tipoGiocata||'Da definire');
-      var icon,label;
-      if(e){icon=ESITO_ICON[e];label=ESITO_LABEL[e]}
+      var icon,label,isFinishedCard=currentView==='home';
+      if(e){icon=ESITO_ICON[e];label=isFinishedCard?finishedOutcomeLabel(m,e):ESITO_LABEL[e]}
       else if(currentView==='live'){icon='●';label='Live'}
       else{icon='⏱';label='Da iniziare'}
       var analyzerBtn=currentView==='live'?'<button type="button" class="live-analyze-btn js-live-analyze" data-match-key="'+esc(liveAnalyzerMatchKey(m))+'">⚡ ANALIZZA LIVE</button>':'';
-      var snapshotBtn=(m.signalFirstAt&&m.id)?'<button type="button" class="signal-snapshot-btn js-signal-snapshot" data-match-id="'+escAttr(m.id)+'">◎ PERCHÉ VERDE?</button>':'';
-      return '<article class="card'+(e?' esito-'+e:'')+'"><div class="card-head"><div class="league"><small>Campionato</small>'+camp+'</div><div class="time"><small>Ora</small><strong class="num">'+esc(fmtTime(m))+'</strong></div></div><div class="date num">'+esc(fmtDate(m))+'</div><div class="matchup"><div class="team"><div class="role">Casa</div>'+crestImg(m.casa,m.campionato)+'<div class="team-name">'+esc(m.casa||'Squadra casa')+'</div></div><div class="vs">VS</div><div class="team"><div class="role">Trasferta</div>'+crestImg(m.trasferta,m.campionato)+'<div class="team-name">'+esc(m.trasferta||'Squadra trasferta')+'</div></div></div><div class="info-grid"><div class="info"><label>Quota ingresso</label><strong class="num">'+q+'</strong></div><div class="info strategy"><label>Strategia</label><strong>'+str+'</strong></div></div>'+lifecycleStrip(m)+'<div class="status '+status+'"><span class="status-icon">'+icon+'</span><span class="status-copy"><small>'+ (e?'Esito':currentView==='live'?'Stato':'Stato') +'</small><strong>'+esc(label)+'</strong></span></div>'+analyzerBtn+snapshotBtn+'</article>'
+      var snapshotBtn=(m.signalFirstAt&&m.id)?'<button type="button" class="finished-snapshot-btn js-signal-snapshot" data-match-id="'+escAttr(m.id)+'">◎ PERCHÉ VERDE?</button>':'<div class="finished-snapshot-placeholder">NESSUNO SNAPSHOT</div>';
+      var finishedExtra=isFinishedCard?finishedSignalSummary(m)+'<div class="finished-action-row">'+snapshotBtn+'</div>':'';
+      return '<article class="card'+(isFinishedCard?' finished-card':'')+(m.signalFirstAt?' has-signal':' no-signal')+(e?' esito-'+e:'')+'"><div class="card-head"><div class="league"><small>Campionato</small>'+camp+'</div><div class="time"><small>Ora</small><strong class="num">'+esc(fmtTime(m))+'</strong></div></div><div class="date num">'+esc(fmtDate(m))+'</div><div class="matchup"><div class="team"><div class="role">Casa</div>'+crestImg(m.casa,m.campionato)+'<div class="team-name">'+esc(m.casa||'Squadra casa')+'</div></div><div class="vs">VS</div><div class="team"><div class="role">Trasferta</div>'+crestImg(m.trasferta,m.campionato)+'<div class="team-name">'+esc(m.trasferta||'Squadra trasferta')+'</div></div></div><div class="info-grid"><div class="info"><label>Quota ingresso</label><strong class="num">'+q+'</strong></div><div class="info strategy"><label>Strategia</label><strong>'+str+'</strong></div></div>'+lifecycleStrip(m)+finishedExtra+'<div class="status '+status+'"><span class="status-icon">'+icon+'</span><span class="status-copy"><small>'+ (e?'Esito':currentView==='live'?'Stato':'Stato') +'</small><strong>'+esc(label)+'</strong></span></div>'+analyzerBtn+'</article>'
     }
   function renderFinishedByDate(list,grid){
     var groups={};

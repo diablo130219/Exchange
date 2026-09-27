@@ -110,8 +110,7 @@ app.post('/api/admin/logout', (req, res) => {
   res.setHeader('Set-Cookie', clearAdminCookie(req));
   res.json({ ok: true });
 });
-// La pagina pubblica (easybet.html) è la home del sito: il Taccuino (index.html) contiene
-// dati personali (saldo, casse, giocate) ed è raggiungibile solo direttamente, dietro PIN.
+// EasyBet pubblico è la home del servizio; l'area Admin resta separata e protetta.
 app.use(express.static(path.join(__dirname, 'public'), { index: 'easybet.html' }));
 
 function newId() {
@@ -119,38 +118,6 @@ function newId() {
 }
 
 // ---------- mappers: DB row (snake_case) <-> API/client shape (camelCase) ----------
-function cassaOut(row) {
-  return {
-    id: row.id,
-    nome: row.nome,
-    saldoIniziale: row.saldo_iniziale === null ? 0 : Number(row.saldo_iniziale),
-    createdAt: Number(row.created_at)
-  };
-}
-function betOut(row) {
-  return {
-    id: row.id,
-    cassaId: row.cassa_id,
-    data: row.data || '',
-    ora: row.ora || '',
-    campionato: row.campionato || '',
-    casa: row.casa || '',
-    trasferta: row.trasferta || '',
-    tipo: row.tipo || 'lay',
-    quota: row.quota === null ? '' : row.quota,
-    importo: row.importo === null ? '' : row.importo,
-    commissione: row.commissione === null ? 0 : Number(row.commissione),
-    esito: row.esito || 'aperta',
-    createdAt: Number(row.created_at)
-  };
-}
-function settingsOut(row) {
-  if (!row) return { tipo: 'lay', commissione: 4.5 };
-  return {
-    tipo: row.tipo || 'lay',
-    commissione: row.commissione === null ? 4.5 : Number(row.commissione)
-  };
-}
 function matchOut(row) {
   return {
     id: row.id,
@@ -547,21 +514,15 @@ app.get('/api/performance-stats', async (req, res) => {
   }
 });
 
-// ---------- combined state (used for initial load + polling sync) ----------
+// ---------- EasyBet state (initial load + polling sync) ----------
 app.get('/api/state', async (req, res) => {
   try {
-    const [casseRes, betsRes, settingsRes, matchesRes, alertSettingsRes, subsRes] = await Promise.all([
-      pool.query('SELECT * FROM casse ORDER BY created_at ASC'),
-      pool.query('SELECT * FROM bets ORDER BY created_at ASC'),
-      pool.query("SELECT * FROM settings WHERE id='main'"),
+    const [matchesRes, alertSettingsRes, subsRes] = await Promise.all([
       pool.query('SELECT * FROM matches ORDER BY start_at ASC'),
       pool.query("SELECT * FROM alert_settings WHERE id='main'"),
       pool.query('SELECT COUNT(*)::int AS n FROM subscribers')
     ]);
     res.json({
-      casse: casseRes.rows.map(cassaOut),
-      bets: betsRes.rows.map(betOut),
-      settings: settingsOut(settingsRes.rows[0]),
       matches: matchesRes.rows.map(matchOut),
       alertSettings: alertSettingsOut(alertSettingsRes.rows[0]),
       subscriberCount: subsRes.rows[0] ? subsRes.rows[0].n : 0,
@@ -569,7 +530,7 @@ app.get('/api/state', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Errore nel caricamento dei dati.' });
+    res.status(500).json({ error: 'Errore nel caricamento dei dati EasyBet.' });
   }
 });
 
@@ -821,162 +782,6 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
     console.error('GoalDir live stats:', err);
     const status = err.status && Number.isFinite(Number(err.status)) ? Number(err.status) : (err.code === 'NO_GOALDIR_KEY' ? 503 : 502);
     res.status(status).json({ code: err.code || 'GOALDIR_ERROR', error: err.message || 'Errore GoalDir.' });
-  }
-});
-
-// ---------- casse ----------
-app.post('/api/casse', async (req, res) => {
-  try {
-    const { nome, saldoIniziale } = req.body || {};
-    if (!nome || !String(nome).trim()) return res.status(400).json({ error: 'Nome cassa mancante.' });
-    const id = newId();
-    const createdAt = Date.now();
-    const saldo = isNaN(parseFloat(saldoIniziale)) ? 0 : parseFloat(saldoIniziale);
-    const { rows } = await pool.query(
-      'INSERT INTO casse (id, nome, saldo_iniziale, created_at) VALUES ($1,$2,$3,$4) RETURNING *',
-      [id, String(nome).trim(), saldo, createdAt]
-    );
-    res.status(201).json(cassaOut(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Errore nella creazione della cassa.' });
-  }
-});
-
-app.patch('/api/casse/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const fields = req.body || {};
-    const sets = [];
-    const vals = [];
-    let i = 1;
-    if (Object.prototype.hasOwnProperty.call(fields, 'nome')) {
-      sets.push('nome = $' + (i++)); vals.push(String(fields.nome).trim());
-    }
-    if (Object.prototype.hasOwnProperty.call(fields, 'saldoIniziale')) {
-      var s = parseFloat(fields.saldoIniziale); if (isNaN(s)) s = 0;
-      sets.push('saldo_iniziale = $' + (i++)); vals.push(s);
-    }
-    if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
-    if (shouldRearmPrematch) {
-      sets.push('notified = $' + (i++)); vals.push(false);
-      sets.push('notify_minutes = $' + (i++)); vals.push(10);
-    }
-    vals.push(id);
-    const { rows } = await pool.query(
-      'UPDATE casse SET ' + sets.join(', ') + ' WHERE id = $' + i + ' RETURNING *',
-      vals
-    );
-    if (!rows.length) return res.status(404).json({ error: 'Cassa non trovata.' });
-    res.json(cassaOut(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Errore nell\'aggiornamento della cassa.' });
-  }
-});
-
-// Deleting a cassa cascades to its bets via the ON DELETE CASCADE foreign key,
-// so this is a single atomic statement — no orphaned bets can be left behind.
-app.delete('/api/casse/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { rowCount } = await pool.query('DELETE FROM casse WHERE id = $1', [id]);
-    if (!rowCount) return res.status(404).json({ error: 'Cassa non trovata.' });
-    res.status(204).end();
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Errore nell\'eliminazione della cassa.' });
-  }
-});
-
-// ---------- bets ----------
-const BET_FIELDS = ['cassaId','data','ora','campionato','casa','trasferta','tipo','quota','importo','commissione','esito'];
-const BET_COLUMNS = { cassaId:'cassa_id', data:'data', ora:'ora', campionato:'campionato', casa:'casa', trasferta:'trasferta', tipo:'tipo', quota:'quota', importo:'importo', commissione:'commissione', esito:'esito' };
-
-app.post('/api/bets', async (req, res) => {
-  try {
-    const b = req.body || {};
-    const id = newId();
-    const createdAt = b.createdAt || Date.now();
-    const cols = ['id','created_at'];
-    const placeholders = ['$1','$2'];
-    const vals = [id, createdAt];
-    let i = 3;
-    BET_FIELDS.forEach(function(f){
-      cols.push(BET_COLUMNS[f]);
-      placeholders.push('$' + (i++));
-      var v = b[f];
-      if (f === 'commissione') v = (v === '' || v == null) ? 0 : Number(v);
-      vals.push(v == null ? '' : v);
-    });
-    const { rows } = await pool.query(
-      'INSERT INTO bets (' + cols.join(',') + ') VALUES (' + placeholders.join(',') + ') RETURNING *',
-      vals
-    );
-    res.status(201).json(betOut(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Errore nella creazione della giocata.' });
-  }
-});
-
-app.patch('/api/bets/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const fields = req.body || {};
-    const sets = [];
-    const vals = [];
-    let i = 1;
-    BET_FIELDS.forEach(function(f){
-      if (Object.prototype.hasOwnProperty.call(fields, f)) {
-        var v = fields[f];
-        if (f === 'commissione') v = (v === '' || v == null) ? 0 : Number(v);
-        sets.push(BET_COLUMNS[f] + ' = $' + (i++));
-        vals.push(v == null ? '' : v);
-      }
-    });
-    if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
-    vals.push(id);
-    const { rows } = await pool.query(
-      'UPDATE bets SET ' + sets.join(', ') + ' WHERE id = $' + i + ' RETURNING *',
-      vals
-    );
-    if (!rows.length) return res.status(404).json({ error: 'Giocata non trovata.' });
-    res.json(betOut(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Errore nell\'aggiornamento della giocata.' });
-  }
-});
-
-app.delete('/api/bets/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { rowCount } = await pool.query('DELETE FROM bets WHERE id = $1', [id]);
-    if (!rowCount) return res.status(404).json({ error: 'Giocata non trovata.' });
-    res.status(204).end();
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Errore nell\'eliminazione della giocata.' });
-  }
-});
-
-// ---------- settings ----------
-app.put('/api/settings', async (req, res) => {
-  try {
-    const { tipo, commissione } = req.body || {};
-    const { rows } = await pool.query(
-      `INSERT INTO settings (id, tipo, commissione) VALUES ('main', $1, $2)
-       ON CONFLICT (id) DO UPDATE SET
-         tipo = COALESCE(EXCLUDED.tipo, settings.tipo),
-         commissione = COALESCE(EXCLUDED.commissione, settings.commissione)
-       RETURNING *`,
-      [tipo != null ? tipo : null, commissione != null ? Number(commissione) : null]
-    );
-    res.json(settingsOut(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Errore nel salvataggio delle impostazioni.' });
   }
 });
 
@@ -1977,8 +1782,8 @@ app.get('/strategie-live.js', function(req, res){
 
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
-// Fallback per qualsiasi GET non-API su un percorso sconosciuto: manda alla pagina
-// pubblica (non al Taccuino, che è privato) invece di un 404 nudo.
+// Fallback per qualsiasi GET non-API su un percorso sconosciuto:
+ // ritorna alla pagina pubblica EasyBet invece di mostrare un 404 nudo.
 app.get('*', function(req, res, next){
   if (req.path.indexOf('/api/') === 0) return next();
   res.sendFile(path.join(__dirname, 'public', 'easybet.html'));
@@ -2005,7 +1810,7 @@ process.once('SIGINT', function(){ shutdown('SIGINT'); });
 migrate()
   .then(function(){
     httpServer = app.listen(PORT, function(){
-      console.log('Taccuino Exchange in ascolto sulla porta ' + PORT);
+      console.log('EasyBet in ascolto sulla porta ' + PORT);
     });
     telegram.startPolling();
     scheduler.start();
