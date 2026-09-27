@@ -1536,3 +1536,23 @@ html[data-theme="light"] body .stats-detail-outcome.skip{color:var(--theme-yello
 html[data-theme="light"] body .dot.g{background:var(--theme-green)!important}
 html[data-theme="light"] body .dot.r{background:var(--theme-red)!important}
 html[data-theme="light"] body .dot.y{background:var(--theme-yellow)!important}
+
+
+/* ===== Step 28 — evento già avvenuto / mercato escluso ===== */
+.la-signal.red .la-pill{font-weight:900}
+.finished-signal-note.market-excluded{
+  border-color:color-mix(in srgb,var(--theme-red) 48%,var(--theme-border))!important;
+  background:color-mix(in srgb,var(--theme-red-soft) 78%,var(--theme-surface))!important;
+}
+.finished-signal-note.market-excluded>span,
+.finished-signal-note.market-excluded b{color:var(--theme-red)!important}
+.live-priority-state.excluded{
+  color:var(--theme-red)!important;
+  border-color:color-mix(in srgb,var(--theme-red) 44%,var(--theme-border))!important;
+  background:var(--theme-red-soft)!important;
+}
+.live-priority-state.closed{
+  color:var(--theme-neutral)!important;
+  border-color:var(--theme-border)!important;
+  background:var(--theme-neutral-soft)!important;
+}

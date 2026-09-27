@@ -1,29 +1,31 @@
-# EasyBet — pacchetto pulito
+# EasyBet — Step 28
 
-Versione finale con backup/export Admin.
+Correzione completa della logica Over 0.5 HT quando il gol arriva prima della finestra operativa.
 
-## Backup JSON
-Nell'area Admin è disponibile `Backup JSON`.
+## Nuovo comportamento Over 0.5 HT
 
-Il file contiene:
-- tutte le partite
-- tutti gli snapshot del primo segnale
-- impostazioni notifiche
-- cache stemmi squadre
-- metadata e conteggi del backup
+- Prima del 15' e risultato 0-0 → `ATTENDI`
+- Prima del 15' ma è già stato segnato almeno un gol → `GOL PRE-FINESTRA`
+- Tra 15' e 30', 0-0 → normale valutazione della strategia
+- Se il gol è già avvenuto quando si apre/aggiorna l'analisi → `GOL GIÀ SEGNATO`
+- Dopo il 30' sullo 0-0 → `NO BET`
 
-Non include PIN, secret, token Telegram, API key o DATABASE_URL.
+Un gol segnato prima della finestra non viene mai trasformato in VERDE ufficiale e non viene contato come segnale EasyBet.
 
-## CSV partite
-Il pulsante `CSV partite` esporta un file compatibile con Excel con:
-- partita e campionato
-- strategia
-- quota
-- esito
-- lifecycle
-- primo score VERDE
-- minuto del primo segnale
-- statistiche dello snapshot
-- fonte e motivazione del segnale
+## Backend
+Anche `/api/live-stats` applica lo stesso gate se riceve minuto e risultato, quindi un gol anticipato non può generare per errore uno snapshot o un alert VERDE.
 
-Entrambe le esportazioni richiedono una sessione Admin valida e non vengono memorizzate nella cache del browser.
+## Dashboard
+Le partite con mercato già consumato mostrano:
+- `ESCLUSA`, oppure
+- `CHIUSA`
+
+invece di `DA CONTROLLARE`.
+
+## Partite terminate
+Se la partita viene poi marcata `non_entrata`, viene distinta come:
+- `NON ENTRATA · GOL PRE-FINESTRA`
+
+e la card spiega che il mercato è stato escluso perché l'evento era già avvenuto prima dell'ingresso.
+
+Nessuna soglia statistica della strategia è stata modificata.

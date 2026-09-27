@@ -142,9 +142,20 @@
 
     var ht;
     if (minuteN == null) ht = sig(h.label, 'DATI', 'Inserisci il minuto della partita.', 'Finestra principale 15’–30’.');
+    else if (minuteN < h.window.from && goals > 0) ht = sig(
+      h.label,
+      'INGIOCABILE',
+      'Gol già segnato prima della finestra EasyBet.',
+      'L’Over 0.5 HT si è verificato prima dell’inizio della zona operativa: non è un ingresso EasyBet e non va contato come segnale.'
+    );
     else if (minuteN < h.window.from) ht = sig(h.label, 'ATTENDI', 'Non ancora in zona operativa.', 'La finestra EasyBet parte indicativamente dal 15°.');
+    else if (goals > 0) ht = sig(
+      h.label,
+      'CHIUSA',
+      'Il gol è già stato segnato.',
+      'La condizione Over 0.5 HT è già raggiunta: il mercato non viene più aperto come nuovo ingresso EasyBet.'
+    );
     else if (minuteN > h.window.to) ht = sig(h.label, 'NO BET', 'Finestra operativa superata.', 'Non inseguire il mercato troppo tardi.');
-    else if (goals > 0) ht = sig(h.label, 'CHIUSA', 'C’è già almeno un gol nel match.', 'La condizione Over 0.5 è raggiunta.');
     else ht = softState(h.label, q.score, q, h.state.green, h.state.strong, h.state.wait, 'Pressione live compatibile con l’ingresso.', 'SOT ' + (sot == null ? 'N/D' : sot) + ' • Tiri ' + (shots == null ? 'N/D' : shots) + ' • xG ' + (round2(xg) == null ? 'N/D' : round2(xg)) + oddText(htOdds), coreHT);
 
     var earlyGoalBefore25 = !!context.earlyGoalBefore25;
@@ -310,6 +321,68 @@
       core = checks.available >= 2;
       var hsc = n(payload.scoreHome), asc = n(payload.scoreAway);
       gateOk = hsc !== null && asc !== null && hsc === 0 && asc === 0;
+    }
+
+    // Gate evento/tempo per Over 0.5 HT quando il collector fornisce minuto e risultato.
+    // Se il gol è già arrivato prima del 15°, il mercato è ESCLUSO: non può generare un VERDE ufficiale.
+    if (strategyKey === 'over05ht') {
+      var pMinute = n(payload.minute);
+      var pHome = n(payload.scoreHome), pAway = n(payload.scoreAway);
+      var pGoals = (pHome == null || pAway == null) ? null : pHome + pAway;
+      if (pMinute != null && pGoals != null) {
+        if (pMinute < RULES.over05ht.window.from && pGoals > 0) {
+          return {
+            level: 'ingiocabile',
+            summary: 'Gol segnato prima della finestra EasyBet • mercato escluso',
+            gateOk: false,
+            score: checks.score,
+            score100: score100(checks.score),
+            passed: checks.passed,
+            available: checks.available,
+            core: core,
+            label: wanted
+          };
+        }
+        if (pMinute < RULES.over05ht.window.from && pGoals === 0) {
+          return {
+            level: 'attendi',
+            summary: 'Prima della finestra operativa 15’–30’',
+            gateOk: false,
+            score: checks.score,
+            score100: score100(checks.score),
+            passed: checks.passed,
+            available: checks.available,
+            core: core,
+            label: wanted
+          };
+        }
+        if (pGoals > 0) {
+          return {
+            level: 'chiusa',
+            summary: 'Gol già segnato • condizione Over 0.5 HT già raggiunta',
+            gateOk: false,
+            score: checks.score,
+            score100: score100(checks.score),
+            passed: checks.passed,
+            available: checks.available,
+            core: core,
+            label: wanted
+          };
+        }
+        if (pMinute > RULES.over05ht.window.to) {
+          return {
+            level: 'rosso',
+            summary: 'Finestra Over 0.5 HT superata senza ingresso',
+            gateOk: false,
+            score: checks.score,
+            score100: score100(checks.score),
+            passed: checks.passed,
+            available: checks.available,
+            core: core,
+            label: wanted
+          };
+        }
+      }
     }
 
     var greenAt = strategyKey === 'layx' ? RULES.layx.state.green : strategyKey === 'backfav' ? RULES.backfav.state.green : rule.state.green;
