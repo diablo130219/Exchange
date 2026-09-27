@@ -1250,6 +1250,149 @@ body:not([data-theme="light"]) .la-proof-chip{background:#20242a;color:#c8d0d8;b
 }
 </style>
 
+
+
+<style id="easybet-fullscreen-v1">
+/* ==========================================================
+   EasyBet — FULL SCREEN DESKTOP LAYOUT
+   Solo intervento grafico/layout. Nessuna logica applicativa.
+   ========================================================== */
+
+/* Il sito usa davvero tutta la viewport, lasciando solo un piccolo respiro. */
+.page-shell{
+  width:calc(100vw - 32px)!important;
+  max-width:none!important;
+  margin:10px 16px 28px!important;
+  border-radius:28px 28px 0 0!important;
+}
+
+/* Barra superiore più ariosa ma senza diventare alta. */
+.topbar{
+  grid-template-columns:minmax(210px,260px) minmax(520px,1fr) minmax(220px,300px)!important;
+  padding-left:30px!important;
+  padding-right:30px!important;
+}
+.nav{gap:30px!important}
+
+/* Hero panoramico: mantiene l'identità ma lascia vedere prima i contenuti. */
+.hero img{
+  height:clamp(270px,18vw,340px)!important;
+  object-position:center 50%!important;
+}
+
+/* Corpo pagina full width con margini coerenti. */
+.section{
+  width:100%!important;
+  padding:18px 28px 38px!important;
+}
+.section-head{padding-top:10px!important}
+
+/* Tutte le griglie partita occupano la larghezza disponibile. */
+.grid:not(.home-history):not(.pronostici-summary-mode){
+  width:100%!important;
+  max-width:none!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  justify-content:stretch!important;
+  gap:16px!important;
+}
+.grid:not(.home-history):not(.pronostici-summary-mode)>.card{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+
+/* LIVE: stesso linguaggio visivo delle altre sezioni. */
+.grid.live-mode{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:16px!important;
+}
+
+/* Partite terminate: 5 per riga sui desktop ampi. */
+#grid.home-history .history-section .date-group-grid,
+#grid.home-history details.history-archive .date-group-grid{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:16px!important;
+}
+
+/* Le card possono stringersi senza tagliare i nomi. */
+.card{min-width:0!important}
+.card .league,
+.card .team-name{overflow-wrap:anywhere!important;word-break:normal!important}
+.card .matchup{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important}
+
+/* Pronostici: sono quattro strategie, quindi quattro colonne uguali a tutta larghezza. */
+#grid.pronostici-summary-mode>.pronostici-summary-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:18px!important;
+}
+
+/* Dossier/dettaglio pronostici: più densità sui monitor grandi. */
+.grid.pronostici-detail-mode{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:16px!important;
+}
+
+/* Barre di ricerca e toolbar respirano meglio su desktop. */
+.live-searchbox{width:min(560px,100%)!important}
+
+/* Desktop medio: 4 colonne. */
+@media(max-width:1599px){
+  .grid:not(.home-history):not(.pronostici-summary-mode),
+  .grid.live-mode,
+  .grid.pronostici-detail-mode,
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive .date-group-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+  .hero img{height:300px!important}
+}
+
+/* Laptop / tablet landscape: 3 colonne. */
+@media(max-width:1199px){
+  .page-shell{width:calc(100vw - 20px)!important;margin:8px 10px 20px!important}
+  .topbar{grid-template-columns:1fr auto auto!important;padding-left:18px!important;padding-right:18px!important}
+  .section{padding-left:18px!important;padding-right:18px!important}
+  .grid:not(.home-history):not(.pronostici-summary-mode),
+  .grid.live-mode,
+  .grid.pronostici-detail-mode,
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive .date-group-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #grid.pronostici-summary-mode>.pronostici-summary-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
+/* Tablet portrait: 2 colonne. */
+@media(max-width:899px){
+  .page-shell{width:calc(100vw - 16px)!important;margin:8px auto 20px!important}
+  .section{padding:12px 14px 28px!important}
+  .hero img{height:280px!important}
+  .grid:not(.home-history):not(.pronostici-summary-mode),
+  .grid.live-mode,
+  .grid.pronostici-detail-mode,
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive .date-group-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
+/* Smartphone: una sola colonna, niente margini artificiali. */
+@media(max-width:639px){
+  .page-shell{width:100%!important;margin:0!important;border-radius:0!important}
+  .hero img{height:220px!important}
+  .grid:not(.home-history):not(.pronostici-summary-mode),
+  .grid.live-mode,
+  .grid.pronostici-detail-mode,
+  #grid.home-history .history-section .date-group-grid,
+  #grid.home-history details.history-archive .date-group-grid,
+  #grid.pronostici-summary-mode>.pronostici-summary-grid{
+    grid-template-columns:1fr!important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="page-shell">
