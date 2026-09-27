@@ -813,6 +813,10 @@ app.post('/api/matches/:id/lifecycle', async (req, res) => {
         [now, level || 'verde', Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null, id]
       );
       if (!rows[0]) return res.status(404).json({ error: 'Partita non trovata.' });
+      if ((level || 'verde') === 'verde') {
+        const resultForSnapshot = { level: 'verde', score100: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null, summary: String((req.body || {}).summary || '') };
+        await saveSignalSnapshot(rows[0], resultForSnapshot, (req.body || {}).snapshot || {}, String((req.body || {}).source || 'analyzer'), now);
+      }
       return res.json(matchOut(rows[0]));
     }
     return res.status(400).json({ error: 'Evento lifecycle non valido.' });
@@ -867,6 +871,76 @@ function numOrNull(v) {
   return v === null || v === undefined || v === '' || isNaN(n) ? null : n;
 }
 
+function scorePairFromAny(value) {
+  if (value && typeof value === 'object') {
+    const h = numOrNull(value.home ?? value.homeScore ?? value.scoreHome);
+    const a = numOrNull(value.away ?? value.awayScore ?? value.scoreAway);
+    if (h !== null || a !== null) return [h, a];
+  }
+  const m = String(value == null ? '' : value).match(/(\d+)\s*[-:]\s*(\d+)/);
+  return m ? [Number(m[1]), Number(m[2])] : [null, null];
+}
+
+function pairFromSnapshot(obj, key) {
+  const v = obj && obj[key];
+  if (Array.isArray(v)) return [numOrNull(v[0]), numOrNull(v[1])];
+  if (v && typeof v === 'object') return [numOrNull(v.home ?? v[0]), numOrNull(v.away ?? v[1])];
+  return [null, null];
+}
+
+async function saveSignalSnapshot(match, result, snapshot, source, createdAt) {
+  if (!match || !match.id || !result || String(result.level || '').toLowerCase() !== 'verde') return null;
+  const snap = snapshot || {};
+  const scorePair = scorePairFromAny(snap.score || { home: snap.scoreHome, away: snap.scoreAway });
+  const xg = pairFromSnapshot(snap, 'xg'), sot = pairFromSnapshot(snap, 'sot'), shots = pairFromSnapshot(snap, 'shots');
+  const chances = pairFromSnapshot(snap, 'chances'), boxshots = pairFromSnapshot(snap, 'boxshots'), touches = pairFromSnapshot(snap, 'touches');
+  const strategy = String(match.live_strategy || match.tipo_giocata || result.label || '').trim();
+  const level = 'verde';
+  const at = Number(createdAt) || Date.now();
+  const vals = [
+    newId(), match.id, at, strategy, level, result.score100 == null ? null : Number(result.score100),
+    numOrNull(snap.minute), scorePair[0], scorePair[1],
+    xg[0], xg[1], sot[0], sot[1], shots[0], shots[1], chances[0], chances[1],
+    boxshots[0], boxshots[1], touches[0], touches[1], String(source || snap.source || '').trim(), String(result.summary || snap.summary || '').trim()
+  ];
+  const { rows } = await pool.query(`
+    INSERT INTO signal_snapshots (
+      id, match_id, created_at, strategy, level, score100, minute, score_home, score_away,
+      xg_home, xg_away, sot_home, sot_away, shots_home, shots_away, chances_home, chances_away,
+      boxshots_home, boxshots_away, touches_home, touches_away, source, summary
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+    ON CONFLICT (match_id, strategy, level) DO NOTHING
+    RETURNING *
+  `, vals);
+  return rows[0] || null;
+}
+
+function signalSnapshotOut(row) {
+  if (!row) return null;
+  return {
+    id: row.id, matchId: row.match_id, createdAt: Number(row.created_at), strategy: row.strategy || '', level: row.level || '',
+    score100: row.score100 == null ? null : Number(row.score100), minute: row.minute == null ? null : Number(row.minute),
+    scoreHome: row.score_home == null ? null : Number(row.score_home), scoreAway: row.score_away == null ? null : Number(row.score_away),
+    xg: [row.xg_home == null ? null : Number(row.xg_home), row.xg_away == null ? null : Number(row.xg_away)],
+    sot: [row.sot_home == null ? null : Number(row.sot_home), row.sot_away == null ? null : Number(row.sot_away)],
+    shots: [row.shots_home == null ? null : Number(row.shots_home), row.shots_away == null ? null : Number(row.shots_away)],
+    chances: [row.chances_home == null ? null : Number(row.chances_home), row.chances_away == null ? null : Number(row.chances_away)],
+    boxshots: [row.boxshots_home == null ? null : Number(row.boxshots_home), row.boxshots_away == null ? null : Number(row.boxshots_away)],
+    touches: [row.touches_home == null ? null : Number(row.touches_home), row.touches_away == null ? null : Number(row.touches_away)],
+    source: row.source || '', summary: row.summary || ''
+  };
+}
+
+app.get('/api/matches/:id/signal-snapshots', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM signal_snapshots WHERE match_id = $1 ORDER BY created_at ASC', [req.params.id]);
+    res.json(rows.map(signalSnapshotOut));
+  } catch (err) {
+    console.error('signal snapshots:', err);
+    res.status(500).json({ error: 'Errore nel recupero degli snapshot del segnale.' });
+  }
+});
+
 app.post('/api/live-stats', async (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   try {
@@ -889,7 +963,8 @@ app.post('/api/live-stats', async (req, res) => {
       boxshotsHome: numOrNull(b.boxshotsHome),
       boxshotsAway: numOrNull(b.boxshotsAway),
       touchesHome: numOrNull(b.touchesHome),
-      touchesAway: numOrNull(b.touchesAway)
+      touchesAway: numOrNull(b.touchesAway),
+      minute: numOrNull(b.minute)
     };
 
     const { rows } = await pool.query(
@@ -910,6 +985,11 @@ app.post('/api/live-stats', async (req, res) => {
     );
 
     if (result.level === 'verde' && result.gateOk) {
+      await saveSignalSnapshot(match, result, {
+        minute: payload.minute, scoreHome: payload.scoreHome, scoreAway: payload.scoreAway,
+        xg: [payload.xgHome, payload.xgAway], sot: [payload.sotHome, payload.sotAway], shots: [payload.shotsHome, payload.shotsAway],
+        chances: [payload.chancesHome, payload.chancesAway], boxshots: [payload.boxshotsHome, payload.boxshotsAway], touches: [payload.touchesHome, payload.touchesAway]
+      }, 'live-stats', lifecycleNow);
       const league = match.campionato ? ' (' + escapeHtmlLite(match.campionato) + ')' : '';
       const tipo = match.tipo_giocata ? escapeHtmlLite(match.tipo_giocata) : '—';
       const punteggio = (payload.scoreHome !== null && payload.scoreAway !== null)

@@ -127,6 +127,38 @@ async function migrate() {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_live_started_at ON matches (live_started_at);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_signal_first_at ON matches (signal_first_at);`);
 
+  // --- STEP 7: snapshot del segnale VERDE ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS signal_snapshots (
+      id TEXT PRIMARY KEY,
+      match_id TEXT NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+      created_at BIGINT NOT NULL,
+      strategy TEXT NOT NULL DEFAULT '',
+      level TEXT NOT NULL DEFAULT 'verde',
+      score100 INTEGER,
+      minute INTEGER,
+      score_home INTEGER,
+      score_away INTEGER,
+      xg_home DOUBLE PRECISION,
+      xg_away DOUBLE PRECISION,
+      sot_home DOUBLE PRECISION,
+      sot_away DOUBLE PRECISION,
+      shots_home DOUBLE PRECISION,
+      shots_away DOUBLE PRECISION,
+      chances_home DOUBLE PRECISION,
+      chances_away DOUBLE PRECISION,
+      boxshots_home DOUBLE PRECISION,
+      boxshots_away DOUBLE PRECISION,
+      touches_home DOUBLE PRECISION,
+      touches_away DOUBLE PRECISION,
+      source TEXT NOT NULL DEFAULT '',
+      summary TEXT NOT NULL DEFAULT '',
+      UNIQUE (match_id, strategy, level)
+    );
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_signal_snapshots_match_id ON signal_snapshots (match_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_signal_snapshots_created_at ON signal_snapshots (created_at DESC);`);
+
   // --- Stemmi squadre (cache per le pagine schede) ---
   await pool.query(`
     CREATE TABLE IF NOT EXISTS team_crests (
