@@ -1,31 +1,29 @@
-# EasyBet — Step 28
+# EasyBet — Step 30
 
-Correzione completa della logica Over 0.5 HT quando il gol arriva prima della finestra operativa.
+Correzione Over 1.5 FT: un gol non può trasformare automaticamente `ATTENDI` in `VERDE`.
 
-## Nuovo comportamento Over 0.5 HT
+## Nuova regola
+Se Over 1.5 FT NON era già VERDE prima del primo gol:
 
-- Prima del 15' e risultato 0-0 → `ATTENDI`
-- Prima del 15' ma è già stato segnato almeno un gol → `GOL PRE-FINESTRA`
-- Tra 15' e 30', 0-0 → normale valutazione della strategia
-- Se il gol è già avvenuto quando si apre/aggiorna l'analisi → `GOL GIÀ SEGNATO`
-- Dopo il 30' sullo 0-0 → `NO BET`
+1. quando arriva il gol, EasyBet passa a `RIVALUTA POST-GOL`;
+2. aspetta almeno 4 minuti dal gol;
+3. dopo i 4 minuti richiede nuova produzione offensiva costruita DOPO il gol:
+   - +0.12 xG, oppure
+   - +1 tiro in porta, oppure
+   - +2 tiri totali;
+4. soltanto dopo questa conferma il normale motore può tornare a produrre un VERDE.
 
-Un gol segnato prima della finestra non viene mai trasformato in VERDE ufficiale e non viene contato come segnale EasyBet.
+Se il segnale era già VERDE prima del gol, il primo segnale resta valido e non viene annullato.
+
+## Frontend
+La protezione funziona sia in inserimento manuale sia con GoalDir usando la memoria locale della partita.
 
 ## Backend
-Anche `/api/live-stats` applica lo stesso gate se riceve minuto e risultato, quindi un gol anticipato non può generare per errore uno snapshot o un alert VERDE.
+`/api/live-stats` applica la stessa protezione in modo persistente.
+Sono aggiunte colonne automatiche su Neon per:
+- ultimo numero di gol osservato;
+- minuto del gol che ha avviato la rivalutazione;
+- minuto minimo di rivalutazione;
+- baseline xG/SOT/tiri al momento del gol.
 
-## Dashboard
-Le partite con mercato già consumato mostrano:
-- `ESCLUSA`, oppure
-- `CHIUSA`
-
-invece di `DA CONTROLLARE`.
-
-## Partite terminate
-Se la partita viene poi marcata `non_entrata`, viene distinta come:
-- `NON ENTRATA · GOL PRE-FINESTRA`
-
-e la card spiega che il mercato è stato escluso perché l'evento era già avvenuto prima dell'ingresso.
-
-Nessuna soglia statistica della strategia è stata modificata.
+Questo impedisce anche a Telegram e agli snapshot di registrare un falso VERDE immediatamente dopo il gol.

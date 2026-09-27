@@ -1328,6 +1328,30 @@ app.get('/api/matches/:id/signal-snapshots', async (req, res) => {
   }
 });
 
+
+function liveTotals(payload) {
+  function total(a, b) {
+    return (a == null || b == null) ? null : Number(a) + Number(b);
+  }
+  return {
+    goals: total(payload.scoreHome, payload.scoreAway),
+    xg: total(payload.xgHome, payload.xgAway),
+    sot: total(payload.sotHome, payload.sotAway),
+    shots: total(payload.shotsHome, payload.shotsAway)
+  };
+}
+function postGoalPressureOk(match, totals) {
+  const dxg = (totals.xg == null || match.live_post_goal_base_xg == null) ? null : totals.xg - Number(match.live_post_goal_base_xg);
+  const dsot = (totals.sot == null || match.live_post_goal_base_sot == null) ? null : totals.sot - Number(match.live_post_goal_base_sot);
+  const dshots = (totals.shots == null || match.live_post_goal_base_shots == null) ? null : totals.shots - Number(match.live_post_goal_base_shots);
+  const available = [dxg, dsot, dshots].filter(v => v != null && Number.isFinite(v)).length;
+  const ok =
+    (dxg != null && dxg >= 0.12) ||
+    (dsot != null && dsot >= 1) ||
+    (dshots != null && dshots >= 2);
+  return { ok, available, dxg, dsot, dshots };
+}
+
 app.post('/api/live-stats', async (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   try {
@@ -1363,8 +1387,73 @@ app.post('/api/live-stats', async (req, res) => {
 
     const previousLevel = String(match.live_last_level || '').toLowerCase();
     const previousScore = match.live_last_score == null ? null : Number(match.live_last_score);
-    const result = liveStrategie.classify(match.live_strategy, payload, match);
+    const totalsNow = liveTotals(payload);
+    const prevGoals = match.live_last_goals == null ? null : Number(match.live_last_goals);
+    const currentMinute = payload.minute == null ? null : Math.round(Number(payload.minute));
+
+    let postGoalJustStarted = false;
+    if (
+      match.live_strategy === 'over15ft' &&
+      !match.signal_first_at &&
+      !match.live_alert_sent &&
+      totalsNow.goals === 1 &&
+      currentMinute != null &&
+      currentMinute >= 25 &&
+      previousLevel !== 'verde' &&
+      (
+        prevGoals === 0 ||
+        (prevGoals == null && !!match.live_last_level && match.live_post_goal_minute == null)
+      )
+    ) {
+      postGoalJustStarted = true;
+      match.live_post_goal_minute = currentMinute;
+      match.live_post_goal_hold_until = currentMinute + 4;
+      match.live_post_goal_base_xg = totalsNow.xg;
+      match.live_post_goal_base_sot = totalsNow.sot;
+      match.live_post_goal_base_shots = totalsNow.shots;
+      await pool.query(
+        `UPDATE matches SET
+           live_post_goal_minute = $2,
+           live_post_goal_hold_until = $3,
+           live_post_goal_base_xg = $4,
+           live_post_goal_base_sot = $5,
+           live_post_goal_base_shots = $6
+         WHERE id = $1`,
+        [match.id, currentMinute, currentMinute + 4, totalsNow.xg, totalsNow.sot, totalsNow.shots]
+      );
+    }
+
+    let result = liveStrategie.classify(match.live_strategy, payload, match);
     if (result.error) return res.json({ sent: false, reason: result.error });
+
+    // Over 1.5 FT: se prima del gol non c'era ancora un VERDE ufficiale,
+    // il gol non può trasformare immediatamente ATTENDI -> VERDE.
+    if (
+      match.live_strategy === 'over15ft' &&
+      !match.signal_first_at &&
+      !match.live_alert_sent &&
+      totalsNow.goals === 1 &&
+      currentMinute != null &&
+      match.live_post_goal_minute != null
+    ) {
+      const holdUntil = Number(match.live_post_goal_hold_until || (Number(match.live_post_goal_minute) + 4));
+      const pressure = postGoalPressureOk(match, totalsNow);
+      if (postGoalJustStarted || currentMinute < holdUntil) {
+        result = Object.assign({}, result, {
+          level: 'rivaluta',
+          gateOk: false,
+          summary: `Gol appena segnato • rivaluta dal ${holdUntil}° con nuova pressione`,
+          score100: result.score100
+        });
+      } else if (!pressure.ok) {
+        result = Object.assign({}, result, {
+          level: 'rivaluta',
+          gateOk: false,
+          summary: 'Attesa nuova pressione post-gol • i dati pre-gol non bastano per entrare',
+          score100: result.score100
+        });
+      }
+    }
 
     const lifecycleNow = Date.now();
     await pool.query(
@@ -1373,9 +1462,10 @@ app.post('/api/live-stats', async (req, res) => {
            live_last_summary = $2,
            live_last_updated = $3,
            live_last_score = $4,
-           live_started_at = COALESCE(live_started_at, $3)
-       WHERE id = $5`,
-      [result.level, result.summary, lifecycleNow, result.score100 == null ? null : Number(result.score100), match.id]
+           live_started_at = COALESCE(live_started_at, $3),
+           live_last_goals = $5
+       WHERE id = $6`,
+      [result.level, result.summary, lifecycleNow, result.score100 == null ? null : Number(result.score100), totalsNow.goals, match.id]
     );
 
     if (result.level === 'verde' && result.gateOk) {

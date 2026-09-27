@@ -80,6 +80,14 @@ async function migrate() {
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_score INTEGER;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_notified_at BIGINT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_deterioration_alert_sent BOOLEAN NOT NULL DEFAULT false;`);
+  // --- STEP 30: protezione Over 1.5 FT dopo un gol arrivato mentre il segnale era ancora in attesa ---
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_last_goals INTEGER;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_post_goal_minute INTEGER;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_post_goal_hold_until INTEGER;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_post_goal_base_xg DOUBLE PRECISION;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_post_goal_base_sot DOUBLE PRECISION;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_post_goal_base_shots DOUBLE PRECISION;`);
+
   // Colonne di un tentativo precedente (soglie semplici tiri/occasioni/corner), non più usate:
   // rimangono nel DB se già create in precedenza ma il codice non le legge più.
 
