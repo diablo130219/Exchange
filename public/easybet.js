@@ -236,6 +236,27 @@
     return '<div class="score-detail"><div class="score-detail-head"><div><small>FASCIA SCORE</small><h4>'+esc(bucket)+'</h4><p>'+d.length+' segnali conclusi nel periodo</p></div><button type="button" data-score-detail-close>×</button></div><div class="score-detail-list">'+(d.length?d.map(function(x){var dt=x.startAt?new Date(x.startAt):null;return '<div class="score-detail-row"><div><b>'+esc((x.casa||'Casa')+' – '+(x.trasferta||'Ospite'))+'</b><span>'+esc(x.strategy||'')+' · '+esc(x.campionato||'')+' · '+(dt?dt.toLocaleDateString('it-IT'):'—')+'</span></div><div><strong>'+Number(x.score||0)+'/100</strong><span class="stats-detail-outcome '+statsOutcomeClass(x.outcome)+'">'+statsOutcomeLabel(x.outcome)+'</span></div></div>'}).join(''):'<div class="stats-empty compact">Nessuna partita.</div>')+'</div></div>';
   }
 
+
+  function minuteValidationHtml(){
+    var mv=performanceStats&&performanceStats.minuteValidation;
+    if(!mv||!Array.isArray(mv.buckets))return '';
+    var buckets=mv.buckets,has=buckets.some(function(x){return Number(x.total||0)>0});
+    if(!has)return '<div class="minute-validation-panel"><div class="minute-validation-head"><div><small>MINUTO DEL SEGNALE</small><h3>Quando entrano i segnali migliori?</h3><p>Servono snapshot conclusi con minuto registrato per iniziare l’analisi.</p></div></div><div class="stats-empty compact">Nessun campione disponibile nel periodo selezionato.</div></div>';
+    var maxEntered=Math.max.apply(null,buckets.map(function(x){return Number(x.entered||0)}).concat([1]));
+    return '<div class="minute-validation-panel">'+
+      '<div class="minute-validation-head"><div><small>STORICO PER MINUTO DI INGRESSO</small><h3>Quale finestra sta performando meglio?</h3><p>Analisi del primo VERDE ufficiale della strategia pre-match, raggruppato per minuto.</p></div><div class="minute-validation-total"><b>'+Number(mv.totalEntered||0)+'</b><span>ingressi con minuto</span></div></div>'+
+      '<div class="minute-buckets">'+buckets.map(function(x){var wr=Number(x.winRate||0),entered=Number(x.entered||0),w=Number(x.wins||0),l=Number(x.losses||0),skip=Number(x.skipped||0),bar=Math.max(4,Math.round(entered/maxEntered*100));return '<button type="button" class="minute-bucket '+performanceClass(wr)+'" data-minute-bucket="'+escAttr(x.label)+'"><div class="minute-bucket-top"><span>'+esc(x.label)+"'"+'</span><em>'+scoreSampleLabel(x.sample)+'</em></div><strong>'+wr+'%</strong><small>win rate · '+w+'V / '+l+'P</small><div class="minute-bucket-bar"><i style="width:'+bar+'%"></i></div><div class="minute-bucket-foot"><span>'+entered+' ingressi</span><span>'+skip+' non entrati</span></div></button>'}).join('')+'</div>'+
+      '<div class="minute-validation-note"><b>Come leggerlo:</b> questa vista non cambia le finestre operative delle strategie. Serve a capire, sul tuo storico reale, se i segnali nati in certe fasce di minuto stanno rendendo meglio di altri. Il campione piccolo va interpretato con cautela.</div>'+
+      minuteDetailHtml()+
+    '</div>';
+  }
+  function minuteDetailHtml(){
+    if(!minuteDetailFilter||!performanceStats||!performanceStats.minuteValidation)return '';
+    var d=performanceStats.minuteValidation.details||[],bucket=minuteDetailFilter;
+    d=d.filter(function(x){return String(x.bucket||'')===bucket});
+    return '<div class="minute-detail"><div class="minute-detail-head"><div><small>FASCIA MINUTO</small><h4>'+esc(bucket)+"'"+'</h4><p>'+d.length+' segnali conclusi nel periodo</p></div><button type="button" data-minute-detail-close>×</button></div><div class="minute-detail-list">'+(d.length?d.map(function(x){var dt=x.startAt?new Date(x.startAt):null;return '<div class="minute-detail-row"><div><b>'+esc((x.casa||'Casa')+' – '+(x.trasferta||'Ospite'))+'</b><span>'+esc(x.strategy||'')+' · '+esc(x.campionato||'')+' · '+(dt?dt.toLocaleDateString('it-IT'):'—')+'</span></div><div><strong>'+Number(x.minute||0)+"'"+(x.score==null?'':' · '+Number(x.score)+'/100')+'</strong><span class="stats-detail-outcome '+statsOutcomeClass(x.outcome)+'">'+statsOutcomeLabel(x.outcome)+'</span></div></div>'}).join(''):'<div class="stats-empty compact">Nessuna partita.</div>')+'</div></div>';
+  }
+
   function renderStats(){
     var dash=document.getElementById('statsDashboard'),grid=document.getElementById('grid');grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');grid.classList.add('view-hidden');grid.style.display='none';dash.classList.add('show');
     if(!performanceStats||!performanceStats.selected||performanceStats.selected.key!==statsPeriod){dash.innerHTML=statsPeriodButtons()+'<div class="stats-loading">Caricamento statistiche…</div>';loadPerformanceStats(false);return}
@@ -250,18 +271,21 @@
       '<div class="chart-box"><div class="chart-title">Distribuzione esiti</div><div class="chart-sub">Presa, perdita e non entrati nel periodo selezionato.</div><div class="donut-wrap"><div class="donut"><div class="donut-center"><div><strong class="num">'+total+'</strong><span>conclusi</span></div></div></div><div class="chart-legend"><div class="chart-legend-row"><span><i class="dot g"></i>Presa</span><b class="num">'+(total?Math.round(w/total*1000)/10:0)+'%</b></div><div class="chart-legend-row"><span><i class="dot r"></i>Perdita</span><b class="num">'+(total?Math.round(l/total*1000)/10:0)+'%</b></div><div class="chart-legend-row"><span><i class="dot y"></i>Non entrati</span><b class="num">'+skipRate+'%</b></div></div></div></div>'+ 
       '<div class="chart-box"><div class="chart-title">Andamento win rate</div><div class="chart-sub">Evoluzione giornaliera cumulativa sugli ingressi del periodo.</div>'+renderTrend((performanceStats.daily||[]).map(function(x){return {label:x.label,v:Number(x.winRate||0)}}))+'</div>'+ 
       scoreValidationHtml()+
+      minuteValidationHtml()+
       performanceTable('Rendimento per strategia','Ordina le colonne oppure apri una strategia per vedere le partite che compongono il dato.',performanceStats.byStrategy,'strategy')+
       performanceTable('Rendimento per campionato','Confronto per competizione nel periodo selezionato.',performanceStats.byLeague,'league')+
       '<div class="stats-note">Il win rate considera solo gli ingressi effettivi (vinte + perse). “Non entrati” resta separato, così puoi distinguere la qualità del segnale dalla frequenza con cui la strategia raggiunge le condizioni operative.</div>'+statsDetailHtml();
     dash.innerHTML=content;
   }
   function statsUiClick(e){
-    var p=e.target.closest('[data-stats-period]');if(p){statsPeriod=p.getAttribute('data-stats-period')||'30d';statsDetailFilter=null;scoreDetailFilter=null;performanceStats=null;renderStats();return}
+    var p=e.target.closest('[data-stats-period]');if(p){statsPeriod=p.getAttribute('data-stats-period')||'30d';statsDetailFilter=null;scoreDetailFilter=null;minuteDetailFilter=null;performanceStats=null;renderStats();return}
     var so=e.target.closest('[data-stats-sort]');if(so){var type=so.getAttribute('data-stats-sort'),key=so.getAttribute('data-stats-key'),cfg=statsSort[type]||{key:'total',dir:'desc'};statsSort[type]={key:key,dir:cfg.key===key&&cfg.dir==='desc'?'asc':'desc'};renderStats();return}
     var dr=e.target.closest('[data-stats-drill]');if(dr){statsDetailFilter={type:dr.getAttribute('data-stats-drill'),label:dr.getAttribute('data-stats-label')||''};renderStats();setTimeout(function(){var el=document.querySelector('.stats-detail-panel');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},20);return}
     if(e.target.closest('[data-stats-detail-close]')){statsDetailFilter=null;renderStats();return}
     var sb=e.target.closest('[data-score-bucket]');if(sb){scoreDetailFilter=sb.getAttribute('data-score-bucket')||null;renderStats();setTimeout(function(){var el=document.querySelector('.score-detail');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},20);return}
-    if(e.target.closest('[data-score-detail-close]')){scoreDetailFilter=null;renderStats()}
+    if(e.target.closest('[data-score-detail-close]')){scoreDetailFilter=null;renderStats();return}
+    var mb=e.target.closest('[data-minute-bucket]');if(mb){minuteDetailFilter=mb.getAttribute('data-minute-bucket')||null;renderStats();setTimeout(function(){var el=document.querySelector('.minute-detail');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},20);return}
+    if(e.target.closest('[data-minute-detail-close]')){minuteDetailFilter=null;renderStats()}
   }
   document.addEventListener('click',statsUiClick);
 

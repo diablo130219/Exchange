@@ -361,6 +361,104 @@ function scoreValidation(rows) {
   };
 }
 
+
+function signalMinuteBucket(minute) {
+  const n = Number(minute);
+  if (!Number.isFinite(n)) return 'N/D';
+  if (n <= 14) return '0–14';
+  if (n <= 25) return '15–25';
+  if (n <= 35) return '26–35';
+  if (n <= 45) return '36–45';
+  if (n <= 60) return '46–60';
+  if (n <= 75) return '61–75';
+  return '76+';
+}
+function signalMinuteOrder(label) {
+  return ({'0–14':0,'15–25':1,'26–35':2,'36–45':3,'46–60':4,'61–75':5,'76+':6,'N/D':7})[label] ?? 99;
+}
+function minuteValidation(rows) {
+  const map = new Map();
+  const byStrategyMap = new Map();
+  const details = [];
+
+  rows.forEach(row => {
+    const outcome = perfOutcome(row.esito_manuale);
+    const minute = row.signal_minute == null ? null : Number(row.signal_minute);
+    if (!outcome || !Number.isFinite(minute)) return;
+
+    const bucket = signalMinuteBucket(minute);
+    const strategy = perfStrategyLabel(row.tipo_giocata);
+
+    if (!map.has(bucket)) map.set(bucket, {
+      label: bucket, total: 0, entered: 0, wins: 0, losses: 0, skipped: 0, minuteSum: 0
+    });
+    const a = map.get(bucket);
+    a.total++; a.minuteSum += minute;
+    if (outcome === 'entrata_vinta') { a.wins++; a.entered++; }
+    else if (outcome === 'entrata_persa') { a.losses++; a.entered++; }
+    else if (outcome === 'non_entrata') a.skipped++;
+
+    if (!byStrategyMap.has(strategy)) byStrategyMap.set(strategy, new Map());
+    const sm = byStrategyMap.get(strategy);
+    if (!sm.has(bucket)) sm.set(bucket, {
+      label: bucket, total: 0, entered: 0, wins: 0, losses: 0, skipped: 0, minuteSum: 0
+    });
+    const sa = sm.get(bucket);
+    sa.total++; sa.minuteSum += minute;
+    if (outcome === 'entrata_vinta') { sa.wins++; sa.entered++; }
+    else if (outcome === 'entrata_persa') { sa.losses++; sa.entered++; }
+    else if (outcome === 'non_entrata') sa.skipped++;
+
+    details.push({
+      id: row.id,
+      casa: row.casa || '',
+      trasferta: row.trasferta || '',
+      campionato: row.campionato || '',
+      startAt: Number(row.start_at) || 0,
+      strategy,
+      minute: Math.round(minute),
+      bucket,
+      score: row.signal_first_score == null ? null : Math.round(Number(row.signal_first_score)),
+      quota: perfQuota(row.quota_ingresso),
+      outcome
+    });
+  });
+
+  function finish(a) {
+    return {
+      label: a.label,
+      total: a.total,
+      entered: a.entered,
+      wins: a.wins,
+      losses: a.losses,
+      skipped: a.skipped,
+      winRate: perfPct(a.wins, a.entered),
+      entryRate: perfPct(a.entered, a.total),
+      avgMinute: a.total ? Math.round((a.minuteSum / a.total) * 10) / 10 : null,
+      sample: a.entered >= 30 ? 'robusto' : a.entered >= 10 ? 'medio' : 'piccolo'
+    };
+  }
+
+  const buckets = Array.from(map.values())
+    .map(finish)
+    .sort((a, b) => signalMinuteOrder(a.label) - signalMinuteOrder(b.label));
+
+  const byStrategy = Array.from(byStrategyMap.entries()).map(([strategy, sm]) => ({
+    strategy,
+    buckets: Array.from(sm.values())
+      .map(finish)
+      .sort((a, b) => signalMinuteOrder(a.label) - signalMinuteOrder(b.label))
+  })).sort((a, b) => a.strategy.localeCompare(b.strategy));
+
+  return {
+    totalSignals: details.length,
+    totalEntered: buckets.reduce((n, x) => n + x.entered, 0),
+    buckets,
+    byStrategy,
+    details: details.sort((a, b) => b.startAt - a.startAt)
+  };
+}
+
 // ---------- public matches feed (lightweight: used by EasyBet public page) ----------
 app.get('/api/matches', async (req, res) => {
   try {
@@ -377,11 +475,20 @@ app.get('/api/matches', async (req, res) => {
 app.get('/api/performance-stats', async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT id, data, campionato, casa, trasferta, tipo_giocata, start_at, quota_ingresso, esito_manuale,
-             signal_first_at, signal_first_level, signal_first_score
-      FROM matches
-      WHERE esito_manuale IS NOT NULL AND esito_manuale <> ''
-      ORDER BY start_at ASC
+      SELECT m.id, m.data, m.campionato, m.casa, m.trasferta, m.tipo_giocata, m.start_at, m.quota_ingresso, m.esito_manuale,
+             m.signal_first_at, m.signal_first_level, m.signal_first_score,
+             ss.minute AS signal_minute
+      FROM matches m
+      LEFT JOIN LATERAL (
+        SELECT s.minute
+        FROM signal_snapshots s
+        WHERE s.match_id = m.id
+          AND LOWER(COALESCE(s.level,'')) = 'verde'
+        ORDER BY s.created_at ASC
+        LIMIT 1
+      ) ss ON TRUE
+      WHERE m.esito_manuale IS NOT NULL AND m.esito_manuale <> ''
+      ORDER BY m.start_at ASC
     `);
     const now = Date.now();
     const overallAcc = perfAccumulator('Totale');
@@ -432,7 +539,8 @@ app.get('/api/performance-stats', async (req, res) => {
       outcome: perfOutcome(row.esito_manuale) || ''
     })).sort((a,b) => b.startAt - a.startAt);
     const scoreValidationData = scoreValidation(selectedRows.filter(r => r.signal_first_at && r.signal_first_score != null));
-    res.json({ generatedAt: now, overall, periods, selected:{ key: requestedPeriod, label: selectedLabel, overall: selectedOverall }, byStrategy, byLeague, daily, details, scoreValidation: scoreValidationData });
+    const minuteValidationData = minuteValidation(selectedRows.filter(r => r.signal_first_at && r.signal_minute != null));
+    res.json({ generatedAt: now, overall, periods, selected:{ key: requestedPeriod, label: selectedLabel, overall: selectedOverall }, byStrategy, byLeague, daily, details, scoreValidation: scoreValidationData, minuteValidation: minuteValidationData });
   } catch (err) {
     console.error('performance-stats:', err);
     res.status(500).json({ error: 'Errore nel calcolo delle statistiche performance.' });
