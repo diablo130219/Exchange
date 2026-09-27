@@ -313,10 +313,26 @@ app.get('/api/performance-stats', async (req, res) => {
       last30: perfPeriod(rows, now - 30 * 86400000, 'Ultimi 30 giorni'),
       all: overall
     };
-    const byStrategy = perfGroup(rows, r => perfStrategyLabel(r.tipo_giocata));
-    const byLeague = perfGroup(rows, r => r.campionato || 'Senza campionato');
+    // Periodo selezionabile dalla pagina Statistiche.
+    // Manteniamo anche i periodi riepilogativi per compatibilità con il frontend storico.
+    const requestedPeriod = String(req.query.period || '30d').toLowerCase();
+    const nowDate = new Date(now);
+    const seasonYear = nowDate.getUTCMonth() >= 6 ? nowDate.getUTCFullYear() : nowDate.getUTCFullYear() - 1;
+    const seasonStart = Date.UTC(seasonYear, 6, 1, 0, 0, 0, 0);
+    let selectedRows = rows;
+    let selectedLabel = 'Tutto';
+    if (requestedPeriod === '7d') { selectedRows = rows.filter(r => Number(r.start_at) >= now - 7 * 86400000); selectedLabel = 'Ultimi 7 giorni'; }
+    else if (requestedPeriod === '30d') { selectedRows = rows.filter(r => Number(r.start_at) >= now - 30 * 86400000); selectedLabel = 'Ultimi 30 giorni'; }
+    else if (requestedPeriod === 'season') { selectedRows = rows.filter(r => Number(r.start_at) >= seasonStart); selectedLabel = 'Stagione ' + seasonYear + '/' + String(seasonYear + 1).slice(-2); }
+    else { selectedRows = rows; }
+
+    const selectedAcc = perfAccumulator(selectedLabel);
+    selectedRows.forEach(row => perfAdd(selectedAcc, row));
+    const selectedOverall = perfFinish(selectedAcc);
+    const byStrategy = perfGroup(selectedRows, r => perfStrategyLabel(r.tipo_giocata));
+    const byLeague = perfGroup(selectedRows, r => r.campionato || 'Senza campionato');
     const dailyMap = new Map();
-    rows.forEach(row => {
+    selectedRows.forEach(row => {
       const outcome = perfOutcome(row.esito_manuale);
       if (!outcome) return;
       const key = perfDateKeyRome(row.start_at);
@@ -324,7 +340,18 @@ app.get('/api/performance-stats', async (req, res) => {
       perfAdd(dailyMap.get(key), row);
     });
     const daily = Array.from(dailyMap.values()).map(perfFinish).sort((a,b) => a.label.localeCompare(b.label)).slice(-60);
-    res.json({ generatedAt: now, overall, periods, byStrategy, byLeague, daily });
+    const details = selectedRows.map(row => ({
+      id: row.id,
+      startAt: Number(row.start_at) || 0,
+      data: row.data || '',
+      campionato: row.campionato || '',
+      casa: row.casa || '',
+      trasferta: row.trasferta || '',
+      strategy: perfStrategyLabel(row.tipo_giocata),
+      quota: perfQuota(row.quota_ingresso),
+      outcome: perfOutcome(row.esito_manuale) || ''
+    })).sort((a,b) => b.startAt - a.startAt);
+    res.json({ generatedAt: now, overall, periods, selected:{ key: requestedPeriod, label: selectedLabel, overall: selectedOverall }, byStrategy, byLeague, daily, details });
   } catch (err) {
     console.error('performance-stats:', err);
     res.status(500).json({ error: 'Errore nel calcolo delle statistiche performance.' });

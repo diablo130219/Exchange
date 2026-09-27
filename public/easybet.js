@@ -16,7 +16,7 @@
 
   var mobileMenuBtn=document.getElementById('mobileMenuBtn');var mobileNav=document.getElementById('mobileNav');if(mobileMenuBtn&&mobileNav){mobileMenuBtn.addEventListener('click',function(){var isOpen=mobileNav.classList.toggle('open');mobileMenuBtn.setAttribute('aria-expanded',isOpen?'true':'false');mobileMenuBtn.textContent=isOpen?'✕':'☰'});mobileNav.addEventListener('click',function(e){var a=e.target.closest('a');if(a){mobileNav.classList.remove('open');mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰'}})}
   var ESITO_LABEL={entrata_vinta:'Entrati • Vinta',entrata_persa:'Entrati • Persa',non_entrata:'Non entrati'};var ESITO_ICON={entrata_vinta:'🏆',entrata_persa:'✖',non_entrata:'−'};
-  var crestCache={},matches=[],currentFilter='tutte',currentView='home',performanceStats=null,performanceStatsLoading=false;
+  var crestCache={},matches=[],currentFilter='tutte',currentView='home',performanceStats=null,performanceStatsLoading=false,statsPeriod='30d',statsSort={strategy:{key:'total',dir:'desc'},league:{key:'total',dir:'desc'}},statsDetailFilter=null;
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
   function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
   var currentPronosticiStrategy=null;
@@ -183,34 +183,62 @@
   }
   function performanceClass(v){v=Number(v)||0;return v>=70?'good':v>=55?'warn':'bad'}
   function fmtQuota(v){return v==null?'—':Number(v).toFixed(2).replace('.',',')}
-  function performanceTable(title,sub,rows){
-    rows=Array.isArray(rows)?rows:[];
-    if(!rows.length)return '<div class="stats-tablebox"><div class="chart-title">'+esc(title)+'</div><div class="chart-sub">'+esc(sub)+'</div><div class="stats-empty" style="margin-top:12px;padding:28px">Nessun dato disponibile.</div></div>';
-    return '<div class="stats-tablebox"><div class="chart-title">'+esc(title)+'</div><div class="chart-sub">'+esc(sub)+'</div><div class="stats-tablewrap"><table class="stats-table"><thead><tr><th>Voce</th><th>Tot.</th><th>Entrati</th><th>V</th><th>P</th><th>Non entr.</th><th>Ingresso %</th><th>Win rate</th><th>Quota media</th></tr></thead><tbody>'+rows.slice(0,30).map(function(r){return '<tr><td title="'+escAttr(r.label)+'">'+esc(r.label)+'</td><td>'+Number(r.total||0)+'</td><td>'+Number(r.entered||0)+'</td><td>'+Number(r.wins||0)+'</td><td>'+Number(r.losses||0)+'</td><td>'+Number(r.skipped||0)+'</td><td>'+Number(r.entryRate||0)+'%</td><td class="'+performanceClass(r.winRate)+'">'+Number(r.winRate||0)+'%</td><td>'+fmtQuota(r.avgQuota)+'</td></tr>'}).join('')+'</tbody></table></div></div>';
+  function statsOutcomeLabel(v){return v==='entrata_vinta'?'PRESA':v==='entrata_persa'?'PERDITA':v==='non_entrata'?'NON ENTRATA':'—'}
+  function statsOutcomeClass(v){return v==='entrata_vinta'?'win':v==='entrata_persa'?'loss':v==='non_entrata'?'skip':''}
+  function statsPeriodButtons(){
+    var opts=[['7d','7 giorni'],['30d','30 giorni'],['season','Stagione'],['all','Tutto']];
+    return '<div class="stats-toolbar"><div><h3>Statistiche performance</h3><p>Dati reali calcolati dagli esiti salvati. Filtra il periodo e confronta strategie e campionati.</p></div><div class="stats-period-filter">'+opts.map(function(o){return '<button type="button" class="stats-period-btn '+(statsPeriod===o[0]?'active':'')+'" data-stats-period="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div></div>';
   }
-  function performancePeriodsHtml(p){
-    p=p||{};var list=[p.today,p.last7,p.last30,p.all].filter(Boolean);
-    return '<div class="stats-performance-head"><div><h3>Storico automatico delle performance</h3><p>Aggiornato direttamente dagli esiti salvati nel database.</p></div></div><div class="stats-periods">'+list.map(function(x){return '<div class="stats-period"><span>'+esc(x.label)+'</span><strong>'+Number(x.winRate||0)+'%</strong><small>'+Number(x.wins||0)+' vinte / '+Number(x.losses||0)+' perse · '+Number(x.entryRate||0)+'% ingressi</small></div>'}).join('')+'</div>';
+  function statsSortValue(r,key){var v=key==='label'?String(r.label||'').toLowerCase():Number(r[key]||0);return v}
+  function sortedPerformanceRows(rows,type){
+    var cfg=statsSort[type]||{key:'total',dir:'desc'},a=(Array.isArray(rows)?rows:[]).slice();
+    a.sort(function(x,y){var xv=statsSortValue(x,cfg.key),yv=statsSortValue(y,cfg.key),n=(xv<yv?-1:xv>yv?1:0);return cfg.dir==='asc'?n:-n});
+    return a;
+  }
+  function statsSortArrow(type,key){var c=statsSort[type]||{};return c.key===key?(c.dir==='asc'?' ↑':' ↓'):''}
+  function performanceTable(title,sub,rows,type){
+    rows=sortedPerformanceRows(rows,type);
+    if(!rows.length)return '<div class="stats-tablebox"><div class="stats-table-head"><div><div class="chart-title">'+esc(title)+'</div><div class="chart-sub">'+esc(sub)+'</div></div></div><div class="stats-empty compact">Nessun dato disponibile nel periodo selezionato.</div></div>';
+    var heads=[['label','Voce'],['total','Tot.'],['entered','Entrati'],['wins','V'],['losses','P'],['skipped','Non entr.'],['entryRate','Ingresso %'],['winRate','Win rate'],['avgQuota','Quota media']];
+    return '<div class="stats-tablebox"><div class="stats-table-head"><div><div class="chart-title">'+esc(title)+'</div><div class="chart-sub">'+esc(sub)+'</div></div><span class="stats-click-hint">Clicca una riga per vedere le partite</span></div><div class="stats-tablewrap"><table class="stats-table"><thead><tr>'+heads.map(function(h){return '<th><button type="button" data-stats-sort="'+type+'" data-stats-key="'+h[0]+'">'+h[1]+statsSortArrow(type,h[0])+'</button></th>'}).join('')+'</tr></thead><tbody>'+rows.slice(0,40).map(function(r){return '<tr class="stats-drill-row" data-stats-drill="'+type+'" data-stats-label="'+escAttr(r.label)+'"><td title="'+escAttr(r.label)+'">'+esc(r.label)+'</td><td>'+Number(r.total||0)+'</td><td>'+Number(r.entered||0)+'</td><td>'+Number(r.wins||0)+'</td><td>'+Number(r.losses||0)+'</td><td>'+Number(r.skipped||0)+'</td><td>'+Number(r.entryRate||0)+'%</td><td class="'+performanceClass(r.winRate)+'">'+Number(r.winRate||0)+'%</td><td>'+fmtQuota(r.avgQuota)+'</td></tr>'}).join('')+'</tbody></table></div></div>';
+  }
+  function statsDetailHtml(){
+    if(!statsDetailFilter||!performanceStats)return '';
+    var d=Array.isArray(performanceStats.details)?performanceStats.details:[],type=statsDetailFilter.type,label=statsDetailFilter.label;
+    d=d.filter(function(x){return type==='strategy'?String(x.strategy||'')===label:String(x.campionato||'Senza campionato')===label});
+    return '<div class="stats-detail-panel"><div class="stats-detail-head"><div><small>'+(type==='strategy'?'STRATEGIA':'CAMPIONATO')+'</small><h3>'+esc(label)+'</h3><p>'+d.length+' partite nel periodo selezionato</p></div><button type="button" class="stats-detail-close" data-stats-detail-close>×</button></div><div class="stats-detail-list">'+(d.length?d.map(function(x){var dt=x.startAt?new Date(x.startAt):null;return '<div class="stats-detail-match"><div><b>'+esc((x.casa||'Casa')+' – '+(x.trasferta||'Ospite'))+'</b><span>'+esc(x.campionato||'Senza campionato')+' · '+(dt?dt.toLocaleDateString('it-IT'):'—')+'</span></div><div class="stats-detail-meta"><span class="stats-detail-outcome '+statsOutcomeClass(x.outcome)+'">'+statsOutcomeLabel(x.outcome)+'</span><strong>'+fmtQuota(x.quota)+'</strong></div></div>'}).join(''):'<div class="stats-empty compact">Nessuna partita.</div>')+'</div></div>';
   }
   function loadPerformanceStats(force){
-    if(performanceStatsLoading||(!force&&performanceStats))return;
+    if(performanceStatsLoading)return;
+    if(!force&&performanceStats&&performanceStats.selected&&performanceStats.selected.key===statsPeriod)return;
     performanceStatsLoading=true;
-    fetch('/api/performance-stats?ts='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(d){performanceStats=d;performanceStatsLoading=false;if(currentView==='statistiche')renderStats()}).catch(function(e){console.warn('EasyBet performance stats:',e);performanceStatsLoading=false;if(currentView==='statistiche')renderStats()});
+    fetch('/api/performance-stats?period='+encodeURIComponent(statsPeriod)+'&ts='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(d){performanceStats=d;performanceStatsLoading=false;if(currentView==='statistiche')renderStats()}).catch(function(e){console.warn('EasyBet performance stats:',e);performanceStatsLoading=false;if(currentView==='statistiche')renderStats()});
   }
   function renderStats(){
-    var s=statsData(),dash=document.getElementById('statsDashboard'),grid=document.getElementById('grid');grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');grid.classList.add('view-hidden');grid.style.display='none';dash.classList.add('show');
-    if(!s.total){dash.innerHTML='<div class="stats-empty">Appena avrai partite con esito, qui compariranno percentuali e grafici.</div>';return}
-    dash.style.setProperty('--winPct',s.winPct+'%');dash.style.setProperty('--lossPct',s.lossPct+'%');
-    dash.innerHTML='<div class="stat-box win"><div class="stat-label">Presa</div><div class="stat-value num">'+s.winPct+'%</div><div class="stat-foot">'+s.w+' pronostici vinti su '+s.total+' conclusi</div></div>'+ 
-      '<div class="stat-box loss"><div class="stat-label">Perdita</div><div class="stat-value num">'+s.lossPct+'%</div><div class="stat-foot">'+s.l+' pronostici persi su '+s.total+' conclusi</div></div>'+ 
-      '<div class="stat-box skip"><div class="stat-label">Non entrati</div><div class="stat-value num">'+s.skipPct+'%</div><div class="stat-foot">'+s.s+' partite senza ingresso</div></div>'+ 
-      '<div class="stat-box rate"><div class="stat-label">Win rate sugli ingressi</div><div class="stat-value num">'+s.hitRate+'%</div><div class="stat-foot">Calcolato solo su vinte + perse</div></div>'+ 
-      '<div class="chart-box"><div class="chart-title">Distribuzione esiti</div><div class="chart-sub">Percentuale sul totale delle partite concluse.</div><div class="donut-wrap"><div class="donut"><div class="donut-center"><div><strong class="num">'+s.total+'</strong><span>conclusi</span></div></div></div><div class="chart-legend"><div class="chart-legend-row"><span><i class="dot g"></i>Presa</span><b class="num">'+s.winPct+'%</b></div><div class="chart-legend-row"><span><i class="dot r"></i>Perdita</span><b class="num">'+s.lossPct+'%</b></div><div class="chart-legend-row"><span><i class="dot y"></i>Non entrati</span><b class="num">'+s.skipPct+'%</b></div></div></div></div>'+ 
-      '<div class="chart-box"><div class="chart-title">Andamento della presa</div><div class="chart-sub">Win rate cumulativo sulle sole partite in cui sei entrato.</div>'+renderTrend(trendSeries())+'</div>'+ 
-      '<div class="stats-note">“Presa”, “Perdita” e “Non entrati” sono calcolati sul totale dei pronostici conclusi. Il “Win rate sugli ingressi” esclude invece i non entrati, così puoi distinguere la qualità degli ingressi dalla frequenza con cui la strategia trova la quota richiesta.</div>'+
-      (performanceStats ? performancePeriodsHtml(performanceStats.periods)+performanceTable('Rendimento per strategia','Confronto automatico tra le strategie salvate nelle partite concluse.',performanceStats.byStrategy)+performanceTable('Rendimento per campionato','Campionati ordinati per numero di pronostici conclusi.',performanceStats.byLeague) : '<div class="stats-loading">Caricamento storico automatico…</div>');
-    if(!performanceStats&&!performanceStatsLoading)loadPerformanceStats(false);
+    var dash=document.getElementById('statsDashboard'),grid=document.getElementById('grid');grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');grid.classList.add('view-hidden');grid.style.display='none';dash.classList.add('show');
+    if(!performanceStats||!performanceStats.selected||performanceStats.selected.key!==statsPeriod){dash.innerHTML=statsPeriodButtons()+'<div class="stats-loading">Caricamento statistiche…</div>';loadPerformanceStats(false);return}
+    var p=performanceStats.selected.overall||{},total=Number(p.total||0),w=Number(p.wins||0),l=Number(p.losses||0),sk=Number(p.skipped||0),entered=Number(p.entered||0),winRate=Number(p.winRate||0),entryRate=Number(p.entryRate||0),skipRate=Number(p.skipRate||0);
+    dash.style.setProperty('--winPct',(total?Math.round(w/total*1000)/10:0)+'%');dash.style.setProperty('--lossPct',(total?Math.round(l/total*1000)/10:0)+'%');
+    var content=statsPeriodButtons()+'<div class="stats-period-caption"><span>Periodo selezionato</span><b>'+esc(performanceStats.selected.label||'')+'</b><em>Aggiornato automaticamente dal database</em></div>';
+    if(!total){dash.innerHTML=content+'<div class="stats-empty">Nessun pronostico concluso nel periodo selezionato.</div>';return}
+    content+='<div class="stat-box win"><div class="stat-label">Presa</div><div class="stat-value num">'+w+'</div><div class="stat-foot">'+(total?Math.round(w/total*1000)/10:0)+'% dei conclusi</div></div>'+ 
+      '<div class="stat-box loss"><div class="stat-label">Perdita</div><div class="stat-value num">'+l+'</div><div class="stat-foot">'+(total?Math.round(l/total*1000)/10:0)+'% dei conclusi</div></div>'+ 
+      '<div class="stat-box skip"><div class="stat-label">Non entrati</div><div class="stat-value num">'+sk+'</div><div class="stat-foot">'+skipRate+'% dei conclusi</div></div>'+ 
+      '<div class="stat-box rate"><div class="stat-label">Win rate ingressi</div><div class="stat-value num">'+winRate+'%</div><div class="stat-foot">'+w+' vinte su '+entered+' ingressi · '+entryRate+'% ingresso</div></div>'+ 
+      '<div class="chart-box"><div class="chart-title">Distribuzione esiti</div><div class="chart-sub">Presa, perdita e non entrati nel periodo selezionato.</div><div class="donut-wrap"><div class="donut"><div class="donut-center"><div><strong class="num">'+total+'</strong><span>conclusi</span></div></div></div><div class="chart-legend"><div class="chart-legend-row"><span><i class="dot g"></i>Presa</span><b class="num">'+(total?Math.round(w/total*1000)/10:0)+'%</b></div><div class="chart-legend-row"><span><i class="dot r"></i>Perdita</span><b class="num">'+(total?Math.round(l/total*1000)/10:0)+'%</b></div><div class="chart-legend-row"><span><i class="dot y"></i>Non entrati</span><b class="num">'+skipRate+'%</b></div></div></div></div>'+ 
+      '<div class="chart-box"><div class="chart-title">Andamento win rate</div><div class="chart-sub">Evoluzione giornaliera cumulativa sugli ingressi del periodo.</div>'+renderTrend((performanceStats.daily||[]).map(function(x){return {label:x.label,v:Number(x.winRate||0)}}))+'</div>'+ 
+      performanceTable('Rendimento per strategia','Ordina le colonne oppure apri una strategia per vedere le partite che compongono il dato.',performanceStats.byStrategy,'strategy')+
+      performanceTable('Rendimento per campionato','Confronto per competizione nel periodo selezionato.',performanceStats.byLeague,'league')+
+      '<div class="stats-note">Il win rate considera solo gli ingressi effettivi (vinte + perse). “Non entrati” resta separato, così puoi distinguere la qualità del segnale dalla frequenza con cui la strategia raggiunge le condizioni operative.</div>'+statsDetailHtml();
+    dash.innerHTML=content;
   }
+  function statsUiClick(e){
+    var p=e.target.closest('[data-stats-period]');if(p){statsPeriod=p.getAttribute('data-stats-period')||'30d';statsDetailFilter=null;performanceStats=null;renderStats();return}
+    var so=e.target.closest('[data-stats-sort]');if(so){var type=so.getAttribute('data-stats-sort'),key=so.getAttribute('data-stats-key'),cfg=statsSort[type]||{key:'total',dir:'desc'};statsSort[type]={key:key,dir:cfg.key===key&&cfg.dir==='desc'?'asc':'desc'};renderStats();return}
+    var dr=e.target.closest('[data-stats-drill]');if(dr){statsDetailFilter={type:dr.getAttribute('data-stats-drill'),label:dr.getAttribute('data-stats-label')||''};renderStats();setTimeout(function(){var el=document.querySelector('.stats-detail-panel');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},20);return}
+    if(e.target.closest('[data-stats-detail-close]')){statsDetailFilter=null;renderStats()}
+  }
+  document.addEventListener('click',statsUiClick);
 
   function renderStrategies(){
     var dash=document.getElementById('statsDashboard'),grid=document.getElementById('grid'),board=document.getElementById('strategiesBoard');
