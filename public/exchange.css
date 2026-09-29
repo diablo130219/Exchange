@@ -89,3 +89,47 @@ body.exchange-fullscreen .exchange-board.show .ex-app-shell{
 @media(max-width:560px){
   body.exchange-fullscreen #partite{padding-left:10px;padding-right:10px}
 }
+
+/* STEP38: colori immediati per esiti e importi firmati */
+.exchange-board .ex-table td.pos,
+.exchange-board .ex-table td.ex-signed-amount.pos{
+  color:#178a4c!important;
+  font-weight:900!important;
+}
+.exchange-board .ex-table td.neg,
+.exchange-board .ex-table td.ex-signed-amount.neg{
+  color:#c92f36!important;
+  font-weight:900!important;
+}
+.exchange-board .ex-outcome span{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:74px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+.exchange-board .ex-outcome.is-reached span{
+  color:#137c43!important;
+  background:#e4f7eb!important;
+  border:1px solid #8fd0aa!important;
+}
+.exchange-board .ex-outcome.is-stop span{
+  color:#ba252d!important;
+  background:#fde8e9!important;
+  border:1px solid #e4a0a4!important;
+}
+.exchange-board .ex-cell.pos-input{
+  color:#178a4c!important;
+  font-weight:900!important;
+  background:#f0fbf4!important;
+  border-color:#b8dfc7!important;
+}
+.exchange-board .ex-cell.neg-input{
+  color:#c92f36!important;
+  font-weight:900!important;
+  background:#fff1f1!important;
+  border-color:#efc3c6!important;
+}
