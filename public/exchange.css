@@ -133,3 +133,23 @@ body.exchange-fullscreen .exchange-board.show .ex-app-shell{
   background:#fff1f1!important;
   border-color:#efc3c6!important;
 }
+
+/* STEP39: Punta verde, Banca rosso nella tabella Operazioni */
+.exchange-board .ex-table .ex-side.punta{
+  color:#137c43!important;
+  background:#e4f7eb!important;
+  border-color:#8fd0aa!important;
+  font-weight:900!important;
+}
+.exchange-board .ex-table .ex-side.banca{
+  color:#ba252d!important;
+  background:#fde8e9!important;
+  border-color:#e4a0a4!important;
+  font-weight:900!important;
+}
+.exchange-board .ex-table .ex-side.trading{
+  color:#8a6200!important;
+  background:#fff3cf!important;
+  border-color:#dfc26c!important;
+  font-weight:900!important;
+}
