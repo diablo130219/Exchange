@@ -49,3 +49,8 @@ Funzioni principali:
 - Pulsante “IMPORTA CSV BETFLAG” direttamente nella sidebar del Diario Exchange, senza dover aprire la scheda Operazioni.
 - Usa lo stesso parser `MovimentiChiusi.csv` già presente e mostra l'anteprima prima dell'importazione.
 - Il caricamento è disponibile da qualunque scheda del Diario finché esiste un periodo attivo.
+
+## STEP36 – Import Betflag iniziale + palette oro/avorio
+- Import CSV Betflag disponibile anche quando non esiste ancora alcun periodo.
+- Se il CSV viene caricato dalla schermata iniziale, EasyBet legge l'intervallo date, precompila il primo periodo e dopo il salvataggio apre automaticamente l'anteprima import.
+- Diario Exchange forzato sulla palette EasyBet oro/avorio, indipendentemente dal tema globale, eliminando pannelli e pulsanti neri.

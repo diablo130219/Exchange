@@ -8,3 +8,49 @@ html[data-theme="light"] .exchange-board{--ex-bg:#f4f0e7;--ex-panel:#fff;--ex-pa
 /* STEP35: import Betflag sempre accessibile dal Diario */
 .ex-sidebar .ex-betflag-main{margin-top:8px;box-shadow:0 7px 20px rgba(212,166,0,.22);font-weight:900;letter-spacing:.02em}
 .ex-sidebar .ex-betflag-main::before{content:'CSV';display:inline-grid;place-items:center;min-width:28px;height:20px;margin-right:7px;border-radius:5px;background:rgba(0,0,0,.2);font-size:9px;letter-spacing:.08em}
+
+/* STEP36: palette fissa EasyBet oro / avorio + import Betflag anche senza periodo */
+.exchange-board{
+  --ex-bg:#f7f0df;--ex-panel:#fffaf0;--ex-panel2:#f3e8cf;
+  --ex-line:rgba(176,128,21,.28);--ex-line2:rgba(119,86,25,.16);
+  --ex-text:#4a3815;--ex-muted:#817255;--ex-gold:#d7a514;--ex-gold2:#b78408;
+  --ex-input:#fffdf8;color:var(--ex-text)!important;
+}
+.ex-app-shell{background:linear-gradient(135deg,#fffaf0,#f1e5ca)!important;box-shadow:0 24px 70px rgba(118,83,16,.18)!important}
+.ex-sidebar{background:linear-gradient(180deg,#fffdf7 0%,#f0e4ca 100%)!important;border-right-color:var(--ex-line)!important}
+.ex-content{background:radial-gradient(circle at 75% 0%,rgba(216,166,20,.10),transparent 30%),#fbf5e8!important}
+.ex-brand,.ex-period-item,.ex-top-tiles>div,.ex-summary-tiles>div,.ex-quick,.ex-op-card,.ex-chart-card,.ex-calc-grid article,.ex-modal,.ex-import-summary>div{
+  background:linear-gradient(180deg,#fffdf8,#f8efd9)!important;color:var(--ex-text)!important;
+}
+.ex-brand{box-shadow:0 10px 28px rgba(135,95,13,.13)!important}
+.ex-period-item.active{background:linear-gradient(90deg,#fff1bb,#fffaf0)!important;border-color:rgba(188,137,14,.5)!important}
+.ex-btn,.ex-file-btn,.ex-row-btn{background:linear-gradient(180deg,#fffaf0,#eadbbd)!important;color:#6d5317!important;border-color:rgba(169,124,24,.28)!important;text-shadow:none!important}
+.ex-btn:hover,.ex-file-btn:hover,.ex-row-btn:hover{color:#4e390c!important;border-color:#c89a27!important;background:#fff4d2!important}
+.ex-btn.primary,.ex-file-btn.primary{background:linear-gradient(180deg,#f1ca4e,#d8a412)!important;color:#4b3508!important;border-color:#c49416!important;box-shadow:0 6px 18px rgba(190,137,12,.18)!important}
+.ex-btn.danger,.ex-row-btn.danger{background:#fff4e4!important}
+.ex-tabs{background:#efe2c7!important;border-color:var(--ex-line)!important}
+.ex-tabs button{color:#796a4d!important}
+.ex-tabs button.active{background:linear-gradient(180deg,#fff8df,#f6e4a9)!important;color:#8a6200!important;box-shadow:inset 0 0 0 1px rgba(186,134,11,.25)!important}
+.ex-field input,.ex-field select,.ex-commission input,.ex-stats-toolbar select,.ex-ops-toolbar select,.ex-modal textarea{
+  background:#fffdf8!important;color:#4a3815!important;border-color:rgba(129,92,22,.20)!important;
+}
+.ex-banner,.ex-reading,.ex-generic-preview,.ex-calc-result,.ex-side{background:#fff8e8!important;color:#695938!important}
+.ex-table-wrap{background:#fffdf8!important;border-color:var(--ex-line2)!important}
+.ex-table th{background:#efe1c2!important;color:#6b5730!important;border-bottom-color:var(--ex-line)!important}
+.ex-table td{color:#5c5038!important;border-bottom-color:rgba(112,80,20,.08)!important}
+.ex-table tr:hover td{background:rgba(221,174,54,.08)!important}
+.ex-cell:focus{background:#fff2ca!important}
+.ex-month .days i{background:#f0e2c5!important;color:#6f6043!important}
+.ex-overlay{background:rgba(103,73,18,.38)!important;backdrop-filter:blur(6px) saturate(.8)!important}
+.ex-modal{border-color:rgba(190,138,14,.35)!important;box-shadow:0 30px 90px rgba(113,78,13,.28)!important}
+.ex-modal-head>button{background:#f5e7c9!important;color:#765c23!important;border-color:var(--ex-line2)!important}
+.ex-main-empty{color:#7e6e50!important;background:radial-gradient(circle at center,rgba(224,184,77,.09),transparent 44%)}
+.ex-main-empty h2{color:#4b3917!important}
+.ex-main-empty b{color:#8b6509!important}
+.ex-empty-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.ex-main-empty small{display:block;margin-top:12px;color:#9b8a66;font-size:.60rem}
+.ex-sidebar .ex-betflag-main::before{background:rgba(255,250,238,.5)!important;color:#6b4d06!important;border:1px solid rgba(111,79,10,.12)}
+.ex-head-chips span{background:#f8edd5!important;color:#735f39!important;border-color:var(--ex-line)!important}
+.ex-side-title,.ex-field span,.ex-top-tiles small,.ex-summary-tiles small,.ex-chart-card>b,.ex-legend,.ex-hint,.ex-commission,.ex-ops-toolbar label,.ex-stats-toolbar label,.ex-period-info,.ex-modal p,.ex-check{color:#817154!important}
+.ex-disclaimer{color:#9b8a69!important}
+@media(max-width:560px){.ex-empty-actions{flex-direction:column;width:min(100%,320px)}.ex-empty-actions .ex-btn{width:100%}}
