@@ -161,6 +161,15 @@ async function migrate() {
     );
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_exchange_periods_start_date ON exchange_periods (start_date DESC);`);
+
+  // --- Masaniello Studio integrato (stato JSON privato area admin) ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS masaniello_state (
+      id TEXT PRIMARY KEY,
+      state JSONB NOT NULL,
+      updated_at BIGINT NOT NULL
+    );
+  `);
 }
 
 module.exports = { pool, migrate };

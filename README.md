@@ -60,3 +60,11 @@ Funzioni principali:
 - Diario Exchange espanso a tutta la larghezza della finestra quando si apre la voce di menu.
 - Header e banner EasyBet restano invariati e centrati alla larghezza originale.
 - Layout Exchange continua a essere responsive su tablet e mobile.
+
+## STEP40 — Masaniello Studio integrato
+- Nuova pagina `Masaniello` nel menu pubblico EasyBet, area privata admin.
+- Grafica oro/avorio coerente con Diario Exchange e layout full-width sotto il banner EasyBet invariato.
+- Porting web del motore principale del software desktop: N eventi / K vittorie, calcolo stake, obiettivo, matrice, quote pianificate, fino a 5 giocate in attesa, esiti vinta/persa/nulla, cicli e storico.
+- Schede: Gioca, Piano e matrice, Confronta piani, Simulatore, Statistiche, Metodi a confronto, Storico e backup.
+- Persistenza PostgreSQL tramite `masaniello_state`, autosalvataggio e import/export JSON.
+- Protezione anti-reset del form durante refresh automatici EasyBet.

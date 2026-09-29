@@ -838,6 +838,42 @@ app.get('/api/exchange/export.csv', requireSameSiteAdmin, async (req, res) => {
   }
 });
 
+// ---------- Masaniello Studio (privato, integrato in EasyBet) ----------
+function masanielloNormalizeState(body) {
+  const b = body && typeof body === 'object' ? body : {};
+  const items = Array.isArray(b.items) ? b.items.slice(0, 200) : [];
+  const selected = String(b.selected || '').slice(0, 80);
+  const settings = b.settings && typeof b.settings === 'object' && !Array.isArray(b.settings) ? b.settings : {};
+  return { app: 'MasanielloStudio/1-web', selected, items, settings };
+}
+
+app.get('/api/masaniello/state', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT state, updated_at FROM masaniello_state WHERE id='main'");
+    const state = rows[0] && rows[0].state ? rows[0].state : { app:'MasanielloStudio/1-web', selected:'', items:[], settings:{} };
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ state, updatedAt: rows[0] ? Number(rows[0].updated_at) || 0 : 0 });
+  } catch (err) {
+    console.error('masaniello state:', err);
+    res.status(500).json({ error: 'Errore nel caricamento di Masaniello Studio.' });
+  }
+});
+
+app.put('/api/masaniello/state', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const state = masanielloNormalizeState(req.body);
+    const now = Date.now();
+    await pool.query(`INSERT INTO masaniello_state (id, state, updated_at)
+                      VALUES ('main',$1::jsonb,$2)
+                      ON CONFLICT (id) DO UPDATE SET state=EXCLUDED.state, updated_at=EXCLUDED.updated_at`,
+                     [JSON.stringify(state), now]);
+    res.json({ state, updatedAt: now });
+  } catch (err) {
+    console.error('masaniello save:', err);
+    res.status(500).json({ error: 'Impossibile salvare Masaniello Studio.' });
+  }
+});
+
 // ---------- GoalDir / BSD live statistics (free REST API) ----------
 const GOALDIR_API_KEY = String(process.env.GOALDIR_API_KEY || process.env.BSD_API_KEY || '').trim();
 const GOALDIR_BASE = 'https://sports.bzzoiro.com/api/v2';

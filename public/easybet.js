@@ -125,13 +125,14 @@
   function matchesView(m){
     if(currentView==='pronostici') return isUpcoming(m);
     if(currentView==='live') return isLive(m);
-    if(currentView==='statistiche'||currentView==='strategie'||currentView==='consigli'||currentView==='exchange') return false;
+    if(currentView==='statistiche'||currentView==='strategie'||currentView==='consigli'||currentView==='exchange'||currentView==='masaniello') return false;
     return isFinished(m);
   }
   function matchesOutcomeFilter(m){return currentFilter==='tutte'||(m.esitoManuale||'')===currentFilter}
   function updateViewUI(){
     var title=document.getElementById('sectionTitle'),sub=document.getElementById('sectionSubtitle'),toolbar=document.getElementById('toolbar'),liveSearchBar=document.getElementById('liveSearchBar');
     document.body.classList.toggle('exchange-fullscreen',currentView==='exchange');
+    document.body.classList.toggle('masaniello-fullscreen',currentView==='masaniello');
     if(liveSearchBar) liveSearchBar.style.display=currentView==='live'?'flex':'none';
     document.querySelectorAll('[data-view]').forEach(function(a){a.classList.toggle('active',a.getAttribute('data-view')===currentView)});
     if(currentView==='pronostici'){
@@ -157,6 +158,10 @@
     }else if(currentView==='exchange'){
       title.textContent='DIARIO EXCHANGE';
       sub.textContent='CASSA, SESSIONI, OPERAZIONI, DISCIPLINA E PERFORMANCE';
+      toolbar.style.display='none';
+    }else if(currentView==='masaniello'){
+      title.textContent='MASANIELLO';
+      sub.textContent='GESTIONE CASSA, STAKE, CICLI, PIANO, SIMULAZIONI E STATISTICHE';
       toolbar.style.display='none';
     }else{
       title.textContent='PARTITE TERMINATE';
@@ -475,8 +480,9 @@
   function render(){
     updateViewUI();
     renderLivePriorityDashboard();
-    var grid=document.getElementById('grid'),dash=document.getElementById('statsDashboard'),board=document.getElementById('strategiesBoard'),advice=document.getElementById('adviceBoard'),exchangeBoard=document.getElementById('exchangeBoard');
+    var grid=document.getElementById('grid'),dash=document.getElementById('statsDashboard'),board=document.getElementById('strategiesBoard'),advice=document.getElementById('adviceBoard'),exchangeBoard=document.getElementById('exchangeBoard'),masanielloBoard=document.getElementById('masanielloBoard');
     if(exchangeBoard&&currentView!=='exchange')exchangeBoard.classList.remove('show');
+    if(masanielloBoard&&currentView!=='masaniello')masanielloBoard.classList.remove('show');
     board.classList.remove('show');board.innerHTML='';advice.classList.remove('show');advice.innerHTML='';
     if(currentView==='statistiche'){renderStats();return}
     if(currentView==='strategie'){renderStrategies();return}
@@ -487,7 +493,14 @@
       if(window.EasyBetExchange&&window.EasyBetExchange.render)window.EasyBetExchange.render();
       return;
     }
+    if(currentView==='masaniello'){
+      dash.classList.remove('show');dash.innerHTML='';grid.classList.add('view-hidden');grid.style.display='none';
+      var mb=document.getElementById('masanielloBoard');if(mb){mb.classList.add('show');}
+      if(window.EasyBetMasaniello&&window.EasyBetMasaniello.render)window.EasyBetMasaniello.render();
+      return;
+    }
     var exb=document.getElementById('exchangeBoard');if(exb)exb.classList.remove('show');
+    var mb2=document.getElementById('masanielloBoard');if(mb2)mb2.classList.remove('show');
     dash.classList.remove('show');dash.innerHTML='';grid.classList.remove('view-hidden','home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');grid.style.display='grid';
     var list=matches.filter(matchesView).filter(function(m){return currentView==='home'?matchesOutcomeFilter(m):true});
     if(currentView==='live' && liveSearchQuery){var q=liveSearchQuery.toLowerCase();list=list.filter(function(m){return [m.casa,m.trasferta,m.campionato,m.tipoGiocata,m.quotaIngresso].join(' ').toLowerCase().indexOf(q)!==-1;});}
@@ -561,6 +574,7 @@
     render();
     if(currentView==='statistiche')loadPerformanceStats(true);
     if(currentView==='exchange'&&window.EasyBetExchange&&window.EasyBetExchange.render)window.EasyBetExchange.render();
+    if(currentView==='masaniello'&&window.EasyBetMasaniello&&window.EasyBetMasaniello.render)window.EasyBetMasaniello.render();
     if(scroll) document.getElementById('partite').scrollIntoView({behavior:'smooth',block:'start'});
   }
   document.querySelectorAll('[data-view]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var v=a.getAttribute('data-view');if(!v)return;history.replaceState(null,'','#'+v);setView(v,true);if(mobileNav){mobileNav.classList.remove('open')}if(mobileMenuBtn){mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰'}})});
@@ -841,5 +855,5 @@
   }
   initLiveAnalyzerUI();
 
-  var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli','exchange'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
+  var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli','exchange','masaniello'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
 })();
