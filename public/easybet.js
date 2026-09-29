@@ -840,5 +840,5 @@
   }
   initLiveAnalyzerUI();
 
-  var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
+  var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli','exchange'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
 })();
