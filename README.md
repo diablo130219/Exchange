@@ -36,3 +36,11 @@ Funzioni principali:
 - salvataggio su PostgreSQL nella tabella `exchange_periods`;
 - accesso ai dati protetto dalla sessione admin EasyBet;
 - i periodi del Diario Exchange sono inclusi nel backup generale admin.
+
+## STEP33 - Diario Exchange fedele al software desktop
+- Interfaccia web riorganizzata come il software Diario Exchange: sidebar periodi, Diario, Operazioni, Statistiche, Andamento e riepilogo, Calcolatori exchange.
+- Nuovo import dedicato `MovimentiChiusi.csv` Betflag con anteprima, esclusione automatica righe `NaN`, riconoscimento campionato/partita/mercato, raggruppamento stessa partita nella stessa sessione e prevenzione dei doppioni tramite riferimento Betflag.
+- Import CSV/tabella generico mantenuto separato.
+- Export CSV del periodo allineato al software desktop (righe giornaliere con sessioni I-X, depositi/prelievi e note).
+- Backup/ripristino JSON e report stampabile dal browser.
+- Grafica adattata allo stile EasyBet dark/light senza cambiare la logica del Diario.
