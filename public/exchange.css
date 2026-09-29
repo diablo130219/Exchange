@@ -153,3 +153,90 @@ body.exchange-fullscreen .exchange-board.show .ex-app-shell{
   border-color:#dfc26c!important;
   font-weight:900!important;
 }
+
+/* STEP42: Diario Exchange segue davvero la modalità Dark/Light globale */
+html[data-theme="dark"] .exchange-board{
+  --ex-bg:#17140f;--ex-panel:#201b14;--ex-panel2:#292116;
+  --ex-line:rgba(224,179,59,.28);--ex-line2:rgba(243,210,113,.13);
+  --ex-text:#f5ead4;--ex-muted:#b5a68b;--ex-gold:#ddb13a;--ex-gold2:#f1cd67;
+  --ex-green:#63d69a;--ex-red:#ff7b78;--ex-input:#1d1913;color:var(--ex-text)!important;
+}
+html[data-theme="dark"] .exchange-board .ex-app-shell{background:linear-gradient(135deg,#1c1812,#15120e)!important;box-shadow:0 24px 70px rgba(0,0,0,.38)!important}
+html[data-theme="dark"] .exchange-board .ex-sidebar{background:linear-gradient(180deg,#211c14 0%,#17140f 100%)!important;border-right-color:var(--ex-line)!important}
+html[data-theme="dark"] .exchange-board .ex-content{background:radial-gradient(circle at 75% 0%,rgba(221,177,58,.10),transparent 30%),#17140f!important}
+html[data-theme="dark"] .exchange-board .ex-brand,
+html[data-theme="dark"] .exchange-board .ex-period-item,
+html[data-theme="dark"] .exchange-board .ex-top-tiles>div,
+html[data-theme="dark"] .exchange-board .ex-summary-tiles>div,
+html[data-theme="dark"] .exchange-board .ex-quick,
+html[data-theme="dark"] .exchange-board .ex-op-card,
+html[data-theme="dark"] .exchange-board .ex-chart-card,
+html[data-theme="dark"] .exchange-board .ex-calc-grid article,
+html[data-theme="dark"] .exchange-board .ex-modal,
+html[data-theme="dark"] .exchange-board .ex-import-summary>div{
+  background:linear-gradient(180deg,#231e16,#1a1611)!important;color:var(--ex-text)!important;
+}
+html[data-theme="dark"] .exchange-board .ex-period-item.active{background:linear-gradient(90deg,rgba(221,177,58,.20),#201a12)!important;border-color:rgba(221,177,58,.48)!important}
+html[data-theme="dark"] .exchange-board .ex-btn,
+html[data-theme="dark"] .exchange-board .ex-file-btn,
+html[data-theme="dark"] .exchange-board .ex-row-btn{background:linear-gradient(180deg,#2b2419,#1d1913)!important;color:#e8dbc2!important;border-color:rgba(224,179,59,.22)!important}
+html[data-theme="dark"] .exchange-board .ex-btn:hover,
+html[data-theme="dark"] .exchange-board .ex-file-btn:hover,
+html[data-theme="dark"] .exchange-board .ex-row-btn:hover{background:#342a1b!important;color:#fff1cf!important;border-color:#d5a932!important}
+html[data-theme="dark"] .exchange-board .ex-btn.primary,
+html[data-theme="dark"] .exchange-board .ex-file-btn.primary{background:linear-gradient(180deg,#e9bf49,#b98715)!important;color:#251b08!important;border-color:#d0a12a!important}
+html[data-theme="dark"] .exchange-board .ex-btn.danger,
+html[data-theme="dark"] .exchange-board .ex-row-btn.danger{background:#32201d!important}
+html[data-theme="dark"] .exchange-board .ex-tabs{background:#1b1711!important;border-color:var(--ex-line)!important}
+html[data-theme="dark"] .exchange-board .ex-tabs button{color:#b8a98f!important}
+html[data-theme="dark"] .exchange-board .ex-tabs button.active{background:linear-gradient(180deg,#3a2f1c,#2a2216)!important;color:#f1cd67!important;box-shadow:inset 0 0 0 1px rgba(221,177,58,.24)!important}
+html[data-theme="dark"] .exchange-board .ex-field input,
+html[data-theme="dark"] .exchange-board .ex-field select,
+html[data-theme="dark"] .exchange-board .ex-commission input,
+html[data-theme="dark"] .exchange-board .ex-stats-toolbar select,
+html[data-theme="dark"] .exchange-board .ex-ops-toolbar select,
+html[data-theme="dark"] .exchange-board .ex-modal textarea{background:#1d1913!important;color:#f5ead4!important;border-color:rgba(243,210,113,.15)!important}
+html[data-theme="dark"] .exchange-board .ex-banner,
+html[data-theme="dark"] .exchange-board .ex-reading,
+html[data-theme="dark"] .exchange-board .ex-generic-preview,
+html[data-theme="dark"] .exchange-board .ex-calc-result,
+html[data-theme="dark"] .exchange-board .ex-side{background:#211c14!important;color:#d7c8ad!important}
+html[data-theme="dark"] .exchange-board .ex-table-wrap{background:#181510!important;border-color:var(--ex-line2)!important}
+html[data-theme="dark"] .exchange-board .ex-table th{background:#2a2318!important;color:#d4bf91!important;border-bottom-color:var(--ex-line)!important}
+html[data-theme="dark"] .exchange-board .ex-table td{color:#ddd0b8!important;border-bottom-color:rgba(243,210,113,.07)!important}
+html[data-theme="dark"] .exchange-board .ex-table tr:hover td{background:rgba(221,177,58,.055)!important}
+html[data-theme="dark"] .exchange-board .ex-cell{color:#eadfc9!important}
+html[data-theme="dark"] .exchange-board .ex-cell:focus{background:#2a2115!important;border-color:rgba(221,177,58,.48)!important}
+html[data-theme="dark"] .exchange-board .ex-month .days i{background:#292219!important;color:#cfc0a5!important}
+html[data-theme="dark"] .exchange-board .ex-overlay{background:rgba(8,7,5,.72)!important;backdrop-filter:blur(6px) saturate(.85)!important}
+html[data-theme="dark"] .exchange-board .ex-modal{border-color:rgba(221,177,58,.30)!important;box-shadow:0 30px 90px rgba(0,0,0,.55)!important}
+html[data-theme="dark"] .exchange-board .ex-modal-head>button{background:#2a2319!important;color:#e5d5ba!important;border-color:var(--ex-line2)!important}
+html[data-theme="dark"] .exchange-board .ex-main-empty{color:#b4a58a!important;background:radial-gradient(circle at center,rgba(221,177,58,.08),transparent 44%)}
+html[data-theme="dark"] .exchange-board .ex-main-empty h2{color:#f3e5cc!important}
+html[data-theme="dark"] .exchange-board .ex-main-empty b{color:#e5bd55!important}
+html[data-theme="dark"] .exchange-board .ex-main-empty small{color:#9f927c!important}
+html[data-theme="dark"] .exchange-board .ex-sidebar .ex-betflag-main::before{background:rgba(255,236,184,.10)!important;color:#f0cb66!important;border-color:rgba(240,203,102,.18)!important}
+html[data-theme="dark"] .exchange-board .ex-head-chips span{background:#241e15!important;color:#d8c8aa!important;border-color:var(--ex-line)!important}
+html[data-theme="dark"] .exchange-board .ex-side-title,
+html[data-theme="dark"] .exchange-board .ex-field span,
+html[data-theme="dark"] .exchange-board .ex-top-tiles small,
+html[data-theme="dark"] .exchange-board .ex-summary-tiles small,
+html[data-theme="dark"] .exchange-board .ex-chart-card>b,
+html[data-theme="dark"] .exchange-board .ex-legend,
+html[data-theme="dark"] .exchange-board .ex-hint,
+html[data-theme="dark"] .exchange-board .ex-commission,
+html[data-theme="dark"] .exchange-board .ex-ops-toolbar label,
+html[data-theme="dark"] .exchange-board .ex-stats-toolbar label,
+html[data-theme="dark"] .exchange-board .ex-period-info,
+html[data-theme="dark"] .exchange-board .ex-modal p,
+html[data-theme="dark"] .exchange-board .ex-check{color:#ac9d84!important}
+html[data-theme="dark"] .exchange-board .ex-disclaimer{color:#8e826f!important}
+html[data-theme="dark"] .exchange-board .ex-linechart line{stroke:rgba(243,210,113,.08)!important}
+/* esiti e valori devono restare leggibili anche in dark */
+html[data-theme="dark"] .exchange-board .ex-outcome.is-reached span{color:#78dfaa!important;background:#173b2b!important;border-color:#39785a!important}
+html[data-theme="dark"] .exchange-board .ex-outcome.is-stop span{color:#ff918d!important;background:#43211f!important;border-color:#86413e!important}
+html[data-theme="dark"] .exchange-board .ex-cell.pos-input{color:#79e2ad!important;background:#173628!important;border-color:#326c50!important}
+html[data-theme="dark"] .exchange-board .ex-cell.neg-input{color:#ff8f8c!important;background:#3c211f!important;border-color:#7b3d3a!important}
+html[data-theme="dark"] .exchange-board .ex-table .ex-side.punta{color:#79e2ad!important;background:#173628!important;border-color:#326c50!important}
+html[data-theme="dark"] .exchange-board .ex-table .ex-side.banca{color:#ff8f8c!important;background:#3c211f!important;border-color:#7b3d3a!important}
+html[data-theme="dark"] .exchange-board .ex-table .ex-side.trading{color:#f0cb66!important;background:#332a18!important;border-color:#745d24!important}

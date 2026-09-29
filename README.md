@@ -68,3 +68,10 @@ Funzioni principali:
 - Schede: Gioca, Piano e matrice, Confronta piani, Simulatore, Statistiche, Metodi a confronto, Storico e backup.
 - Persistenza PostgreSQL tramite `masaniello_state`, autosalvataggio e import/export JSON.
 - Protezione anti-reset del form durante refresh automatici EasyBet.
+
+## STEP42 — Dark mode Diario Exchange + Masaniello
+- Diario Exchange ora segue il selettore globale Light/Dark.
+- Masaniello ora segue il selettore globale Light/Dark.
+- In modalità Light restano oro/avorio.
+- In modalità Dark diventano grafite/bruno scuro con accenti oro, mantenendo verdi/rossi funzionali.
+- Banner e struttura fullscreen restano invariati.

@@ -20,3 +20,79 @@ body.masaniello-fullscreen .page-shell{overflow:visible}body.masaniello-fullscre
 @media(max-width:1250px){.ms-shell{grid-template-columns:235px minmax(0,1fr)}.ms-grid{grid-template-columns:repeat(2,1fr)}.ms-tiles,.ms-kpis{grid-template-columns:repeat(2,1fr)}.ms-compare-form{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:850px){.ms-shell{display:block}.ms-sidebar{min-height:0;border-right:0;border-bottom:1px solid var(--ms-line)}.ms-list{max-height:180px}.ms-content{padding:12px}.ms-head-top{flex-direction:column}.ms-grid,.ms-next,.ms-modal .ms-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.ms-grid,.ms-grid.two,.ms-next,.ms-tiles,.ms-kpis,.ms-compare-form,.ms-modal .ms-grid{grid-template-columns:1fr}.ms-tabs button{min-width:150px}.ms-side-grid{grid-template-columns:1fr}body.masaniello-fullscreen #partite{padding-left:10px;padding-right:10px}}
+
+/* STEP42: Masaniello segue la modalità Dark/Light globale */
+html[data-theme="dark"] .masaniello-board{
+  --ms-bg:#17140f;--ms-panel:#211c14;--ms-panel2:#2a2217;
+  --ms-line:rgba(221,177,58,.27);--ms-line2:rgba(243,210,113,.13);
+  --ms-text:#f5ead4;--ms-muted:#b3a58c;--ms-gold:#ddb13a;--ms-gold2:#f1cd67;
+  --ms-green:#63d69a;--ms-red:#ff7b78;--ms-blue:#78a7d8;color:var(--ms-text)!important;
+}
+html[data-theme="dark"] .masaniello-board .ms-shell{background:linear-gradient(135deg,#1c1812,#15120e)!important;box-shadow:0 24px 70px rgba(0,0,0,.40)!important}
+html[data-theme="dark"] .masaniello-board .ms-sidebar{background:linear-gradient(180deg,#211c14,#17140f)!important;border-right-color:var(--ms-line)!important}
+html[data-theme="dark"] .masaniello-board .ms-content{background:radial-gradient(circle at 76% 0%,rgba(221,177,58,.10),transparent 30%),#17140f!important}
+html[data-theme="dark"] .masaniello-board .ms-brand,
+html[data-theme="dark"] .masaniello-board .ms-item,
+html[data-theme="dark"] .masaniello-board .ms-head,
+html[data-theme="dark"] .masaniello-board .ms-tile,
+html[data-theme="dark"] .masaniello-board .ms-card,
+html[data-theme="dark"] .masaniello-board .ms-next>div,
+html[data-theme="dark"] .masaniello-board .ms-kpi,
+html[data-theme="dark"] .masaniello-board .ms-chart,
+html[data-theme="dark"] .masaniello-board .ms-modal{background:linear-gradient(180deg,#231e16,#1a1611)!important;color:var(--ms-text)!important}
+html[data-theme="dark"] .masaniello-board .ms-item.active{background:linear-gradient(90deg,rgba(221,177,58,.20),#201a12)!important;border-color:rgba(221,177,58,.48)!important}
+html[data-theme="dark"] .masaniello-board .ms-btn,
+html[data-theme="dark"] .masaniello-board .ms-file,
+html[data-theme="dark"] .masaniello-board .ms-mini{background:linear-gradient(180deg,#2b2419,#1d1913)!important;color:#e8dbc2!important;border-color:rgba(224,179,59,.22)!important}
+html[data-theme="dark"] .masaniello-board .ms-btn:hover,
+html[data-theme="dark"] .masaniello-board .ms-file:hover,
+html[data-theme="dark"] .masaniello-board .ms-mini:hover{background:#342a1b!important;color:#fff1cf!important;border-color:#d5a932!important}
+html[data-theme="dark"] .masaniello-board .ms-btn.primary{background:linear-gradient(180deg,#e9bf49,#b98715)!important;color:#251b08!important;border-color:#d0a12a!important}
+html[data-theme="dark"] .masaniello-board .ms-btn.danger{background:#32201d!important}
+html[data-theme="dark"] .masaniello-board .ms-btn.green{color:#7ee1ac!important;background:#173628!important;border-color:#326c50!important}
+html[data-theme="dark"] .masaniello-board .ms-btn.red{color:#ff918d!important;background:#3c211f!important;border-color:#7b3d3a!important}
+html[data-theme="dark"] .masaniello-board .ms-tabs{background:#1b1711!important;border-color:var(--ms-line)!important}
+html[data-theme="dark"] .masaniello-board .ms-tabs button{color:#b8a98f!important}
+html[data-theme="dark"] .masaniello-board .ms-tabs button.active{background:linear-gradient(180deg,#3a2f1c,#2a2216)!important;color:#f1cd67!important;box-shadow:inset 0 0 0 1px rgba(221,177,58,.24)!important}
+html[data-theme="dark"] .masaniello-board .ms-field input,
+html[data-theme="dark"] .masaniello-board .ms-field select,
+html[data-theme="dark"] .masaniello-board .ms-field textarea{background:#1d1913!important;color:#f5ead4!important;border-color:rgba(243,210,113,.15)!important}
+html[data-theme="dark"] .masaniello-board .ms-table-wrap{background:#181510!important;border-color:var(--ms-line2)!important}
+html[data-theme="dark"] .masaniello-board .ms-table th{background:#2a2318!important;color:#d4bf91!important;border-bottom-color:var(--ms-line)!important}
+html[data-theme="dark"] .masaniello-board .ms-table td{color:#ddd0b8!important;border-bottom-color:rgba(243,210,113,.07)!important}
+html[data-theme="dark"] .masaniello-board .ms-table tr:hover td{background:rgba(221,177,58,.055)!important}
+html[data-theme="dark"] .masaniello-board .ms-matrix th{color:#b6a68c!important}
+html[data-theme="dark"] .masaniello-board .ms-matrix td{background:#211c14!important;color:#e7dac2!important;border-color:var(--ms-line2)!important}
+html[data-theme="dark"] .masaniello-board .ms-matrix td.current{background:#c99a25!important;color:#241907!important;border-color:#e0b84b!important}
+html[data-theme="dark"] .masaniello-board .ms-status{background:#332a18!important;border-color:#745d24!important;color:#f0cb66!important}
+html[data-theme="dark"] .masaniello-board .ms-status.won,
+html[data-theme="dark"] .masaniello-board .ms-pill.win{background:#173628!important;border-color:#326c50!important;color:#79e2ad!important}
+html[data-theme="dark"] .masaniello-board .ms-status.lost,
+html[data-theme="dark"] .masaniello-board .ms-pill.loss{background:#3c211f!important;border-color:#7b3d3a!important;color:#ff8f8c!important}
+html[data-theme="dark"] .masaniello-board .ms-status.stopped,
+html[data-theme="dark"] .masaniello-board .ms-pill.void{background:#29251e!important;border-color:#4d4538!important;color:#c3b8a5!important}
+html[data-theme="dark"] .masaniello-board .ms-pill{background:#332a18!important;color:#f0cb66!important;border-color:#745d24!important}
+html[data-theme="dark"] .masaniello-board .ms-alert{background:#292219!important;border-color:var(--ms-line2)!important;color:#dbc9a6!important}
+html[data-theme="dark"] .masaniello-board .ms-alert.ok{color:#79e2ad!important;background:#173628!important;border-color:#326c50!important}
+html[data-theme="dark"] .masaniello-board .ms-alert.bad{color:#ff8f8c!important;background:#3c211f!important;border-color:#7b3d3a!important}
+html[data-theme="dark"] .masaniello-board .ms-alert.warn{color:#f0cb66!important;background:#332a18!important;border-color:#745d24!important}
+html[data-theme="dark"] .masaniello-board .ms-statbar{background:#2a2318!important}
+html[data-theme="dark"] .masaniello-board .ms-overlay{background:rgba(8,7,5,.72)!important;backdrop-filter:blur(6px) saturate(.85)!important}
+html[data-theme="dark"] .masaniello-board .ms-modal{border-color:rgba(221,177,58,.30)!important;box-shadow:0 30px 90px rgba(0,0,0,.55)!important}
+html[data-theme="dark"] .masaniello-board .ms-close{background:#2a2319!important;color:#e5d5ba!important;border-color:var(--ms-line2)!important}
+html[data-theme="dark"] .masaniello-board .ms-side-title,
+html[data-theme="dark"] .masaniello-board .ms-brand-copy b,
+html[data-theme="dark"] .masaniello-board .ms-brand-copy small,
+html[data-theme="dark"] .masaniello-board .ms-item span,
+html[data-theme="dark"] .masaniello-board .ms-field label,
+html[data-theme="dark"] .masaniello-board .ms-tile small,
+html[data-theme="dark"] .masaniello-board .ms-tile span,
+html[data-theme="dark"] .masaniello-board .ms-next small,
+html[data-theme="dark"] .masaniello-board .ms-kpi small,
+html[data-theme="dark"] .masaniello-board .ms-help,
+html[data-theme="dark"] .masaniello-board .ms-disc{color:#aa9b82!important}
+html[data-theme="dark"] .masaniello-board .ms-brand-copy strong,
+html[data-theme="dark"] .masaniello-board .ms-eyebrow,
+html[data-theme="dark"] .masaniello-board .ms-card h3{color:#efc861!important}
+html[data-theme="dark"] .masaniello-board .ms-chart .grid{stroke:rgba(243,210,113,.08)!important}
+html[data-theme="dark"] .masaniello-board .ms-chart .base{stroke:#8e826f!important}
