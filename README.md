@@ -44,3 +44,8 @@ Funzioni principali:
 - Export CSV del periodo allineato al software desktop (righe giornaliere con sessioni I-X, depositi/prelievi e note).
 - Backup/ripristino JSON e report stampabile dal browser.
 - Grafica adattata allo stile EasyBet dark/light senza cambiare la logica del Diario.
+
+## STEP35 — Import CSV Betflag sempre visibile
+- Pulsante “IMPORTA CSV BETFLAG” direttamente nella sidebar del Diario Exchange, senza dover aprire la scheda Operazioni.
+- Usa lo stesso parser `MovimentiChiusi.csv` già presente e mostra l'anteprima prima dell'importazione.
+- Il caricamento è disponibile da qualunque scheda del Diario finché esiste un periodo attivo.
