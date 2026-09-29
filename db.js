@@ -148,6 +148,19 @@ async function migrate() {
     );
   `);
   await pool.query(`ALTER TABLE team_crests ADD COLUMN IF NOT EXISTS manual BOOLEAN NOT NULL DEFAULT false;`);
+
+  // --- Diario Exchange integrato (stato JSON per periodo, privato area admin) ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS exchange_periods (
+      uid TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      start_date TEXT NOT NULL,
+      state JSONB NOT NULL,
+      created_at BIGINT NOT NULL,
+      updated_at BIGINT NOT NULL
+    );
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_exchange_periods_start_date ON exchange_periods (start_date DESC);`);
 }
 
 module.exports = { pool, migrate };

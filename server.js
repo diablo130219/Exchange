@@ -180,11 +180,12 @@ app.post('/api/admin/logout', (req, res) => {
 // ---------- backup / export Admin ----------
 app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
   try {
-    const [matchesRes, snapshotsRes, alertRes, crestsRes] = await Promise.all([
+    const [matchesRes, snapshotsRes, alertRes, crestsRes, exchangeRes] = await Promise.all([
       pool.query('SELECT * FROM matches ORDER BY start_at ASC, id ASC'),
       pool.query('SELECT * FROM signal_snapshots ORDER BY created_at ASC, id ASC'),
       pool.query("SELECT * FROM alert_settings WHERE id='main'"),
-      pool.query('SELECT * FROM team_crests ORDER BY name_norm ASC')
+      pool.query('SELECT * FROM team_crests ORDER BY name_norm ASC'),
+      pool.query('SELECT * FROM exchange_periods ORDER BY start_date ASC, uid ASC')
     ]);
 
     const payload = {
@@ -195,13 +196,15 @@ app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
       counts: {
         matches: matchesRes.rows.length,
         signalSnapshots: snapshotsRes.rows.length,
-        teamCrests: crestsRes.rows.length
+        teamCrests: crestsRes.rows.length,
+        exchangePeriods: exchangeRes.rows.length
       },
       data: {
         matches: matchesRes.rows,
         signalSnapshots: snapshotsRes.rows,
         alertSettings: alertRes.rows[0] || null,
-        teamCrests: crestsRes.rows
+        teamCrests: crestsRes.rows,
+        exchangePeriods: exchangeRes.rows
       }
     };
 
@@ -729,6 +732,111 @@ app.get('/api/state', async (req, res) => {
   }
 });
 
+
+
+// ---------- Diario Exchange (privato, integrato in EasyBet) ----------
+function exchangeStateOut(row) {
+  if (!row) return null;
+  const state = row.state && typeof row.state === 'object' ? row.state : {};
+  return { ...state, uid: row.uid, name: row.name, start: row.start_date, updatedAt: Number(row.updated_at) || 0 };
+}
+function exchangeNormalizeState(body, uidOverride) {
+  const b = body && typeof body === 'object' ? body : {};
+  const uid = String(uidOverride || b.uid || '').trim().slice(0, 64);
+  const name = String(b.name || 'Periodo').trim().slice(0, 120) || 'Periodo';
+  const start = /^\d{4}-\d{2}-\d{2}$/.test(String(b.start || '')) ? String(b.start) : new Date().toISOString().slice(0,10);
+  const cash = Math.max(0, Number(b.cash) || 0);
+  const targetPct = Math.max(0, Math.min(100, Number(b.targetPct == null ? 5 : b.targetPct) || 0));
+  const stakePct = Math.max(0, Math.min(100, Number(b.stakePct == null ? 3 : b.stakePct) || 0));
+  const length = Math.max(1, Math.min(366, Math.round(Number(b.length) || 31)));
+  const targetMode = ['bank','calendar','trading','linear'].includes(String(b.targetMode)) ? String(b.targetMode) : 'calendar';
+  const commission = Math.max(0, Math.min(20, Number(b.commission == null ? 5 : b.commission) || 0));
+  const rulesIn = b.rules && typeof b.rules === 'object' ? b.rules : {};
+  const rules = {
+    stopLossPct: Math.max(0, Math.min(100, Number(rulesIn.stopLossPct == null ? 5 : rulesIn.stopLossPct) || 0)),
+    stopWin: rulesIn.stopWin === false ? false : true,
+    maxSessions: Math.max(0, Math.min(10, Math.round(Number(rulesIn.maxSessions) || 0))),
+    maxStakePct: Math.max(0, Math.min(100, Number(rulesIn.maxStakePct) || 0))
+  };
+  const days = b.days && typeof b.days === 'object' && !Array.isArray(b.days) ? b.days : {};
+  const ops = Array.isArray(b.ops) ? b.ops.slice(0, 10000) : [];
+  return { uid, name, start, cash, targetPct, stakePct, length, targetMode, commission, rules, days, ops };
+}
+function exchangeUid() { return 'ex_' + crypto.randomBytes(8).toString('hex'); }
+
+app.get('/api/exchange/periods', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT uid, name, start_date, state, created_at, updated_at FROM exchange_periods ORDER BY start_date DESC, created_at DESC');
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ periods: rows.map(exchangeStateOut) });
+  } catch (err) {
+    console.error('exchange periods:', err);
+    res.status(500).json({ error: 'Errore nel caricamento del Diario Exchange.' });
+  }
+});
+
+app.post('/api/exchange/periods', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const uid = exchangeUid();
+    const state = exchangeNormalizeState(req.body, uid);
+    const now = Date.now();
+    await pool.query(`INSERT INTO exchange_periods (uid, name, start_date, state, created_at, updated_at)
+                      VALUES ($1,$2,$3,$4::jsonb,$5,$5)`, [uid, state.name, state.start, JSON.stringify(state), now]);
+    res.status(201).json({ period: { ...state, updatedAt: now } });
+  } catch (err) {
+    console.error('exchange create:', err);
+    res.status(500).json({ error: 'Impossibile creare il periodo.' });
+  }
+});
+
+app.put('/api/exchange/periods/:uid', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const uid = String(req.params.uid || '').trim().slice(0,64);
+    const state = exchangeNormalizeState(req.body, uid);
+    const now = Date.now();
+    const q = await pool.query(`UPDATE exchange_periods SET name=$2, start_date=$3, state=$4::jsonb, updated_at=$5 WHERE uid=$1 RETURNING uid`,
+      [uid, state.name, state.start, JSON.stringify(state), now]);
+    if (!q.rowCount) return res.status(404).json({ error: 'Periodo non trovato.' });
+    res.json({ period: { ...state, updatedAt: now } });
+  } catch (err) {
+    console.error('exchange update:', err);
+    res.status(500).json({ error: 'Impossibile salvare il periodo.' });
+  }
+});
+
+app.delete('/api/exchange/periods/:uid', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const uid = String(req.params.uid || '').trim().slice(0,64);
+    const q = await pool.query('DELETE FROM exchange_periods WHERE uid=$1', [uid]);
+    if (!q.rowCount) return res.status(404).json({ error: 'Periodo non trovato.' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('exchange delete:', err);
+    res.status(500).json({ error: 'Impossibile eliminare il periodo.' });
+  }
+});
+
+app.get('/api/exchange/export.csv', requireSameSiteAdmin, async (req, res) => {
+  try {
+    const uid = String(req.query.uid || '').trim().slice(0,64);
+    const { rows } = await pool.query('SELECT state FROM exchange_periods WHERE uid=$1', [uid]);
+    if (!rows[0]) return res.status(404).json({ error: 'Periodo non trovato.' });
+    const state = rows[0].state || {};
+    const ops = Array.isArray(state.ops) ? state.ops : [];
+    const header = ['Data','Sessione','Partita','Campionato','Mercato','Strategia','Tipo','Quota entrata','Quota uscita','Stake','Minuto','Profitto','Note'];
+    const lines = [header.map(csvCell).join(',')];
+    ops.forEach(o => lines.push([
+      o.day, Number(o.slot || 0) + 1, o.event, o.league, o.market, o.strategy, o.side,
+      o.oddsIn, o.oddsOut, o.stake, o.minute, o.profit, o.note
+    ].map(csvCell).join(',')));
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${backupFilename('easybet-diario-exchange', 'csv')}"`);
+    res.send('\ufeff' + lines.join('\n'));
+  } catch (err) {
+    console.error('exchange export:', err);
+    res.status(500).json({ error: 'Impossibile esportare il Diario Exchange.' });
+  }
+});
 
 // ---------- GoalDir / BSD live statistics (free REST API) ----------
 const GOALDIR_API_KEY = String(process.env.GOALDIR_API_KEY || process.env.BSD_API_KEY || '').trim();

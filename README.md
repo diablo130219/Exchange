@@ -18,3 +18,21 @@ Il tooltip funziona anche con:
 È presente anche il tooltip SVG nativo come fallback.
 
 Nessuna modifica ai calcoli statistici: cambia soltanto la leggibilità del grafico.
+
+## STEP 32 — Diario Exchange integrato
+
+Il progetto include ora la sezione privata **Diario Exchange** dentro il sito EasyBet, con grafica coerente dark/light e responsive.
+
+Funzioni principali:
+- periodi con cassa iniziale, target, stake, durata e modalità di crescita;
+- stop loss, stop win, limite sessioni e limite stake;
+- giornate con fino a 10 sessioni, depositi/prelievi e note;
+- operazioni dettagliate (partita, campionato, mercato, strategia, Punta/Banca/Trading, quote, stake, minuto, P/L);
+- sincronizzazione automatica del P/L delle operazioni nella relativa sessione;
+- dashboard cassa reale vs target, profitto, drawdown e proiezione;
+- statistiche per strategia, mercato, lato, giorno della settimana e campionato;
+- import CSV (incluse colonne tipiche Betflag) ed export CSV;
+- calcolatori Green-Up Punta→Banca, Banca→Punta e responsabilità Lay;
+- salvataggio su PostgreSQL nella tabella `exchange_periods`;
+- accesso ai dati protetto dalla sessione admin EasyBet;
+- i periodi del Diario Exchange sono inclusi nel backup generale admin.

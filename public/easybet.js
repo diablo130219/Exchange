@@ -125,7 +125,7 @@
   function matchesView(m){
     if(currentView==='pronostici') return isUpcoming(m);
     if(currentView==='live') return isLive(m);
-    if(currentView==='statistiche'||currentView==='strategie'||currentView==='consigli') return false;
+    if(currentView==='statistiche'||currentView==='strategie'||currentView==='consigli'||currentView==='exchange') return false;
     return isFinished(m);
   }
   function matchesOutcomeFilter(m){return currentFilter==='tutte'||(m.esitoManuale||'')===currentFilter}
@@ -152,6 +152,10 @@
     }else if(currentView==='consigli'){
       title.textContent='CONSIGLI';
       sub.textContent='LETTURA DEL LIVE, DISCIPLINA, BANKROLL E REGOLE PRATICHE';
+      toolbar.style.display='none';
+    }else if(currentView==='exchange'){
+      title.textContent='DIARIO EXCHANGE';
+      sub.textContent='CASSA, SESSIONI, OPERAZIONI, DISCIPLINA E PERFORMANCE';
       toolbar.style.display='none';
     }else{
       title.textContent='PARTITE TERMINATE';
@@ -470,11 +474,19 @@
   function render(){
     updateViewUI();
     renderLivePriorityDashboard();
-    var grid=document.getElementById('grid'),dash=document.getElementById('statsDashboard'),board=document.getElementById('strategiesBoard'),advice=document.getElementById('adviceBoard');
+    var grid=document.getElementById('grid'),dash=document.getElementById('statsDashboard'),board=document.getElementById('strategiesBoard'),advice=document.getElementById('adviceBoard'),exchangeBoard=document.getElementById('exchangeBoard');
+    if(exchangeBoard&&currentView!=='exchange')exchangeBoard.classList.remove('show');
     board.classList.remove('show');board.innerHTML='';advice.classList.remove('show');advice.innerHTML='';
     if(currentView==='statistiche'){renderStats();return}
     if(currentView==='strategie'){renderStrategies();return}
     if(currentView==='consigli'){renderAdvice();return}
+    if(currentView==='exchange'){
+      dash.classList.remove('show');dash.innerHTML='';grid.classList.add('view-hidden');grid.style.display='none';
+      var ex=document.getElementById('exchangeBoard');if(ex){ex.classList.add('show');}
+      if(window.EasyBetExchange&&window.EasyBetExchange.render)window.EasyBetExchange.render();
+      return;
+    }
+    var exb=document.getElementById('exchangeBoard');if(exb)exb.classList.remove('show');
     dash.classList.remove('show');dash.innerHTML='';grid.classList.remove('view-hidden','home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');grid.style.display='grid';
     var list=matches.filter(matchesView).filter(function(m){return currentView==='home'?matchesOutcomeFilter(m):true});
     if(currentView==='live' && liveSearchQuery){var q=liveSearchQuery.toLowerCase();list=list.filter(function(m){return [m.casa,m.trasferta,m.campionato,m.tipoGiocata,m.quotaIngresso].join(' ').toLowerCase().indexOf(q)!==-1;});}
@@ -547,6 +559,7 @@
     document.querySelectorAll('.pill').forEach(function(p){p.classList.toggle('active',p.getAttribute('data-f')==='tutte')});
     render();
     if(currentView==='statistiche')loadPerformanceStats(true);
+    if(currentView==='exchange'&&window.EasyBetExchange&&window.EasyBetExchange.render)window.EasyBetExchange.render();
     if(scroll) document.getElementById('partite').scrollIntoView({behavior:'smooth',block:'start'});
   }
   document.querySelectorAll('[data-view]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var v=a.getAttribute('data-view');if(!v)return;history.replaceState(null,'','#'+v);setView(v,true);if(mobileNav){mobileNav.classList.remove('open')}if(mobileMenuBtn){mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰'}})});
