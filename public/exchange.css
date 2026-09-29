@@ -54,3 +54,38 @@ html[data-theme="light"] .exchange-board{--ex-bg:#f4f0e7;--ex-panel:#fff;--ex-pa
 .ex-side-title,.ex-field span,.ex-top-tiles small,.ex-summary-tiles small,.ex-chart-card>b,.ex-legend,.ex-hint,.ex-commission,.ex-ops-toolbar label,.ex-stats-toolbar label,.ex-period-info,.ex-modal p,.ex-check{color:#817154!important}
 .ex-disclaimer{color:#9b8a69!important}
 @media(max-width:560px){.ex-empty-actions{flex-direction:column;width:min(100%,320px)}.ex-empty-actions .ex-btn{width:100%}}
+
+
+/* STEP37: Diario Exchange a larghezza schermo, banner EasyBet invariato */
+body.exchange-fullscreen .page-shell{
+  overflow:visible;
+}
+body.exchange-fullscreen #partite{
+  width:100vw;
+  max-width:none;
+  margin-left:calc(50% - 50vw);
+  margin-right:calc(50% - 50vw);
+  padding-left:clamp(18px,2.2vw,42px);
+  padding-right:clamp(18px,2.2vw,42px);
+}
+body.exchange-fullscreen #partite .section-head,
+body.exchange-fullscreen #partite .exchange-board{
+  width:100%;
+  max-width:none;
+}
+body.exchange-fullscreen .exchange-board.show .ex-app-shell{
+  width:100%;
+  max-width:none;
+  min-height:calc(100vh - 190px);
+}
+@media(max-width:900px){
+  body.exchange-fullscreen #partite{
+    margin-left:calc(50% - 50vw);
+    margin-right:calc(50% - 50vw);
+    padding-left:14px;
+    padding-right:14px;
+  }
+}
+@media(max-width:560px){
+  body.exchange-fullscreen #partite{padding-left:10px;padding-right:10px}
+}

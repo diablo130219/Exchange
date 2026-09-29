@@ -54,3 +54,9 @@ Funzioni principali:
 - Import CSV Betflag disponibile anche quando non esiste ancora alcun periodo.
 - Se il CSV viene caricato dalla schermata iniziale, EasyBet legge l'intervallo date, precompila il primo periodo e dopo il salvataggio apre automaticamente l'anteprima import.
 - Diario Exchange forzato sulla palette EasyBet oro/avorio, indipendentemente dal tema globale, eliminando pannelli e pulsanti neri.
+
+
+## STEP37
+- Diario Exchange espanso a tutta la larghezza della finestra quando si apre la voce di menu.
+- Header e banner EasyBet restano invariati e centrati alla larghezza originale.
+- Layout Exchange continua a essere responsive su tablet e mobile.
