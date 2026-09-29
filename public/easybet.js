@@ -488,13 +488,19 @@
     if(currentView==='strategie'){renderStrategies();return}
     if(currentView==='consigli'){renderAdvice();return}
     if(currentView==='exchange'){
-      dash.classList.remove('show');dash.innerHTML='';grid.classList.add('view-hidden');grid.style.display='none';
+      dash.classList.remove('show');dash.innerHTML='';
+      /* STEP41: quando si arriva dalla Home, rimuove le classi layout dello storico prima di nascondere la griglia.
+         #grid.home-history usa display:flex!important e altrimenti può prevalere su view-hidden. */
+      grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');
+      grid.classList.add('view-hidden');grid.style.display='none';
       var ex=document.getElementById('exchangeBoard');if(ex){ex.classList.add('show');}
       if(window.EasyBetExchange&&window.EasyBetExchange.render)window.EasyBetExchange.render();
       return;
     }
     if(currentView==='masaniello'){
-      dash.classList.remove('show');dash.innerHTML='';grid.classList.add('view-hidden');grid.style.display='none';
+      dash.classList.remove('show');dash.innerHTML='';
+      grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');
+      grid.classList.add('view-hidden');grid.style.display='none';
       var mb=document.getElementById('masanielloBoard');if(mb){mb.classList.add('show');}
       if(window.EasyBetMasaniello&&window.EasyBetMasaniello.render)window.EasyBetMasaniello.render();
       return;
