@@ -75,15 +75,19 @@
     over05ht: {
       label: 'Over 0.5 HT',
       window: { from: 15, to: 32 },
-      base: { xg: 0.55, sot: 2, big: 1, box: 5, touches: 10, shots: 6, quotaMin: 1.55, quotaMax: 2.10 },
+      base: { xg: 0.55, sot: 2, big: 1, box: 5, touches: 10, shots: 6, quotaMin: 1.60, quotaMax: 2.10 },
+      system: 'O0.5 HT PRE+LIVE', // live sullo 0-0 dal 15', quota >= 1.60
       weights: { xg: 1.4, sot: 1.5, big: 1.1, box: 1.0, touches: 0.7, shots: 1.0, quota: 0.6 },
       state: { green: 0.60, strong: 0.46, wait: 0.30 },
       core: { sot: 2, shots: 7, xg: 0.60 }
     },
     over15ft: {
       label: 'Over 1.5 FT',
-      window: { from: 20, to: 60 },
-      base: { xg: 0.85, sot: 3, big: 1, box: 6, touches: 12, shots: 7, quotaMin: 1.55 },
+      system: 'EXCH O1.5 GOL 25-70', // ingresso solo sullo 0-0 tra 20' e 30', quota >= 1.70, uscita al primo gol o al 71'
+      window: { from: 20, to: 30 },
+      exitMinute: 71,
+      allowPostGoal: false,
+      base: { xg: 0.85, sot: 3, big: 1, box: 6, touches: 12, shots: 7, quotaMin: 1.70 },
       weights: { xg: 1.4, sot: 1.5, big: 1.0, box: 1.0, touches: 0.7, shots: 1.0, quota: 0.7 },
       state: { green: 0.60, strong: 0.47, wait: 0.30 },
       core: { sot: 3, shots: 8, xg: 0.90 },
@@ -92,7 +96,8 @@
     },
     layx: {
       label: 'Banca X',
-      quotaMax: 2.00,
+      system: 'EXCH LAY X HT', // ingresso solo all'intervallo sullo 0-0 o 1-1, quota Lay X <= 2.10, tenere fino al 90'
+      quotaMax: 2.10,
       dyn: { dxg: 0.30, dsot: 1, dshots: 3, dtouches: 6, dbig: 1, quotaMin: 1.70, quotaMaxEval: 2.50 },
       weights: { dxg: 1.5, dsot: 1.5, dshots: 1.0, dtouches: 0.8, dbig: 1.1, quota: 0.7 },
       state: { green: 0.55, wait: 0.40, weak: 0.25 }
@@ -102,7 +107,22 @@
       dyn: { dxg: 0.25, dsot: 1, dshots: 3, dtouches: 6, dbig: 1, quotaMin: 1.55, quotaMax: 2.50 },
       weights: { dxg: 1.5, dsot: 1.5, dshots: 1.0, dtouches: 0.8, dbig: 1.1, quota: 0.7 },
       state: { green: 0.58, strong: 0.42, wait: 0.28 }
+    },
+    favht: {
+      label: 'Favorito HT',
+      system: 'EXCH FAVORITO HT', // favorito in casa (quota 1 pre-match <= 1.60), ingresso solo all'intervallo
+      preMatchMax: 1.60,
+      drawBackMin: 1.85,   // in parita': punta 1 solo a quota >= 1.85 (backtest: vince 57,3%)
+      trailLayMax: 2.10,   // favorito sotto: banca 2 solo a quota <= 2.10 (backtest: 1 o X 55,9%)
+      trailBackMin: 3.90   // favorito sotto, alternativa: punta 1 solo a quota >= 3.90 (backtest: 27,9%)
     }
+  };
+  var STRATEGIE = {
+    over05ht: RULES.over05ht.label,
+    over15ft: RULES.over15ft.label,
+    layx: RULES.layx.label,
+    backfav: RULES.backfav.label,
+    favht: RULES.favht.label
   };
 
   function analyzeAll(metrics, context) {
@@ -116,9 +136,9 @@
     var minuteText = String(context.minute == null ? '' : context.minute).trim();
     var isHT = /^(ht|intervallo|half\s*time)$/i.test(minuteText);
     var minuteN = isHT ? 45 : numFromText(context.minute);
-    var htOdds = oddNum(odds.ht), ftOdds = oddNum(odds.ft), layOdds = oddNum(odds.lay), favOdds = oddNum(odds.fav);
+    var htOdds = oddNum(odds.ht), ftOdds = oddNum(odds.ft), layOdds = oddNum(odds.lay), favOdds = oddNum(odds.fav), awayLayOdds = oddNum(odds.away);
 
-    var h = RULES.over05ht, f = RULES.over15ft, l = RULES.layx, bf = RULES.backfav;
+    var h = RULES.over05ht, f = RULES.over15ft, l = RULES.layx, bf = RULES.backfav, fh = RULES.favht;
     var q = weighted([
       line('xG', xg, xg != null && xg >= h.base.xg, h.weights.xg),
       line('SOT', sot, sot != null && sot >= h.base.sot, h.weights.sot),
@@ -179,19 +199,20 @@
       line('Quota', ftOdds, ftOdds != null && ftOdds >= 1.60, 0.7)
     ]);
     var ft;
-    if (goals >= 2) ft = sig(f.label, 'CHIUSA', 'Sono già stati segnati almeno 2 gol.', 'La condizione Over 1.5 è raggiunta.');
-    else if (goals > 0 && !firstGoalKnown) ft = sig(f.label, 'DATI GOL', 'Inserisci il minuto del primo gol.', 'Con inserimento manuale EasyBet deve sapere quando è arrivato il primo gol: se è prima del 25° l’Over 1.5 FT diventa INGIOCABILE.');
-    else if (earlyGoalBefore25 && goals > 0) ft = sig(f.label, 'INGIOCABILE', 'Gol arrivato prima del 25° minuto.', 'Regola EasyBet: il primo gol è arrivato troppo presto; il mercato resta escluso perché la quota è già stata compressa.');
-    else if (minuteN != null && minuteN < f.window.from) ft = sig(f.label, 'ATTENDI', 'Match ancora presto per il filtro principale.', 'Finestra operativa principale 20’–45’.');
-    else if (minuteN != null && minuteN <= 45) ft = softState(f.label, s.score, s, f.state.green, f.state.strong, f.state.wait, 'Volume offensivo sufficiente.', 'Finestra 20’–45’ con criteri pesati' + oddText(ftOdds) + '.', coreFT);
-    else if (minuteN != null && minuteN <= 55) {
-      var midCore = ((xg != null && xg >= f.mid.xg) ? 1 : 0) + ((sot != null && sot >= f.mid.sot) ? 1 : 0) + (pressureReal ? 1 : 0) >= 2;
-      ft = softState(f.label, midChecks.score, midChecks, f.mid.green, f.mid.strong, f.mid.wait, 'Finestra estesa con pressione convincente.', '46’–55’: bastano 2 segnali forti su 3 principali; non serve che tutte le metriche siano presenti' + oddText(ftOdds) + '.', midCore);
-    } else if (minuteN != null && minuteN <= f.window.to) {
-      var lateCore = ((xg != null && xg >= f.late.xg) ? 1 : 0) + ((sot != null && sot >= f.late.sot) ? 1 : 0) + ((big != null && big >= 1) ? 1 : 0) + (pressureStrong ? 1 : 0) >= 3;
-      ft = softState(f.label, lateChecks.score, lateChecks, f.late.green, f.late.strong, f.late.wait, 'Scenario molto forte nonostante il minuto avanzato.', '56’–60’: servono almeno 3 segnali forti tra xG, SOT, big chance e produzione offensiva' + oddText(ftOdds) + '.', lateCore);
-    } else if (minuteN != null && minuteN > f.window.to) ft = sig(f.label, 'NO BET', 'Finestra operativa chiusa.', 'Dopo il 60° minuto non vengono aperti nuovi ingressi Over 1.5 FT.');
-    else ft = sig(f.label, 'DATI', 'Inserisci il minuto della partita.', 'Finestra operativa 20’–60’.');
+    var ftExit = ' Uscita: al primo gol in verde, oppure al ' + f.exitMinute + '° in perdita.';
+    if (goals > 0 && minuteN != null && minuteN < f.window.from) ft = sig(f.label, 'INGIOCABILE', 'Gol segnato prima del 20°.', f.system + ' entra solo sullo 0-0 tra il 20° e il 30°: partita esclusa.');
+    else if (goals > 0) ft = sig(f.label, 'CHIUSA', 'Gol segnato: nessun nuovo ingresso.', f.system + ' entra solo sullo 0-0. Se eri dentro, chiudi ora in verde.');
+    else if (minuteN == null) ft = sig(f.label, 'DATI', 'Inserisci il minuto della partita.', 'Finestra di ingresso 20’–30’ sullo 0-0.');
+    else if (minuteN < f.window.from) ft = sig(f.label, 'ATTENDI', 'Non ancora in zona operativa.', 'Ingresso sullo 0-0 tra il 20° e il 30° con quota Over 1.5 ≥ ' + f.base.quotaMin.toFixed(2) + '.');
+    else if (minuteN > f.window.to) ft = sig(f.label, 'NO BET', 'Finestra operativa 20’–30’ superata.', 'Dopo il 30° ' + f.system + ' non apre nuovi ingressi.' + ftExit);
+    else {
+      ft = softState(f.label, s.score, s, f.state.green, f.state.strong, f.state.wait, '0-0 in finestra 20’–30’.', 'Criteri pesati' + oddText(ftOdds) + '.' + ftExit, coreFT);
+      if (ft.state === 'VERDE' && ftOdds != null && ftOdds + 0.0001 < f.base.quotaMin) {
+        ft.state = 'ATTESA QUOTA';
+        ft.reason = 'Condizioni ok, quota Over 1.5 troppo bassa.';
+        ft.why = 'Quota live ' + ftOdds.toFixed(2) + ' • serve ≥ ' + f.base.quotaMin.toFixed(2) + '.' + ftExit;
+      }
+    }
 
     var dxg = diffPair(metrics.xg), dsot = diffPair(metrics.sot), dshots = diffPair(metrics.shots), dtouch = diffPair(metrics.touches), dbig = diffPair(metrics.big);
     var layDyn = weighted([
@@ -204,25 +225,16 @@
     ]);
     var lay;
     var drawTarget = sm && Number(sm[1]) === Number(sm[2]) && (Number(sm[1]) === 0 || Number(sm[1]) === 1);
+    var layRule = 'Regola ' + l.system + ': banca la X solo all’intervallo sullo 0-0 o 1-1 a quota ≤ ' + l.quotaMax.toFixed(2) + ' e tieni fino al 90’.';
     if (isHT) {
-      if (!drawTarget) lay = sig(l.label, 'NON ATTIVA', 'Intervallo raggiunto, ma il risultato non è 0-0 o 1-1.', 'La strategia Banca X viene preparata a HT solo se il pareggio è 0-0 o 1-1.');
-      else if (layDyn.available < 2) lay = sig(l.label, 'DATI', 'Intervallo: dati insufficienti per misurare la fragilità del pareggio.', 'Servono almeno 2 indicatori comparativi disponibili prima di preparare l’ingresso nel secondo tempo.', layDyn.checks, layDyn.score);
-      else if (layDyn.score >= l.state.green) lay = sig(l.label, 'ATTENDI FORTE', 'Pareggio fragile: strategia idonea per il secondo tempo.', 'Attendi la ripresa e la quota Lay X a 2.00 o inferiore. Punteggio adattivo ' + Math.round(layDyn.score * 100) + '%' + oddText(layOdds) + '.', layDyn.checks, layDyn.score);
-      else if (layDyn.score >= l.state.wait) lay = sig(l.label, 'ATTENDI', 'Pareggio interessante ma ancora da confermare.', 'La strategia resta osservata nel secondo tempo; attendi maggiore squilibrio e quota Lay X ≤ 2.00.', layDyn.checks, layDyn.score);
-      else lay = sig(l.label, 'NO BET', 'Pareggio ancora troppo stabile a HT.', 'Può essere rivalutato nei primi minuti del secondo tempo solo se la pressione aumenta sensibilmente.', layDyn.checks, layDyn.score);
-    } else if (minuteN != null && minuteN < 45) lay = sig(l.label, 'VALUTA A HT', 'Strategia da valutare all’intervallo.', 'Prima dell’HT non viene emesso un NO BET: la lettura parte sullo 0-0 o 1-1 e l’ingresso avviene nel secondo tempo.');
-    else if (minuteN === 45) lay = sig(l.label, 'ATTENDI HT', 'Attendo la fine effettiva del primo tempo.', 'Il 45° può includere recupero. In manuale, quando è davvero intervallo scrivi HT nel campo Minuto.');
-    else if (minuteN != null && minuteN > 45) {
-      if (!drawTarget) lay = sig(l.label, 'NON ATTIVA', 'Il risultato non è 0-0 o 1-1.', 'Il pareggio target della strategia non è più presente, quindi non si apre un nuovo Lay X.');
-      else if (layDyn.available < 2) lay = sig(l.label, 'DATI', 'Secondo tempo: dati insufficienti per valutare il Lay X.', 'Servono almeno 2 indicatori comparativi disponibili.', layDyn.checks, layDyn.score);
-      else if (layDyn.score >= l.state.green) {
-        if (layOdds == null) lay = sig(l.label, 'ATTESA QUOTA', 'Pareggio fragile: condizioni live confermate.', 'Inserisci la quota Lay X corrente. Il segnale può diventare VERDE solo con quota 2.00 o inferiore.', layDyn.checks, layDyn.score);
-        else if (layOdds > l.quotaMax + 0.0001) lay = sig(l.label, 'ATTESA QUOTA', 'Pareggio fragile, ma la quota Lay X è ancora troppo alta.', 'Quota live ' + layOdds.toFixed(2) + ' • attendi ' + l.quotaMax.toFixed(2) + ' o inferiore prima dell’ingresso.', layDyn.checks, layDyn.score);
-        else lay = sig(l.label, 'VERDE', 'Pareggio fragile nel secondo tempo e quota idonea.', 'Condizioni live confermate • quota Lay X ' + layOdds.toFixed(2) + ' ≤ ' + l.quotaMax.toFixed(2) + '.', layDyn.checks, layDyn.score);
-      } else if (layDyn.score >= l.state.wait) lay = sig(l.label, 'ATTENDI FORTE', 'Pareggio sotto pressione nel secondo tempo.', 'Vicino all’ingresso: serve ulteriore conferma; quando i dati saranno sufficienti servirà comunque quota Lay X ≤ 2.00.', layDyn.checks, layDyn.score);
-      else if (layDyn.score >= l.state.weak) lay = sig(l.label, 'ATTENDI', 'C’è qualche squilibrio, ma non abbastanza netto.', 'Continua a monitorare il secondo tempo e la quota Lay X.', layDyn.checks, layDyn.score);
-      else lay = sig(l.label, 'NO BET', 'Il pareggio appare ancora abbastanza stabile.', 'Nessun ingresso finché pressione e squilibrio non aumentano.', layDyn.checks, layDyn.score);
-    } else lay = sig(l.label, 'DATI', 'Inserisci il minuto o HT.', 'La strategia viene preparata a HT e giocata nel secondo tempo con quota Lay X ≤ 2.00.');
+      if (!drawTarget) lay = sig(l.label, 'NON ATTIVA', 'Intervallo raggiunto, ma il risultato non è 0-0 o 1-1.', layRule, layDyn.checks, layDyn.score);
+      else if (layOdds == null) lay = sig(l.label, 'ATTESA QUOTA', 'Pareggio all’intervallo: inserisci la quota Lay X.', layRule, layDyn.checks, layDyn.score);
+      else if (layOdds > l.quotaMax + 0.0001) lay = sig(l.label, 'NO BET', 'Quota Lay X ' + layOdds.toFixed(2) + ' sopra ' + l.quotaMax.toFixed(2) + ': non entrare.', layRule, layDyn.checks, layDyn.score);
+      else lay = sig(l.label, 'VERDE', 'Pareggio all’intervallo e quota Lay X ' + layOdds.toFixed(2) + ' ≤ ' + l.quotaMax.toFixed(2) + '.', layRule, layDyn.checks, layDyn.score);
+    } else if (minuteN != null && minuteN < 45) lay = sig(l.label, 'VALUTA A HT', 'Strategia da valutare all’intervallo.', layRule);
+    else if (minuteN === 45) lay = sig(l.label, 'ATTENDI HT', 'Attendo la fine effettiva del primo tempo.', 'Il 45° può includere recupero. Quando è davvero intervallo scrivi HT nel campo Minuto. ' + layRule);
+    else if (minuteN != null && minuteN > 45) lay = sig(l.label, drawTarget ? 'NO BET' : 'NON ATTIVA', drawTarget ? 'Secondo tempo iniziato: nessun nuovo ingresso.' : 'Il risultato non è 0-0 o 1-1.', layRule);
+    else lay = sig(l.label, 'DATI', 'Inserisci il minuto o HT.', layRule);
 
     var homeDyn = weighted([
       line('ΔxG', dxg, dxg != null && dxg >= bf.dyn.dxg, bf.weights.dxg),
@@ -253,7 +265,28 @@
       else if (fd.score >= bf.state.wait) fav = sig(bf.label, 'ATTENDI', name + ' mostra qualche segnale di superiorità.', 'Punteggio adattivo ' + Math.round(fd.score * 100) + '%.', fd.checks, fd.score);
       else fav = sig(bf.label, 'NO BET', name + ' non sta mostrando sufficiente superiorità.', 'Punteggio adattivo ' + Math.round(fd.score * 100) + '%.', fd.checks, fd.score);
     }
-    return [ht, ft, lay, fav];
+    var fht;
+    var fhRule = 'Regola ' + fh.system + ' (favorito in casa, quota 1 pre-match ≤ ' + fh.preMatchMax.toFixed(2) + '): all’intervallo in parità punta 1 a quota ≥ ' + fh.drawBackMin.toFixed(2) + '; favorito sotto banca 2 a quota ≤ ' + fh.trailLayMax.toFixed(2) + ' (oppure punta 1 a quota ≥ ' + fh.trailBackMin.toFixed(2) + '). Una sola giocata, tenere fino al 90’.';
+    var fhHome = sm ? Number(sm[1]) : null, fhAway = sm ? Number(sm[2]) : null;
+    if (favSel === 'away') fht = sig(fh.label, 'NON ATTIVA', 'Sistema testato solo con il favorito in casa.', fhRule);
+    else if (favSel !== 'home') fht = sig(fh.label, 'DATI', 'Indica la favorita: Casa.', fhRule);
+    else if (!isHT && minuteN != null && minuteN < 45) fht = sig(fh.label, 'VALUTA A HT', 'Strategia da valutare all’intervallo.', fhRule);
+    else if (!isHT && minuteN === 45) fht = sig(fh.label, 'ATTENDI HT', 'Attendo la fine effettiva del primo tempo.', 'Quando è davvero intervallo scrivi HT nel campo Minuto. ' + fhRule);
+    else if (!isHT && minuteN != null && minuteN > 45) fht = sig(fh.label, 'NO BET', 'Secondo tempo iniziato: nessun nuovo ingresso.', fhRule);
+    else if (!isHT) fht = sig(fh.label, 'DATI', 'Inserisci il minuto o HT.', fhRule);
+    else if (fhHome == null) fht = sig(fh.label, 'DATI', 'Inserisci il risultato all’intervallo.', fhRule);
+    else if (fhHome > fhAway) fht = sig(fh.label, 'NON ATTIVA', 'Il favorito è già in vantaggio.', fhRule);
+    else if (fhHome === fhAway) {
+      if (favOdds == null) fht = sig(fh.label, 'ATTESA QUOTA', 'Favorito in parità: inserisci la quota live dell’1.', fhRule);
+      else if (favOdds + 0.0001 >= fh.drawBackMin) fht = sig(fh.label, 'VERDE', 'PUNTA 1 • favorito in parità, quota ' + favOdds.toFixed(2) + ' ≥ ' + fh.drawBackMin.toFixed(2) + '.', fhRule);
+      else fht = sig(fh.label, 'NO BET', 'Quota 1 ' + favOdds.toFixed(2) + ' sotto ' + fh.drawBackMin.toFixed(2) + ': non entrare.', fhRule);
+    } else {
+      if (awayLayOdds != null && awayLayOdds <= fh.trailLayMax + 0.0001) fht = sig(fh.label, 'VERDE', 'BANCA 2 • favorito sotto, quota ospite ' + awayLayOdds.toFixed(2) + ' ≤ ' + fh.trailLayMax.toFixed(2) + '.', fhRule);
+      else if (favOdds != null && favOdds + 0.0001 >= fh.trailBackMin) fht = sig(fh.label, 'VERDE', 'PUNTA 1 • favorito sotto, quota ' + favOdds.toFixed(2) + ' ≥ ' + fh.trailBackMin.toFixed(2) + '.', fhRule);
+      else if (awayLayOdds == null && favOdds == null) fht = sig(fh.label, 'ATTESA QUOTA', 'Favorito sotto: inserisci la quota del 2 (banca) o dell’1.', fhRule);
+      else fht = sig(fh.label, 'NO BET', 'Quote fuori regola: 2 sopra ' + fh.trailLayMax.toFixed(2) + ' e 1 sotto ' + fh.trailBackMin.toFixed(2) + '.', fhRule);
+    }
+    return [ht, ft, lay, fav, fht];
   }
 
   function keyToSignal(strategyKey) {
@@ -261,6 +294,7 @@
     if (strategyKey === 'over15ft') return RULES.over15ft.label;
     if (strategyKey === 'layx') return RULES.layx.label;
     if (strategyKey === 'backfav') return RULES.backfav.label;
+    if (strategyKey === 'favht') return RULES.favht.label;
     return null;
   }
 
@@ -296,8 +330,9 @@
       core = (totalSot != null && totalSot >= rule.core.sot) || (totalShots != null && totalShots >= rule.core.shots) || (totalXg != null && totalXg >= rule.core.xg);
     } else if (strategyKey === 'layx') {
       rule = RULES.layx;
-      var sh = n(payload.scoreHome), sa = n(payload.scoreAway);
-      gateOk = sh !== null && sa !== null && sh === sa && (sh === 0 || sh === 1);
+      var sh = n(payload.scoreHome), sa = n(payload.scoreAway), lm = n(payload.minute);
+      // EXCH LAY X HT: ingresso solo all'intervallo (collector: minuto 45-47 o assente) sullo 0-0 / 1-1.
+      gateOk = sh !== null && sa !== null && sh === sa && (sh === 0 || sh === 1) && (lm === null || (lm >= 45 && lm <= 47));
       var dx = diffPair(metrics.xg), ds = diffPair(metrics.sot), dsh = diffPair(metrics.shots), dt = diffPair(metrics.touches), db = diffPair(metrics.big);
       checks = weighted([
         line('ΔxG', dx, dx != null && Math.abs(dx) >= rule.dyn.dxg, rule.weights.dxg),
@@ -307,6 +342,14 @@
         line('ΔBig chances', db, db != null && Math.abs(db) >= rule.dyn.dbig, rule.weights.dbig)
       ]);
       core = checks.available >= 2;
+    } else if (strategyKey === 'favht') {
+      var fhh = n(payload.scoreHome), fha = n(payload.scoreAway), fhm = n(payload.minute), fhr = RULES.favht;
+      var fhAtHt = fhm === null || (fhm >= 45 && fhm <= 47);
+      var fhOk = favorite === 'home' && fhh !== null && fha !== null && fhAtHt && fhh <= fha;
+      var fhSummary = !fhOk ? 'Favorito HT: condizioni non attive (serve favorito in casa, intervallo, favorito non in vantaggio)'
+        : (fhh === fha ? 'Intervallo in parità • PUNTA 1 solo se quota ≥ ' + fhr.drawBackMin.toFixed(2)
+          : 'Favorito sotto all’intervallo • BANCA 2 solo se quota ≤ ' + fhr.trailLayMax.toFixed(2) + ' (oppure punta 1 ≥ ' + fhr.trailBackMin.toFixed(2) + ')');
+      return { level: fhOk ? 'verde' : 'rosso', summary: fhSummary + ' • controlla la quota live', gateOk: fhOk, score: null, score100: null, passed: 0, available: 0, core: fhOk, label: wanted };
     } else {
       rule = RULES.backfav;
       var sign = favorite === 'home' ? 1 : -1;
@@ -385,6 +428,18 @@
       }
     }
 
+    if (strategyKey === 'layx') {
+      var s100x = score100(checks.score);
+      return { level: gateOk ? 'verde' : 'rosso', summary: gateOk ? ('Pareggio all’intervallo • BANCA X solo se quota ≤ ' + RULES.layx.quotaMax.toFixed(2) + ', tieni fino al 90’') : 'Banca X non attiva: serve 0-0 o 1-1 all’intervallo', gateOk: gateOk, score: checks.score, score100: s100x, passed: checks.passed, available: checks.available, core: core, label: wanted };
+    }
+    // Over 1.5 FT (EXCH O1.5 GOL 25-70): solo sullo 0-0 tra 20' e 30' quando il collector invia minuto e risultato.
+    if (strategyKey === 'over15ft') {
+      var oMin = n(payload.minute), oH = n(payload.scoreHome), oA = n(payload.scoreAway);
+      var oGoals = (oH == null || oA == null) ? null : oH + oA;
+      if (oGoals != null && oGoals > 0) return { level: 'chiusa', summary: 'Gol segnato • EXCH O1.5 25-70 entra solo sullo 0-0', gateOk: false, score: checks.score, score100: score100(checks.score), passed: checks.passed, available: checks.available, core: core, label: wanted };
+      if (oMin != null && oMin < RULES.over15ft.window.from) return { level: 'attendi', summary: 'Prima della finestra 20’–30’', gateOk: false, score: checks.score, score100: score100(checks.score), passed: checks.passed, available: checks.available, core: core, label: wanted };
+      if (oMin != null && oMin > RULES.over15ft.window.to) return { level: 'rosso', summary: 'Finestra 20’–30’ superata senza ingresso', gateOk: false, score: checks.score, score100: score100(checks.score), passed: checks.passed, available: checks.available, core: core, label: wanted };
+    }
     var greenAt = strategyKey === 'layx' ? RULES.layx.state.green : strategyKey === 'backfav' ? RULES.backfav.state.green : rule.state.green;
     var yellowAt = strategyKey === 'layx' ? RULES.layx.state.weak : strategyKey === 'backfav' ? RULES.backfav.state.wait : rule.state.wait;
     var level = (gateOk && core && checks.available >= 2 && checks.score >= greenAt) ? 'verde' : (checks.available >= 2 && checks.score >= yellowAt ? 'giallo' : 'rosso');
@@ -393,5 +448,5 @@
     return { level: level, summary: summary, gateOk: gateOk, score: checks.score, score100: s100, passed: checks.passed, available: checks.available, core: core, label: wanted };
   }
 
-  return { RULES: RULES, analyzeAll: analyzeAll, classify: classify, score100: score100 };
+  return { RULES: RULES, STRATEGIE: STRATEGIE, analyzeAll: analyzeAll, classify: classify, score100: score100 };
 });

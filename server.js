@@ -1541,6 +1541,7 @@ app.post('/api/live-stats', async (req, res) => {
     let postGoalJustStarted = false;
     if (
       match.live_strategy === 'over15ft' &&
+      liveStrategie.RULES.over15ft.allowPostGoal !== false &&
       !match.signal_first_at &&
       !match.live_alert_sent &&
       totalsNow.goals === 1 &&
@@ -1577,6 +1578,7 @@ app.post('/api/live-stats', async (req, res) => {
     // il gol non può trasformare immediatamente ATTENDI -> VERDE.
     if (
       match.live_strategy === 'over15ft' &&
+      liveStrategie.RULES.over15ft.allowPostGoal !== false &&
       !match.signal_first_at &&
       !match.live_alert_sent &&
       totalsNow.goals === 1 &&

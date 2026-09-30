@@ -1721,3 +1721,4 @@ html[data-theme="light"] .csv-trend-card.public{border-color:#dec46e;background:
   .csv-trend-card.public .csv-trend-main span,
   .csv-trend-card.public .csv-trend-sub span{font-size:.60rem;padding:5px 4px}
 }
+@media(min-width:901px){.la-odds-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}

@@ -771,7 +771,7 @@
     // L'import amministrativo usa direttamente il file CSV: niente più copia/incolla.
     // Per i file di scouting OVER 0.5 HT la quota del CSV (O1.5 FT) viene volutamente ignorata.
     var IMPORT_STRATEGY = 'Over 0.5 HT';
-    var IMPORT_QUOTA = '1.55';
+    var IMPORT_QUOTA = '1.60';
 
     function toStartAt(dataStr, oraStr){
       var dm = (dataStr||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -872,7 +872,7 @@
         var original={};
         headers.forEach(function(h,j){
           var nh=normalizeHeader(h);
-          // Le colonne quota/O1.5 FT non vengono importate né conservate: per EasyBet l'ingresso è sempre 1.55.
+          // Le colonne quota/O1.5 FT non vengono importate né conservate: per EasyBet l'ingresso minimo è sempre 1.60 (regola O0.5 HT PRE+LIVE).
           if (nh.indexOf('o1 5 sopra')!==-1 || nh.indexOf('quota')!==-1 || nh.indexOf('odds')!==-1) return;
           original[h]=vals[j] == null ? '' : String(vals[j]).trim();
         });
@@ -910,14 +910,14 @@
 
     function renderImportPreview(){
       if (!importPending.length){ importPreview.innerHTML = ''; return; }
-      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b><span>Strategia: OVER 0.5 HT</span><span>Quota ingresso: 1.55</span></div>';
+      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b><span>Strategia: OVER 0.5 HT</span><span>Quota ingresso: 1.60</span></div>';
       html += importPending.map(function(m, idx){
         return '<div class="preview-row">'+
           '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
           '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
           '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
           (function(){var t=importTrend(m);return t?'<div class="preview-trend"><span>Casa O0.5 <b>'+pctLabel(t.home)+'</b></span><span>Trasf. O0.5 <b>'+pctLabel(t.away)+'</b></span><span>Media <b>'+pctLabel(t.avg)+'</b></span><span>Gol 15–45 C <b>'+pctLabel(t.h1545)+'</b></span><span>Gol 15–45 T <b>'+pctLabel(t.a1545)+'</b></span></div>':'';})()+
-          '<div class="preview-fields fixed"><span>OVER 0.5 HT</span><b>1.55</b></div>'+
+          '<div class="preview-fields fixed"><span>OVER 0.5 HT</span><b>1.60</b></div>'+
         '</div>';
       }).join('');
       html += '<div class="modal-actions" style="margin-top:10px;"><div style="flex:1"></div><button class="btn btn-primary" id="importConfirmBtn">Importa '+importPending.length+' partite</button></div>';
