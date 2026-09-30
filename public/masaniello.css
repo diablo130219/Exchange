@@ -96,3 +96,32 @@ html[data-theme="dark"] .masaniello-board .ms-eyebrow,
 html[data-theme="dark"] .masaniello-board .ms-card h3{color:#efc861!important}
 html[data-theme="dark"] .masaniello-board .ms-chart .grid{stroke:rgba(243,210,113,.08)!important}
 html[data-theme="dark"] .masaniello-board .ms-chart .base{stroke:#8e826f!important}
+
+
+/* STEP46: eliminazione righe Confronta piani */
+.masaniello-board .ms-delete-compare{
+  color:#b2252d;
+  background:#fff1f1;
+  border-color:#e7b0b3;
+  font-weight:900;
+  white-space:nowrap;
+}
+.masaniello-board .ms-delete-compare:hover{
+  background:#fde4e4;
+  border-color:#d98f94;
+}
+.masaniello-board .ms-empty-row{
+  padding:18px 10px!important;
+  color:#8c7b5d!important;
+  font-style:italic;
+}
+.masaniello-board .ms-btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  transform:none!important;
+}
+html[data-theme="dark"] .masaniello-board .ms-delete-compare{
+  color:#ff9a95!important;
+  background:#3c211f!important;
+  border-color:#7b3d3a!important;
+}
