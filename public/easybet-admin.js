@@ -307,6 +307,7 @@
           '<div class="stat">'+ICON_CHART+'<div class="stat-text"><span class="stat-label">Quota ingresso</span><span class="stat-value">'+esc(m.quotaIngresso||'—')+'</span></div></div>'+
           '<div class="stat">'+ICON_TARGET+'<div class="stat-text"><span class="stat-label">Strategia</span><span class="stat-value">'+esc(m.tipoGiocata||'—')+'</span></div></div>'+
         '</div>'+
+        (function(){var t=importTrend(m);return t?'<div class="csv-trend-card"><div class="csv-trend-title">PRESA ULTIME 5</div><div class="csv-trend-main"><span>Casa <b>'+pctLabel(t.home)+'</b></span><span>Trasferta <b>'+pctLabel(t.away)+'</b></span><span class="media">Media <b>'+pctLabel(t.avg)+'</b></span></div><div class="csv-trend-sub"><span>Gol 15–45 casa <b>'+pctLabel(t.h1545)+'</b></span><span>Gol 15–45 trasf. <b>'+pctLabel(t.a1545)+'</b></span></div></div>':'';})()+
         '<div class="esito-banner '+bannerCls+'">'+bannerIcon+
           '<div class="esito-banner-text"><span class="esito-tag">Esito</span>'+
             '<select class="esito-select-inline" data-id="'+esc(m.id)+'" data-role="esito">'+
@@ -808,6 +809,28 @@
         .replace(/[^a-z0-9]+/g,' ' ).trim();
     }
 
+    function parsePct(v){
+      var raw=String(v==null?'':v).trim().replace('%','').replace(',','.');
+      var n=parseFloat(raw);
+      return isFinite(n)?Math.max(0,Math.min(100,n)):null;
+    }
+    function pctLabel(v){
+      var n=(typeof v==='number')?v:parsePct(v);
+      if (n==null) return '—';
+      var rounded=Math.round(n*10)/10;
+      return String(rounded).replace('.',',')+'%';
+    }
+    function importTrend(m){
+      var d=m&&m.importData;
+      if(!d||typeof d!=='object') return null;
+      var e=d._easybet||{};
+      var home=e.over05HomePct, away=e.over05AwayPct, h1545=e.home1545Pct, a1545=e.away1545Pct;
+      if(home==null && away==null && h1545==null && a1545==null) return null;
+      var vals=[home,away].filter(function(x){return typeof x==='number'&&isFinite(x);});
+      var avg=vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
+      return {home:home,away:away,h1545:h1545,a1545:a1545,avg:avg};
+    }
+
     function parseDateOra(raw){
       raw=String(raw||'').trim();
       // Esempio: "25/26 02/10/2026 0130". La prima parte è la stagione.
@@ -835,6 +858,10 @@
       var iDate=idx('data ora','dataora','data');
       var iHome=idx('squadra casa','casa','home');
       var iAway=idx('squadra ospite','ospite','away');
+      var iOverHome=idx('over 0 5 casa');
+      var iOverAway=idx('over 0 5 trasf','over 0 5 trasferta');
+      var iHome1545=idx('home gol 15 445','home gol 15 45');
+      var iAway1545=idx('osp gol 15 45','ospite gol 15 45','away gol 15 45');
       if (iLeague<0 || iDate<0 || iHome<0 || iAway<0) return [];
       var out=[];
       for (var r=1;r<rows.length;r++){
@@ -849,6 +876,14 @@
           if (nh.indexOf('o1 5 sopra')!==-1 || nh.indexOf('quota')!==-1 || nh.indexOf('odds')!==-1) return;
           original[h]=vals[j] == null ? '' : String(vals[j]).trim();
         });
+        // Schema definitivo OVER 0.5 HT: salviamo anche una forma normalizzata delle percentuali
+        // così le card non dipendono dagli spazi o dalla punteggiatura dei titoli CSV.
+        original._easybet={
+          over05HomePct:iOverHome>=0?parsePct(vals[iOverHome]):null,
+          over05AwayPct:iOverAway>=0?parsePct(vals[iOverAway]):null,
+          home1545Pct:iHome1545>=0?parsePct(vals[iHome1545]):null,
+          away1545Pct:iAway1545>=0?parsePct(vals[iAway1545]):null
+        };
         out.push({
           data:dt.data, ora:dt.ora,
           campionato:String(vals[iLeague]||'').trim(),
@@ -881,6 +916,7 @@
           '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
           '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
           '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
+          (function(){var t=importTrend(m);return t?'<div class="preview-trend"><span>Casa O0.5 <b>'+pctLabel(t.home)+'</b></span><span>Trasf. O0.5 <b>'+pctLabel(t.away)+'</b></span><span>Media <b>'+pctLabel(t.avg)+'</b></span><span>Gol 15–45 C <b>'+pctLabel(t.h1545)+'</b></span><span>Gol 15–45 T <b>'+pctLabel(t.a1545)+'</b></span></div>':'';})()+
           '<div class="preview-fields fixed"><span>OVER 0.5 HT</span><b>1.55</b></div>'+
         '</div>';
       }).join('');

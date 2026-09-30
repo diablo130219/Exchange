@@ -232,3 +232,9 @@
 .preview-row .preview-fields.fixed span,.preview-row .preview-fields.fixed b{border:1px solid var(--border);background:var(--surface);padding:5px 8px;border-radius:999px}
 .preview-row .preview-fields.fixed b{color:var(--gold-deep);font-family:'IBM Plex Mono',monospace}
 @media(max-width:700px){.csv-import-head{flex-direction:column}.csv-fixed-rule{grid-template-columns:1fr 1fr}.csv-fixed-rule small{grid-column:1/-1}}
+
+
+/* STEP 44 — percentuali scouting CSV definitivo OVER 0.5 HT */
+.csv-trend-card{margin:-3px 0 13px;padding:10px 11px;border:1px solid color-mix(in srgb,var(--gold) 40%,var(--border));border-radius:10px;background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 7%,var(--surface)),var(--surface-2));}
+.csv-trend-title{font-size:.58rem;font-weight:950;letter-spacing:.09em;color:var(--gold-deep);margin-bottom:7px}.csv-trend-main,.csv-trend-sub{display:flex;gap:6px;flex-wrap:wrap}.csv-trend-main span,.csv-trend-sub span{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:5px 8px;font-size:.64rem;color:var(--text-faint)}.csv-trend-main b,.csv-trend-sub b{font-family:'IBM Plex Mono',monospace;color:var(--text);font-size:.68rem}.csv-trend-main .media{border-color:color-mix(in srgb,var(--gold) 55%,var(--border));background:color-mix(in srgb,var(--gold) 10%,var(--surface))}.csv-trend-main .media b{color:var(--gold-deep)}
+.preview-trend{grid-column:1/-1;display:flex;gap:5px;flex-wrap:wrap}.preview-trend span{font-size:.62rem;padding:4px 7px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-faint)}.preview-trend b{color:var(--gold-deep);font-family:'IBM Plex Mono',monospace}

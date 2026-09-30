@@ -1670,3 +1670,8 @@ html[data-theme="light"] body .trend-tooltip{
 @media(max-width:600px){
   .trend-tooltip{font-size:.68rem;white-space:normal;max-width:86%}
 }
+
+
+/* STEP 44 — trend ultime 5 importato dal CSV scouting */
+.csv-trend-card.public{margin:10px 0 0;padding:10px;border-radius:12px;border:1px solid rgba(211,171,64,.34);background:linear-gradient(135deg,rgba(211,171,64,.08),rgba(255,255,255,.02))}.csv-trend-title{font-size:.56rem;font-weight:950;letter-spacing:.1em;color:#d8b75a;margin-bottom:7px}.csv-trend-main,.csv-trend-sub{display:flex;gap:6px;flex-wrap:wrap}.csv-trend-main span,.csv-trend-sub span{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.10);border-radius:999px;padding:5px 8px;font-size:.62rem}.csv-trend-main span{font-weight:700}.csv-trend-main b,.csv-trend-sub b{font-family:'IBM Plex Mono',monospace}.csv-trend-main .media{border-color:rgba(211,171,64,.42);background:rgba(211,171,64,.09)}.csv-trend-main .media b{color:#e4c86f}.csv-trend-sub{margin-top:5px;opacity:.82}
+html[data-theme="light"] .csv-trend-card.public{border-color:#dec46e;background:linear-gradient(135deg,#fff9e7,#fff)}html[data-theme="light"] .csv-trend-title,html[data-theme="light"] .csv-trend-main .media b{color:#806000}html[data-theme="light"] .csv-trend-main span,html[data-theme="light"] .csv-trend-sub span{border-color:#e7dfc7;color:#5d5646;background:#fff}

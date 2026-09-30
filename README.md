@@ -79,3 +79,10 @@ Funzioni principali:
 
 ## STEP 43 — Import elenco da CSV
 Il pulsante “Importa elenco” nell’admin apre direttamente un file CSV. Per i file scouting Over 0.5 HT importa campionato, data/ora e squadre, conserva tutte le colonne originali in `import_data`, imposta strategia `Over 0.5 HT` e quota ingresso fissa `1.55`, ignorando la quota Over 1.5 FT presente nel file.
+
+
+## STEP 44 — CSV definitivo OVER 0.5 HT
+- Import compatibile con il formato definitivo a separatore `;`.
+- Importa e normalizza `OVER 0.5 CASA`, `OVER 0.5 TRASF.`, `{HOME GOL 15-445}`, `{OSP GOL 15-45}`.
+- Mantiene la quota EasyBet fissa a 1.55 e ignora eventuali quote esterne.
+- Mostra sulle card Casa/Trasferta, media e trend gol 15–45.
