@@ -240,3 +240,28 @@ html[data-theme="dark"] .exchange-board .ex-cell.neg-input{color:#ff8f8c!importa
 html[data-theme="dark"] .exchange-board .ex-table .ex-side.punta{color:#79e2ad!important;background:#173628!important;border-color:#326c50!important}
 html[data-theme="dark"] .exchange-board .ex-table .ex-side.banca{color:#ff8f8c!important;background:#3c211f!important;border-color:#7b3d3a!important}
 html[data-theme="dark"] .exchange-board .ex-table .ex-side.trading{color:#f0cb66!important;background:#332a18!important;border-color:#745d24!important}
+
+
+/* STEP47: riepiloghi in alto e statistiche con segni colore coerenti */
+.exchange-board .ex-top-tiles b.pos,
+.exchange-board .ex-summary-tiles b.pos,
+.exchange-board .ex-import-summary b.pos{
+  color:#178a4c!important;
+  font-weight:900!important;
+}
+.exchange-board .ex-top-tiles b.neg,
+.exchange-board .ex-summary-tiles b.neg,
+.exchange-board .ex-import-summary b.neg{
+  color:#c92f36!important;
+  font-weight:900!important;
+}
+html[data-theme="dark"] .exchange-board .ex-top-tiles b.pos,
+html[data-theme="dark"] .exchange-board .ex-summary-tiles b.pos,
+html[data-theme="dark"] .exchange-board .ex-import-summary b.pos{
+  color:#79e2ad!important;
+}
+html[data-theme="dark"] .exchange-board .ex-top-tiles b.neg,
+html[data-theme="dark"] .exchange-board .ex-summary-tiles b.neg,
+html[data-theme="dark"] .exchange-board .ex-import-summary b.neg{
+  color:#ff8f8c!important;
+}
