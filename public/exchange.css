@@ -265,3 +265,34 @@ html[data-theme="dark"] .exchange-board .ex-summary-tiles b.neg,
 html[data-theme="dark"] .exchange-board .ex-import-summary b.neg{
   color:#ff8f8c!important;
 }
+
+/* STEP46 — Verifica sistemi */
+.exchange-board .ex-sys-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.exchange-board .ex-sys-card{border:1px solid var(--ex-line);border-left:4px solid var(--ex-muted);border-radius:13px;background:var(--ex-panel);padding:13px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.exchange-board .ex-sys-card.green{border-left-color:var(--ex-green)}
+.exchange-board .ex-sys-card.yellow{border-left-color:var(--ex-gold)}
+.exchange-board .ex-sys-card.red{border-left-color:var(--ex-red)}
+.exchange-board .ex-sys-card header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.exchange-board .ex-sys-card header b{display:block;font-size:.8rem;color:var(--ex-text);letter-spacing:.02em}
+.exchange-board .ex-sys-card header small{display:block;font-size:.56rem;color:var(--ex-muted);margin-top:3px}
+.exchange-board .ex-sys-light{font-size:.52rem;font-weight:900;letter-spacing:.1em;padding:5px 8px;border-radius:999px;border:1px solid var(--ex-line2);color:var(--ex-muted);white-space:nowrap}
+.exchange-board .ex-sys-light.green{color:var(--ex-green);border-color:currentColor}
+.exchange-board .ex-sys-light.yellow{color:var(--ex-gold);border-color:currentColor}
+.exchange-board .ex-sys-light.red{color:var(--ex-red);border-color:currentColor}
+.exchange-board .ex-sys-rule{font-size:.6rem;line-height:1.45;color:var(--ex-muted);border:1px dashed var(--ex-line2);border-radius:8px;padding:7px 9px}
+.exchange-board .ex-sys-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.exchange-board .ex-sys-kpi>div{border:1px solid var(--ex-line2);border-radius:10px;padding:8px 9px;min-width:0}
+.exchange-board .ex-sys-kpi small{display:block;font-size:.5rem;color:var(--ex-muted)}
+.exchange-board .ex-sys-kpi b{display:block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.95rem;margin-top:5px;color:var(--ex-text);white-space:nowrap}
+.exchange-board .ex-sys-kpi span{display:block;font-size:.5rem;color:var(--ex-muted);margin-top:3px;line-height:1.35}
+.exchange-board .ex-sys-progress>div{height:7px;border-radius:99px;background:var(--ex-line2);overflow:hidden}
+.exchange-board .ex-sys-progress span{display:block;height:100%;background:linear-gradient(90deg,var(--ex-gold),var(--ex-gold2));border-radius:99px}
+.exchange-board .ex-sys-progress small{display:block;font-size:.53rem;color:var(--ex-muted);margin-top:4px}
+.exchange-board .ex-sys-foot{font-size:.58rem;color:var(--ex-muted)}
+.exchange-board .ex-sys-foot b{color:var(--ex-text)}
+.exchange-board .ex-sys-foot em{font-style:normal;font-weight:800}
+.exchange-board .ex-sys-verdict{font-size:.62rem;line-height:1.5;color:var(--ex-text);border-top:1px solid var(--ex-line2);padding-top:8px}
+.exchange-board .ex-sys-assign{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.exchange-board .ex-sys-assign span{flex-basis:100%;font-size:.55rem;color:var(--ex-muted)}
+@media(max-width:1100px){.exchange-board .ex-sys-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.exchange-board .ex-sys-kpi{grid-template-columns:1fr 1fr}}
