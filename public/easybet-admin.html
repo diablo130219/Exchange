@@ -144,18 +144,20 @@
 </div>
 </div>
 </div>
+<input id="importCsvFile" type="file" accept=".csv,text/csv" hidden/>
 <div class="modal-backdrop" id="importBackdrop">
 <div class="modal wide">
-<h3>Importa elenco partite</h3>
-<div class="field">
-<label>Incolla qui l'elenco (data, ora, campionato, squadre)</label>
-<textarea id="importBox" placeholder="[United States: Major League Soccer]
-14/09/2026 00:30	Vancouver Whitecaps - Austin	-"></textarea>
-<div class="import-hint">Una riga tipo "[Campionato]" seguita da righe "GG/MM/AAAA HH:MM  Squadra Casa - Squadra Trasferta" — formato importazione EasyBet.</div>
+<h3>Importa elenco da CSV</h3>
+<div class="csv-import-head">
+  <div>
+    <strong id="importFileName">Nessun file selezionato</strong>
+    <div class="import-hint">Formato supportato: CSV come “PROVA OVER 0.5HT.csv”. Vengono importati campionato, data/ora e squadre. Tutte le colonne originali vengono conservate nei dati importati.</div>
+  </div>
+  <button class="btn btn-ghost" id="importChooseBtn" type="button">Scegli altro CSV</button>
 </div>
+<div class="csv-fixed-rule"><span>Strategia</span><b>OVER 0.5 HT</b><span>Ingresso consigliato</span><b>1.55</b><small>Le quote presenti nel CSV vengono ignorate perché riferite all’Over 1.5 finale.</small></div>
 <div class="modal-actions">
-<button class="btn btn-ghost" id="importCancelBtn">Chiudi</button>
-<button class="btn btn-primary" id="importParseBtn">Analizza elenco</button>
+<button class="btn btn-ghost" id="importCancelBtn" type="button">Chiudi</button>
 </div>
 <div class="modal-err" id="importErr"></div>
 <div class="import-preview" id="importPreview"></div>

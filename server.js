@@ -323,6 +323,9 @@ function matchOut(row) {
     quotaIngresso: row.quota_ingresso || '',
     esitoManuale: row.esito_manuale || '',
     botEnabled: row.bot_enabled === false ? false : true,
+    importSource: row.import_source || '',
+    importMatchId: row.import_match_id || '',
+    importData: row.import_data || null,
     liveStartedAt: row.live_started_at === null || row.live_started_at === undefined ? null : Number(row.live_started_at),
     signalFirstAt: row.signal_first_at === null || row.signal_first_at === undefined ? null : Number(row.signal_first_at),
     signalFirstLevel: row.signal_first_level || '',
@@ -1135,9 +1138,9 @@ app.post('/api/matches', requireSameSiteAdmin, async (req, res) => {
     const notifyMinutes = 10;
     const botEnabled = b.botEnabled === false ? false : true;
     const { rows } = await pool.query(
-      `INSERT INTO matches (id, data, ora, campionato, casa, trasferta, tipo_giocata, start_at, notify_minutes, notified, created_at, quota_ingresso, esito_manuale, bot_enabled)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,$10,$11,$12,$13) RETURNING *`,
-      [id, b.data || '', b.ora || '', b.campionato || '', b.casa, b.trasferta, b.tipoGiocata || '', Number(b.startAt), notifyMinutes, createdAt, b.quotaIngresso || '', b.esitoManuale || null, botEnabled]
+      `INSERT INTO matches (id, data, ora, campionato, casa, trasferta, tipo_giocata, start_at, notify_minutes, notified, created_at, quota_ingresso, esito_manuale, bot_enabled, import_source, import_match_id, import_data)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+      [id, b.data || '', b.ora || '', b.campionato || '', b.casa, b.trasferta, b.tipoGiocata || '', Number(b.startAt), notifyMinutes, createdAt, b.quotaIngresso || '', b.esitoManuale || null, botEnabled, b.importSource || null, b.importMatchId || null, b.importData || null]
     );
     res.status(201).json(matchOut(rows[0]));
   } catch (err) {

@@ -75,3 +75,7 @@ Funzioni principali:
 - In modalità Light restano oro/avorio.
 - In modalità Dark diventano grafite/bruno scuro con accenti oro, mantenendo verdi/rossi funzionali.
 - Banner e struttura fullscreen restano invariati.
+
+
+## STEP 43 — Import elenco da CSV
+Il pulsante “Importa elenco” nell’admin apre direttamente un file CSV. Per i file scouting Over 0.5 HT importa campionato, data/ora e squadre, conserva tutte le colonne originali in `import_data`, imposta strategia `Over 0.5 HT` e quota ingresso fissa `1.55`, ignorando la quota Over 1.5 FT presente nel file.

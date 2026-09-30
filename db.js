@@ -95,6 +95,10 @@ async function migrate() {
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS quota_ingresso TEXT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS esito_manuale TEXT;`); // null|'entrata_vinta'|'entrata_persa'|'non_entrata'
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS bot_enabled BOOLEAN NOT NULL DEFAULT true;`);
+  // --- Import CSV esterni (STEP 43): conserva i dati originali senza usare la quota del file ---
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_source TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_match_id TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_data JSONB;`);
 
   // --- STEP 6: timeline PRE-MATCH → LIVE → SEGNALE → ESITO ---
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_started_at BIGINT;`);

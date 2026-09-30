@@ -218,3 +218,17 @@
 @media(max-width:460px){
   .head-actions{grid-template-columns:1fr}
 }
+
+/* STEP 43 — import elenco CSV diretto */
+.csv-import-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:12px 14px;border:1px solid var(--border);background:var(--surface-2);border-radius:10px;margin-top:8px}
+.csv-import-head strong{display:block;font-size:.9rem;margin-bottom:4px;color:var(--text)}
+.csv-fixed-rule{display:grid;grid-template-columns:auto auto auto auto 1fr;gap:8px 10px;align-items:center;margin:10px 0 4px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--gold) 35%,var(--border));background:color-mix(in srgb,var(--gold) 8%,var(--surface));border-radius:10px;font-size:.76rem}
+.csv-fixed-rule span{color:var(--text-faint)}
+.csv-fixed-rule b{color:var(--gold-deep);font-family:'IBM Plex Mono',monospace}
+.csv-fixed-rule small{color:var(--text-faint)}
+.csv-import-summary{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 8px;padding:9px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);font-size:.73rem}
+.csv-import-summary b{margin-right:auto}
+.preview-row .preview-fields.fixed{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:8px;color:var(--text-faint);font-size:.7rem}
+.preview-row .preview-fields.fixed span,.preview-row .preview-fields.fixed b{border:1px solid var(--border);background:var(--surface);padding:5px 8px;border-radius:999px}
+.preview-row .preview-fields.fixed b{color:var(--gold-deep);font-family:'IBM Plex Mono',monospace}
+@media(max-width:700px){.csv-import-head{flex-direction:column}.csv-fixed-rule{grid-template-columns:1fr 1fr}.csv-fixed-rule small{grid-column:1/-1}}

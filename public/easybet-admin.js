@@ -766,9 +766,12 @@
       });
     });
 
-    // ---------------- import elenco (incolla lista partite) ----------------
-    // Formato importazione EasyBet: righe "[Campionato]" seguite
-    // da righe "GG/MM/AAAA HH:MM  Squadra Casa - Squadra Trasferta".
+    // ---------------- import elenco da CSV (STEP 43) ----------------
+    // L'import amministrativo usa direttamente il file CSV: niente più copia/incolla.
+    // Per i file di scouting OVER 0.5 HT la quota del CSV (O1.5 FT) viene volutamente ignorata.
+    var IMPORT_STRATEGY = 'Over 0.5 HT';
+    var IMPORT_QUOTA = '1.55';
+
     function toStartAt(dataStr, oraStr){
       var dm = (dataStr||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
       var tm = (oraStr||'').match(/^(\d{1,2}):(\d{2})$/);
@@ -777,125 +780,187 @@
       return d.getTime();
     }
 
-    function parsePaste(text){
-      var lines = text.split('\n');
-      var league = '';
-      var out = [];
-      for (var i=0;i<lines.length;i++){
-        var raw = lines[i].replace(/\r$/,'');
-        var trimmed = raw.trim();
-        if (!trimmed) continue;
-        var lm = trimmed.match(/^\[(.+)\]$/);
-        if (lm){ league = lm[1].trim(); continue; }
-        var parts = raw.split('\t').map(function(s){return s.trim();}).filter(function(s){return s.length && s !== '-';});
-        if (parts.length < 2){
-          parts = trimmed.split(/\s{2,}/).map(function(s){return s.trim();}).filter(function(s){return s.length && s !== '-';});
+    function csvRows(text){
+      text = String(text || '').replace(/^\uFEFF/, '');
+      var first = (text.split(/\r?\n/,1)[0] || '');
+      var delimiter = (first.split(';').length > first.split(',').length) ? ';' : ',';
+      var rows=[], row=[], cell='', quoted=false;
+      for (var i=0;i<text.length;i++){
+        var ch=text[i];
+        if (quoted){
+          if (ch==='"' && text[i+1]==='"'){ cell+='"'; i++; }
+          else if (ch==='"'){ quoted=false; }
+          else { cell+=ch; }
+        } else {
+          if (ch==='"') quoted=true;
+          else if (ch===delimiter){ row.push(cell); cell=''; }
+          else if (ch==='\n'){ row.push(cell.replace(/\r$/,'')); rows.push(row); row=[]; cell=''; }
+          else cell+=ch;
         }
-        var dateStr, timeStr, matchStr;
-        if (parts.length >= 2){
-          var dt = parts[0].match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{1,2}:\d{2})$/);
-          if (dt){ dateStr = dt[1]; timeStr = dt[2]; matchStr = parts[1]; }
+      }
+      if (cell.length || row.length){ row.push(cell.replace(/\r$/,'')); rows.push(row); }
+      return rows.filter(function(r){ return r.some(function(v){ return String(v||'').trim()!==''; }); });
+    }
+
+    function normalizeHeader(v){
+      return String(v || '').replace(/^\uFEFF/,'').trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-z0-9]+/g,' ' ).trim();
+    }
+
+    function parseDateOra(raw){
+      raw=String(raw||'').trim();
+      // Esempio: "25/26 02/10/2026 0130". La prima parte è la stagione.
+      var m=raw.match(/(?:^|\s)(\d{2}\/\d{2}\/\d{4})\s+(\d{2})(\d{2})(?:\s|$)/);
+      if (!m) m=raw.match(/(?:^|\s)(\d{2}\/\d{2}\/\d{4})\s+(\d{1,2}):(\d{2})(?:\s|$)/);
+      if (!m) return null;
+      return {data:m[1], ora:String(m[2]).padStart(2,'0')+':'+m[3]};
+    }
+
+    function parseImportCsv(text, fileName){
+      var rows=csvRows(text);
+      if (rows.length < 2) return [];
+      var headers=rows[0].map(function(h){ return String(h||'').replace(/^\uFEFF/,'').trim(); });
+      var norm=headers.map(normalizeHeader);
+      function idx(){
+        for (var a=0;a<arguments.length;a++){
+          var wanted=arguments[a];
+          var found=norm.indexOf(wanted);
+          if (found>=0) return found;
         }
-        if (!dateStr){
-          var full = trimmed.match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{1,2}:\d{2})\s+(.+)$/);
-          if (full){ dateStr = full[1]; timeStr = full[2]; matchStr = full[3]; }
-        }
-        if (!dateStr || !matchStr) continue;
-        matchStr = matchStr.replace(/\s*-\s*$/,'').trim();
-        var tm2 = matchStr.match(/^(.+?)\s+-\s+(.+)$/);
-        if (!tm2) continue;
-        out.push({data:dateStr, ora:timeStr, campionato:league, casa:tm2[1].trim(), trasferta:tm2[2].trim(), tipoGiocata:'', quotaIngresso:''});
+        return -1;
+      }
+      var iId=idx('matchid','match id');
+      var iLeague=idx('campionato');
+      var iDate=idx('data ora','dataora','data');
+      var iHome=idx('squadra casa','casa','home');
+      var iAway=idx('squadra ospite','ospite','away');
+      if (iLeague<0 || iDate<0 || iHome<0 || iAway<0) return [];
+      var out=[];
+      for (var r=1;r<rows.length;r++){
+        var vals=rows[r];
+        var dt=parseDateOra(vals[iDate]);
+        var casa=String(vals[iHome]||'').trim(), trasferta=String(vals[iAway]||'').trim();
+        if (!dt || !casa || !trasferta) continue;
+        var original={};
+        headers.forEach(function(h,j){
+          var nh=normalizeHeader(h);
+          // Le colonne quota/O1.5 FT non vengono importate né conservate: per EasyBet l'ingresso è sempre 1.55.
+          if (nh.indexOf('o1 5 sopra')!==-1 || nh.indexOf('quota')!==-1 || nh.indexOf('odds')!==-1) return;
+          original[h]=vals[j] == null ? '' : String(vals[j]).trim();
+        });
+        out.push({
+          data:dt.data, ora:dt.ora,
+          campionato:String(vals[iLeague]||'').trim(),
+          casa:casa, trasferta:trasferta,
+          tipoGiocata:IMPORT_STRATEGY,
+          quotaIngresso:IMPORT_QUOTA,
+          importSource:fileName || 'CSV',
+          importMatchId:iId>=0 ? String(vals[iId]||'').trim() : '',
+          importData:original
+        });
       }
       return out;
     }
 
     var importPending = [];
     var importBackdrop = document.getElementById('importBackdrop');
-    var importBox = document.getElementById('importBox');
+    var importCsvFile = document.getElementById('importCsvFile');
+    var importChooseBtn = document.getElementById('importChooseBtn');
+    var importFileName = document.getElementById('importFileName');
     var importErr = document.getElementById('importErr');
     var importPreview = document.getElementById('importPreview');
 
-    function openImportModal(){
-      importPending = [];
-      importBox.value = '';
-      importErr.textContent = '';
-      importPreview.innerHTML = '';
-      importBackdrop.classList.add('open');
-    }
     function closeImportModal(){ importBackdrop.classList.remove('open'); }
 
     function renderImportPreview(){
       if (!importPending.length){ importPreview.innerHTML = ''; return; }
-      var html = importPending.map(function(m, idx){
+      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b><span>Strategia: OVER 0.5 HT</span><span>Quota ingresso: 1.55</span></div>';
+      html += importPending.map(function(m, idx){
         return '<div class="preview-row">'+
           '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
           '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
           '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
-          '<div class="preview-fields">'+
-            '<input class="pv-tipo" data-idx="'+idx+'" placeholder="Strategia / tipo di giocata" value="'+esc(m.tipoGiocata||'')+'">'+
-            '<input class="pv-quota" data-idx="'+idx+'" inputmode="decimal" placeholder="Quota consigliata (es. 1.66)" value="'+esc(m.quotaIngresso||'')+'">'+
-          '</div>'+
+          '<div class="preview-fields fixed"><span>OVER 0.5 HT</span><b>1.55</b></div>'+
         '</div>';
       }).join('');
-      html += '<div class="modal-actions" style="margin-top:10px;">'+
-        '<div style="flex:1"></div>'+
-        '<button class="btn btn-primary" id="importConfirmBtn">Conferma import ('+importPending.length+' partite)</button>'+
-      '</div>';
+      html += '<div class="modal-actions" style="margin-top:10px;"><div style="flex:1"></div><button class="btn btn-primary" id="importConfirmBtn">Importa '+importPending.length+' partite</button></div>';
       importPreview.innerHTML = html;
-      Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-tipo'), function(inp){
-        inp.addEventListener('input', function(){ importPending[+inp.getAttribute('data-idx')].tipoGiocata = inp.value; });
-      });
-      Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-quota'), function(inp){
-        inp.addEventListener('input', function(){
-          var value = inp.value.replace(',', '.').replace(/[^0-9.]/g, '');
-          var firstDot = value.indexOf('.');
-          if (firstDot !== -1) value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
-          inp.value = value;
-          importPending[+inp.getAttribute('data-idx')].quotaIngresso = value;
-        });
-      });
       Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-del'), function(btn){
         btn.addEventListener('click', function(){ importPending.splice(+btn.getAttribute('data-idx'),1); renderImportPreview(); });
       });
       document.getElementById('importConfirmBtn').addEventListener('click', confirmImport);
     }
 
+    function openCsvPicker(){
+      importCsvFile.value='';
+      importCsvFile.click();
+    }
+
     function confirmImport(){
       var batch = importPending.slice();
+      if (!batch.length) return;
+      var btn=document.getElementById('importConfirmBtn');
+      if (btn){btn.disabled=true;btn.textContent='Importazione…';}
       var chain = Promise.resolve();
+      var done=0, skipped=0;
+      function sameText(a,b){return String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();}
       batch.forEach(function(m){
         var startAt = toStartAt(m.data, m.ora);
         if (startAt == null) return;
+        var duplicate = matches.some(function(x){
+          return Number(x.startAt)===Number(startAt) && sameText(x.casa,m.casa) && sameText(x.trasferta,m.trasferta);
+        });
+        if (duplicate){ skipped++; return; }
         chain = chain.then(function(){
           return fetch('/api/matches', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
-              campionato: m.campionato || '', casa: m.casa, trasferta: m.trasferta,
-              data: m.data, ora: m.ora, startAt: startAt,
-              tipoGiocata: m.tipoGiocata || '', quotaIngresso: m.quotaIngresso || '', esitoManuale: '', botEnabled: true
+              campionato:m.campionato || '', casa:m.casa, trasferta:m.trasferta,
+              data:m.data, ora:m.ora, startAt:startAt,
+              tipoGiocata:IMPORT_STRATEGY, quotaIngresso:IMPORT_QUOTA,
+              esitoManuale:'', botEnabled:true,
+              importSource:m.importSource || 'CSV', importMatchId:m.importMatchId || '', importData:m.importData || null
             })
-          });
+          }).then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error(t||'Errore import');}); done++; });
         });
       });
       chain.then(function(){
-        importPending = [];
+        importPending=[];
         closeImportModal();
         loadMatches();
-      }).catch(function(){
-        importErr.textContent = 'Errore durante l\'import.';
+      }).catch(function(err){
+        importErr.textContent='Importazione interrotta dopo '+done+' partite. '+(err&&err.message?err.message:'');
+        if (btn){btn.disabled=false;btn.textContent='Riprova import';}
       });
     }
 
-    document.getElementById('importBtn').addEventListener('click', openImportModal);
+    document.getElementById('importBtn').addEventListener('click', openCsvPicker);
+    importChooseBtn.addEventListener('click', openCsvPicker);
     document.getElementById('importCancelBtn').addEventListener('click', closeImportModal);
     importBackdrop.addEventListener('click', function(e){ if (e.target === importBackdrop) closeImportModal(); });
-    document.getElementById('importParseBtn').addEventListener('click', function(){
-      importErr.textContent = '';
-      var parsed = parsePaste(importBox.value);
-      if (!parsed.length){ importErr.textContent = 'Nessuna partita riconosciuta in questo testo.'; importPreview.innerHTML=''; return; }
-      importPending = parsed;
-      renderImportPreview();
+    importCsvFile.addEventListener('change', function(){
+      var file=importCsvFile.files && importCsvFile.files[0];
+      if (!file) return;
+      importErr.textContent='';
+      importPreview.innerHTML='';
+      importFileName.textContent=file.name;
+      var reader=new FileReader();
+      reader.onload=function(){
+        var parsed=parseImportCsv(reader.result,file.name);
+        if (!parsed.length){
+          importPending=[];
+          importErr.textContent='CSV non riconosciuto. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
+          importBackdrop.classList.add('open');
+          return;
+        }
+        importPending=parsed;
+        importBackdrop.classList.add('open');
+        renderImportPreview();
+      };
+      reader.onerror=function(){ importErr.textContent='Impossibile leggere il file CSV.'; importBackdrop.classList.add('open'); };
+      reader.readAsText(file,'UTF-8');
     });
 
     loadMatches();
