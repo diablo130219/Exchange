@@ -86,3 +86,9 @@ Il pulsante “Importa elenco” nell’admin apre direttamente un file CSV. Per
 - Importa e normalizza `OVER 0.5 CASA`, `OVER 0.5 TRASF.`, `{HOME GOL 15-445}`, `{OSP GOL 15-45}`.
 - Mantiene la quota EasyBet fissa a 1.55 e ignora eventuali quote esterne.
 - Mostra sulle card Casa/Trasferta, media e trend gol 15–45.
+
+## STEP45 — Card "PRESA ULTIME 5" uniformi
+- Prima riga sempre a 3 colonne: Casa / Trasferta / Media.
+- Seconda riga sempre a 2 colonne: Gol 15–45 casa / Gol 15–45 trasferta.
+- Altezza del blocco uniforme su tutte le card.
+- Rimossi i ritorni a capo casuali dei badge mantenendo layout responsive.
