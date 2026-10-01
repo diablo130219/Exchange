@@ -334,6 +334,9 @@ function matchOut(row) {
     importData: row.import_data || null,
     diarioProfit: row.diario_profit == null ? null : Number(row.diario_profit),
     diarioLinkedAt: row.diario_linked_at == null ? null : Number(row.diario_linked_at),
+    liveExcludedAt: row.live_excluded_at == null ? null : Number(row.live_excluded_at),
+    liveExcludedReason: row.live_excluded_reason || '',
+    esitoAuto: row.esito_auto === true,
     diarioEntry: (()=>{ try { return row.diario_entry ? JSON.parse(row.diario_entry) : null; } catch (_) { return null; } })(),
     liveStartedAt: row.live_started_at === null || row.live_started_at === undefined ? null : Number(row.live_started_at),
     signalFirstAt: row.signal_first_at === null || row.signal_first_at === undefined ? null : Number(row.signal_first_at),
@@ -1333,6 +1336,7 @@ app.patch('/api/matches/:id', requireSameSiteAdmin, async (req, res) => {
       sets.push('esito_manuale = $' + (i++)); vals.push(isValidOutcome ? v : null);
       sets.push('outcome_set_at = $' + (i++)); vals.push(isValidOutcome ? Date.now() : null);
     }
+    if (Object.prototype.hasOwnProperty.call(fields, 'esitoManuale')) { sets.push('esito_auto = false'); sets.push("settle_state = '{\"manual\":true}'"); }
     if (Object.prototype.hasOwnProperty.call(fields, 'botEnabled')) {
       sets.push('bot_enabled = $' + (i++)); vals.push(!!fields.botEnabled);
     }
@@ -1411,6 +1415,7 @@ app.post('/api/matches/bulk', requireSameSiteAdmin, async (req, res) => {
       sets.push('esito_manuale = $' + (i++)); vals.push(ok ? v : null);
       sets.push('outcome_set_at = $' + (i++)); vals.push(ok ? Date.now() : null);
     }
+    if (Object.prototype.hasOwnProperty.call(fields, 'esitoManuale')) { sets.push('esito_auto = false'); sets.push("settle_state = '{\"manual\":true}'"); }
 
     if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
     vals.push(ids);
@@ -1487,6 +1492,13 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
         }
       }
       return res.json(Object.assign(matchOut(rows[0]), { telegramStatus: res.locals.tgStatus || null }));
+    }
+    if (event === 'excluded') {
+      const b = req.body || {};
+      const ex = await markMatchExcluded(id, String(b.reason || 'Partita esclusa'), { signalName: b.signalName, minute: b.minute, score: b.scoreText });
+      const { rows } = await pool.query('SELECT * FROM matches WHERE id = $1', [id]);
+      if (!rows[0]) return res.status(404).json({ error: 'Partita non trovata.' });
+      return res.json(Object.assign(matchOut(rows[0]), { excludedNow: !!ex }));
     }
     return res.status(400).json({ error: 'Evento lifecycle non valido.' });
   } catch (err) {
@@ -2496,6 +2508,34 @@ app.post('/api/cron/telegram', async (req, res) => {
 
 
 
+// ---------- Partita esclusa (⛔): una sola volta, solo se non c'è stato un segnale ----------
+async function markMatchExcluded(matchId, reason, info) {
+  info = info || {};
+  const now = Date.now();
+  const { rows } = await pool.query(
+    `UPDATE matches SET live_excluded_at = $2, live_excluded_reason = $3
+     WHERE id = $1 AND live_excluded_at IS NULL AND signal_first_at IS NULL AND (esito_manuale IS NULL OR esito_manuale = '') RETURNING *`,
+    [matchId, now, String(reason || 'Partita esclusa').slice(0, 240)]);
+  const m = rows[0];
+  if (!m) return null;
+  if (m.bot_enabled !== false && telegram.isConfigured) {
+    const minute = info.minute == null || info.minute === '' ? '' : String(info.minute);
+    const text = '⛔ <b>PARTITA ESCLUSA — ' + escapeHtmlLite(info.signalName || m.tipo_giocata || '') + '</b>' + (m.campionato ? ' (' + escapeHtmlLite(m.campionato) + ')' : '') + '\n' +
+      '<b>' + escapeHtmlLite(m.casa) + ' - ' + escapeHtmlLite(m.trasferta) + '</b>\n' +
+      (minute || info.score ? '⏱ ' + escapeHtmlLite(minute || 'N/D') + (minute && !/^ht$/i.test(minute) ? "'" : '') + ' • 📍 ' + escapeHtmlLite(info.score || 'N/D') + '\n' : '') +
+      '❌ ' + escapeHtmlLite(reason) + '\nNessun ingresso: a fine partita viene segnata come <i>Non entrata</i>.';
+    try { await telegram.broadcast(text); } catch (e) { console.error('telegram excluded:', e.message); }
+  }
+  return m;
+}
+async function autoCloseExcluded() {
+  const now = Date.now();
+  try {
+    await pool.query(`UPDATE matches SET esito_manuale = 'non_entrata', outcome_set_at = COALESCE(outcome_set_at, $1)
+      WHERE live_excluded_at IS NOT NULL AND (esito_manuale IS NULL OR esito_manuale = '') AND start_at < $2`, [now, now - 125 * 60 * 1000]);
+  } catch (e) { console.warn('autoCloseExcluded:', e.message); }
+}
+
 // ---------- Scanner LIVE automatico lato server (GoalDir) ----------
 // Ogni 60s controlla tutte le partite iniziate e ancora senza esito, legge le statistiche GoalDir,
 // calcola il segnale con lo stesso motore del Live Analyzer e, al primo VERDE, accende la campanella
@@ -2532,16 +2572,18 @@ async function liveAutoScanOnce() {
   const now = Date.now();
   let checked = 0, found = 0, alerts = 0;
   try {
+    await autoCloseExcluded();
     const { rows } = await pool.query(
       `SELECT * FROM matches WHERE start_at <= $1 AND start_at >= $2 AND (esito_manuale IS NULL OR esito_manuale = '')`,
-      [now, now - 135 * 60 * 1000]);
+      [now, now - 170 * 60 * 1000]);
+    const settleTargets = rows.filter(m => m.signal_first_at && !m.esito_auto && !/"manual"/.test(m.settle_state || '') && scanSignalName(m.tipo_giocata));
     const targets = rows.filter(m => {
       const name = scanSignalName(m.tipo_giocata), w = scanWindow(name);
-      if (!name || !w || m.signal_first_at || m.live_alert_sent) return false;
+      if (!name || !w || m.signal_first_at || m.live_alert_sent || m.live_excluded_at) return false;
       const el = (now - Number(m.start_at)) / 60000;
-      return el >= w[0] && el <= w[1];
+      return el >= w[0] && el <= w[1] + 8; // +8': controllo finale per capire se la finestra si è chiusa senza ingresso
     });
-    if (!targets.length) { liveScanLast = { at: now, checked: 0, found: 0, alerts: 0, error: '', paused: '', idle: 'Nessuna partita nella finestra di controllo' }; return; }
+    if (!targets.length && !settleTargets.length) { liveScanLast = { at: now, checked: 0, found: 0, alerts: 0, error: '', paused: '', idle: 'Nessuna partita nella finestra di controllo' }; return; }
     const usage = await gdUsage();
     if (usage.remaining <= usage.reserve) { liveScanLast = { at: now, checked: 0, found: 0, alerts: 0, error: '', paused: 'Limite giornaliero GoalDir quasi raggiunto: restano ' + usage.remaining + ' richieste oggi (riserva ' + usage.reserve + ' per il Live Analyzer).' }; return; }
     const liveResp = await gdFetchCached('/events/live/', 45000);
@@ -2558,8 +2600,9 @@ async function liveAutoScanOnce() {
       if (!best || bestScore < 0.5) continue;
       const eventId = gdEventId(best); if (!eventId) continue;
       found++;
+      const afterWindow = (now - Number(m.start_at)) / 60000 > scanWindow(scanSignalName(m.tipo_giocata))[1];
       let statsData = {};
-      try { statsData = (await gdFetchCached('/events/' + encodeURIComponent(eventId) + '/stats/', 55000)).data || {}; } catch (e) { continue; }
+      if (!afterWindow) try { statsData = (await gdFetchCached('/events/' + encodeURIComponent(eventId) + '/stats/', 55000)).data || {}; } catch (e) { continue; }
       const stats = gdNormalizeStats(statsData);
       const minute = gdIsHalftime(best) ? 'HT' : gdLiveMinute(best);
       const score = gdLiveScore(best);
@@ -2569,6 +2612,13 @@ async function liveAutoScanOnce() {
       const name = scanSignalName(m.tipo_giocata);
       const sig = sigs.find(x => x.name === name);
       if (!sig) continue;
+      const excl = liveStrategie.exclusionOf(sig);
+      if (excl) {
+        const ex = await markMatchExcluded(m.id, excl, { signalName: name, minute: minute == null ? '' : (minute === 'HT' ? 'HT' : Math.round(minute)), score });
+        if (ex) alerts++;
+        continue;
+      }
+      if (afterWindow) continue;
       // Banca X / Favorito HT: senza quota live il motore si ferma a "ATTESA QUOTA" = condizione di ingresso raggiunta.
       const htReady = (name === 'Banca X' || name === 'Favorito HT') && sig.state === 'ATTESA QUOTA';
       const isGreen = sig.state === 'VERDE' || htReady;
@@ -2601,11 +2651,71 @@ async function liveAutoScanOnce() {
         } catch (e) { console.error('autoscan telegram:', e.message); }
       }
     }
-    liveScanLast = { at: now, checked, found, alerts, error: '', paused: '' };
+    for (const m of settleTargets) {
+      try { if (await settleMatch(m, events, now)) alerts++; } catch (e) { console.warn('settle:', e.message); }
+    }
+    liveScanLast = { at: now, checked, found, alerts, error: '', paused: '', settling: settleTargets.length };
   } catch (err) {
     liveScanLast = { at: now, checked, found, alerts, error: String(err && err.message || err) };
     console.error('live autoscan:', liveScanLast.error);
   } finally { liveScanBusy = false; }
+}
+// ---------- Esito automatico (solo Home/statistiche, MAI Diario Exchange) ----------
+// Dopo un segnale VERDE il server segue il risultato e imposta Entrata · Vinta / Persa con esito_auto = true.
+function gdFindEvent(m, events, eventId) {
+  if (eventId) { const ev = events.find(e => String(gdEventId(e)) === String(eventId)); if (ev) return ev; }
+  let best = null, bestScore = 0;
+  for (const ev of events) {
+    const sc = (gdNameScore(m.casa, gdEventTeamName(ev, 'home')) + gdNameScore(m.trasferta, gdEventTeamName(ev, 'away'))) / 2;
+    if (sc > bestScore) { bestScore = sc; best = ev; }
+  }
+  return best && bestScore >= 0.5 ? best : null;
+}
+function gdIsFinished(ev) { const s = gdStatusText(ev).toLowerCase(); return /finished|ended|full\s*time|^ft$|terminat|after|aet|pen/.test(s); }
+async function settleMatch(m, events, now) {
+  const name = scanSignalName(m.tipo_giocata);
+  let st = {}; try { st = m.settle_state ? JSON.parse(m.settle_state) : {}; } catch (_) { st = {}; }
+  const ev = gdFindEvent(m, events, st.eventId);
+  const elapsed = (now - Number(m.start_at)) / 60000;
+  let finished = false, score = st.lastScore || '', minute = st.lastMinute;
+  if (ev) {
+    st.eventId = gdEventId(ev) || st.eventId;
+    score = gdLiveScore(ev) || score;
+    minute = gdIsHalftime(ev) ? 45 : (gdLiveMinute(ev) != null ? gdLiveMinute(ev) : minute);
+    if (gdIsHalftime(ev) || (minute != null && minute <= 45)) st.htScore = score; // ultimo punteggio visto nel 1° tempo
+    finished = gdIsFinished(ev);
+  } else if (st.eventId && elapsed > 95) {
+    // Uscita dal feed live = partita finita: provo a leggere il risultato finale, altrimenti uso l'ultimo visto.
+    try { const r = await gdFetchCached('/events/' + encodeURIComponent(st.eventId) + '/', 300000); const fe = r.data || {}; score = gdLiveScore(fe) || score; } catch (_) {}
+    finished = true;
+  } else if (!st.eventId && elapsed > 165) {
+    return false; // mai trovata su GoalDir: lascio l'esito a te
+  }
+  st.lastScore = score; st.lastMinute = minute;
+  const sp = scorePairFromAny(score), goals = sp[0] == null ? null : sp[0] + sp[1];
+  const htp = scorePairFromAny(st.htScore || ''), htGoals = htp[0] == null ? null : htp[0] + htp[1];
+  let outcome = null, why = '';
+  if (name === 'Over 0.5 HT') {
+    if (goals != null && goals > 0 && minute != null && minute <= 45) { outcome = 'entrata_vinta'; why = 'gol nel 1° tempo'; }
+    else if (minute != null && minute > 45 && htGoals === 0) { outcome = 'entrata_persa'; why = '0-0 all’intervallo'; }
+    else if (minute != null && minute > 45 && htGoals != null && htGoals > 0) { outcome = 'entrata_vinta'; why = 'gol nel 1° tempo'; }
+  } else if (name === 'Over 1.5 FT') {
+    if (goals != null && goals > 0 && (minute == null || minute < 71)) { outcome = 'entrata_vinta'; why = 'primo gol prima del 71’'; }
+    else if (minute != null && minute >= 71 && goals === 0) { outcome = 'entrata_persa'; why = 'nessun gol entro il 71’'; }
+    else if (finished && goals === 0) { outcome = 'entrata_persa'; why = 'nessun gol'; }
+  } else if (finished && sp[0] != null) {
+    if (name === 'Banca X') { outcome = sp[0] !== sp[1] ? 'entrata_vinta' : 'entrata_persa'; why = 'finale ' + score; }
+    else if (name === 'Favorito HT') {
+      const trailing = htp[0] != null && htp[0] < htp[1];
+      if (trailing) { outcome = sp[0] >= sp[1] ? 'entrata_vinta' : 'entrata_persa'; why = 'banca 2 · finale ' + score; }
+      else { outcome = sp[0] > sp[1] ? 'entrata_vinta' : 'entrata_persa'; why = 'punta 1 · finale ' + score; }
+    }
+  }
+  if (!outcome) { await pool.query('UPDATE matches SET settle_state=$2 WHERE id=$1', [m.id, JSON.stringify(st)]); return false; }
+  st.decided = why;
+  const { rowCount } = await pool.query(`UPDATE matches SET esito_manuale=$2, esito_auto=true, outcome_set_at=COALESCE(outcome_set_at,$3), settle_state=$4
+    WHERE id=$1 AND (esito_manuale IS NULL OR esito_manuale='')`, [m.id, outcome, now, JSON.stringify(st)]);
+  return rowCount > 0;
 }
 function startLiveAutoScan() {
   if (!LIVE_SCAN_ENABLED || !GOALDIR_API_KEY || liveScanTimer) return;

@@ -488,5 +488,12 @@
     return { level: level, summary: summary, gateOk: gateOk, score: checks.score, score100: s100, passed: checks.passed, available: checks.available, core: core, label: wanted };
   }
 
-  return { RULES: RULES, STRATEGIE: STRATEGIE, analyzeAll: analyzeAll, classify: classify, score100: score100 };
+  // Partita "andata": la strategia non può più dare un ingresso (gol prima/dentro la finestra, finestra superata, condizione HT non valida).
+  function exclusionOf(s) {
+    if (!s) return null;
+    if (s.state === 'INGIOCABILE' || s.state === 'CHIUSA' || s.state === 'NON ATTIVA') return s.reason || s.state;
+    if (s.state === 'NO BET' && /superata|secondo tempo iniziato/i.test(String(s.reason || ''))) return s.reason;
+    return null;
+  }
+  return { RULES: RULES, STRATEGIE: STRATEGIE, analyzeAll: analyzeAll, classify: classify, score100: score100, exclusionOf: exclusionOf };
 });

@@ -309,7 +309,7 @@
         '</div>'+
         ebTrendHtml(ebTrendFromImport(m&&m.importData),'')+
         '<div class="esito-banner '+bannerCls+'">'+bannerIcon+
-          '<div class="esito-banner-text"><span class="esito-tag">Esito</span>'+
+          '<div class="esito-banner-text"><span class="esito-tag">Esito'+(m.esitoAuto?' · auto':'')+'</span>'+
             '<select class="esito-select-inline" data-id="'+esc(m.id)+'" data-role="esito">'+
               '<option value=""'+(esito===''?' selected':'')+'>In attesa</option>'+
               '<option value="entrata_vinta"'+(esito==='entrata_vinta'?' selected':'')+'>Entrata • Vinta</option>'+
