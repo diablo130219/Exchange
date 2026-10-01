@@ -399,6 +399,7 @@
   function ebTrendFromImport(d){
     if(!d||typeof d!=='object')return null;
     var e=d._easybet||{};
+    if(e.type==='plain')return null;
     function num(v){if(v==null||v==='')return null;var n=parseFloat(String(v).replace('%','').replace(',','.'));return isFinite(n)?n:null}
     function nk(k){return String(k||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
     function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++)if(k===names[j])return num(d[ks[i]])}return null}

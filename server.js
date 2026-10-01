@@ -372,6 +372,8 @@ function perfStrategyLabel(v) {
   if (/OVER\s*1\.?5/.test(s)) return 'OVER 1.5 FT';
   if (/OVER\s*0\.?5\s*(HT|1T)/.test(s)) return 'OVER 0.5 HT';
   if (/BANCA\s*(LA\s*)?X|LAY\s*X/.test(s)) return 'BANCA LA X';
+  if (/UNDER\s*0\.?5/.test(s)) return 'UNDER 0.5 HT';
+  if (/FAVORITO/.test(s)) return 'FAVORITO HT';
   if (/SEGNA\s*(LA\s*)?FAVORITA|FAVORITA/.test(s)) return 'SEGNA LA FAVORITA';
   if (/SEGNO\s*1|\b1\b/.test(s)) return 'SEGNO 1';
   return raw || 'Senza strategia';

@@ -823,6 +823,7 @@
     function ebTrendFromImport(d){
       if(!d||typeof d!=='object')return null;
       var e=d._easybet||{};
+      if(e.type==='plain')return null;
       function num(v){if(v==null||v==='')return null;var n=parseFloat(String(v).replace('%','').replace(',','.'));return isFinite(n)?n:null}
       function nk(k){return String(k||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
       function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++)if(k===names[j])return num(d[ks[i]])}return null}
@@ -892,7 +893,25 @@
       var iH2570=idx('home gol 25 70'), iA2570=idx('osp gol 25 70','ospite gol 25 70');
       var iH00=idx('home 0 0 al 70'), iA00=idx('osp 0 0 al 70','ospite 0 0 al 70');
       var isO15=iH2570>=0||iA2570>=0;
-      var rowStrategy=isO15?'Over 1.5 FT':IMPORT_STRATEGY, rowQuota=isO15?'1.70':IMPORT_QUOTA;
+      var isO05=iOverHome>=0||iOverAway>=0||iHome1545>=0||iAway1545>=0;
+      // Riconoscimento dal nome del file per i CSV senza statistiche (Banca X, Under 0.5 HT, Segno 1 / Favorito HT).
+      var fn=String(fileName||'').toLowerCase().replace(/\.csv$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ');
+      var fileType='';
+      if (/banca( la)? x|lay x/.test(fn)) fileType='layx';
+      else if (/under ?0 ?5|under 05/.test(fn)) fileType='under05ht';
+      else if (/segno 1|favorit/.test(fn)) fileType='favht';
+      else if (/over ?1 ?5|o1 ?5|25 ?70/.test(fn)) fileType='o15';
+      else if (/over ?0 ?5|o0 ?5/.test(fn)) fileType='o05';
+      var kind=isO15?'o15':(fileType||(isO05?'o05':'o05'));
+      var KINDS={
+        o15:{strategy:'Over 1.5 FT',quota:'1.70',stats:true},
+        o05:{strategy:IMPORT_STRATEGY,quota:IMPORT_QUOTA,stats:true},
+        layx:{strategy:'Banca X HT',quota:'2.10',stats:false},
+        under05ht:{strategy:'Under 0.5 HT',quota:'2.95',stats:false},
+        favht:{strategy:'Favorito HT',quota:'1.85',stats:false}
+      };
+      var rowStrategy=KINDS[kind].strategy, rowQuota=KINDS[kind].quota;
+      if (kind==='o15') isO15=true;
       if (iLeague<0 || iDate<0 || iHome<0 || iAway<0) return [];
       var out=[];
       for (var r=1;r<rows.length;r++){
@@ -909,7 +928,7 @@
         });
         // Schema definitivo OVER 0.5 HT: salviamo anche una forma normalizzata delle percentuali
         // così le card non dipendono dagli spazi o dalla punteggiatura dei titoli CSV.
-        original._easybet=isO15?{
+        original._easybet=!KINDS[kind].stats?{type:'plain'}:isO15?{
           type:'o15_2570',
           home2570Pct:iH2570>=0?parsePct(vals[iH2570]):null,
           away2570Pct:iA2570>=0?parsePct(vals[iA2570]):null,
@@ -950,7 +969,7 @@
       var ruleBox=document.getElementById('importRule');
       if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
       var byStrat={};importPending.forEach(function(x){var k=String(x.tipoGiocata||'').toUpperCase()+' · '+(x.quotaIngresso||'');byStrat[k]=(byStrat[k]||0)+1});var stratKeys=Object.keys(byStrat);var first=importPending[0], isO15=String(first.tipoGiocata||'').toLowerCase().indexOf('1.5')!==-1;
-      if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+(isO15?'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.':'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
+      if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+({'over 1.5 ft':'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.','banca x ht':'File EXCH LAY X HT: all’intervallo sullo 0-0 o 1-1 banca X solo a quota ≤ 2,10 e tieni fino al 90’.','under 0.5 ht':'File EXCH UNDER 0.5 HT: pre-match solo a quota ≥ 2,95 in exchange (≥ 2,85 bookmaker).','favorito ht':'File EXCH FAVORITO HT: all’intervallo in parità punta 1 ≥ 1,85, favorito sotto banca 2 ≤ 2,10.'}[String(first.tipoGiocata||'').toLowerCase()]||'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
       function isDup(m){var st=toStartAt(m.data,m.ora);return matches.some(function(x){return Number(x.startAt)===Number(st)&&String(x.tipoGiocata||'').trim().toLowerCase()===String(m.tipoGiocata||'').trim().toLowerCase()&&String(x.casa||'').trim().toLowerCase()===String(m.casa||'').trim().toLowerCase()&&String(x.trasferta||'').trim().toLowerCase()===String(m.trasferta||'').trim().toLowerCase();});}
       var dupCount=importPending.filter(isDup).length;
       var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b>'+(stratKeys.length>1?'<span>Strategie: '+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</span>':'<span>Strategia: '+esc(String(importPending[0].tipoGiocata||'').toUpperCase())+'</span><span>Quota ingresso: '+esc(importPending[0].quotaIngresso||'')+'</span>')+(dupCount?'<span>'+dupCount+' già presenti: verranno saltate</span>':'')+'</div>';
