@@ -297,3 +297,6 @@ html[data-theme="dark"] .exchange-board .ex-import-summary b.neg{
 @media(max-width:1100px){.exchange-board .ex-sys-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.exchange-board .ex-sys-kpi{grid-template-columns:1fr 1fr}}
 .exchange-board .ex-import-system{margin:4px 0 10px}.exchange-board .ex-import-system select{width:100%}
+
+/* Diario: tutti gli importi centrati (la 3a colonna era allineata a sinistra) */
+.exchange-board .ex-diary-table td:not(:first-child){text-align:center!important}
