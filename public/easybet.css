@@ -1792,3 +1792,9 @@ html[data-theme="light"] .csv-trend-card.public{border-color:#dec46e;background:
   #grid.home-history .history-section .date-group-grid,#grid.home-history details .date-group-grid{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
   #grid.home-history .history-section .date-group-grid>.card.card,#grid.home-history details .date-group-grid>.card.card{width:100%!important;max-width:none!important;min-height:0!important}
 }
+@media (min-width:1100px){
+  #grid.home-history .history-section .date-group-grid.date-group-grid,
+  #grid.home-history details.history-archive .date-group-grid.date-group-grid,
+  #grid.home-history details.date-group .date-group-grid.date-group-grid{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+  #grid.home-history .card .team-name{min-height:0!important}
+}
