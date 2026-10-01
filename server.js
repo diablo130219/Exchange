@@ -334,6 +334,7 @@ function matchOut(row) {
     importData: row.import_data || null,
     diarioProfit: row.diario_profit == null ? null : Number(row.diario_profit),
     diarioLinkedAt: row.diario_linked_at == null ? null : Number(row.diario_linked_at),
+    diarioEntry: (()=>{ try { return row.diario_entry ? JSON.parse(row.diario_entry) : null; } catch (_) { return null; } })(),
     liveStartedAt: row.live_started_at === null || row.live_started_at === undefined ? null : Number(row.live_started_at),
     signalFirstAt: row.signal_first_at === null || row.signal_first_at === undefined ? null : Number(row.signal_first_at),
     signalFirstLevel: row.signal_first_level || '',
@@ -865,7 +866,8 @@ app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
   try{
     const b=req.body||{};
     const id=String(b.matchId||'').trim();
-    const profit=Number(String(b.profit==null?'':b.profit).replace(',','.'));
+    const isOpen=b.open===true||b.open==='1';
+    const profit=isOpen?0:Number(String(b.profit==null?'':b.profit).replace(',','.'));
     if(!id) return res.status(400).json({error:'Partita mancante.'});
     if(!Number.isFinite(profit)) return res.status(400).json({error:'Scrivi il profitto netto (es. 1,90 oppure -2).'});
     const mq=await pool.query('SELECT * FROM matches WHERE id=$1',[id]);
@@ -888,13 +890,15 @@ app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
       op={uid:'op_'+crypto.randomBytes(5).toString('hex'),ref}; st.ops.push(op);
     }
     Object.assign(op,{day,slot,event,league:m.campionato||'',market:DIARIO_MARKETS[strategy]||String(b.market||m.tipo_giocata||''),strategy,side:['Punta','Banca','Trading'].includes(b.side)?b.side:'Punta',
-      oddsIn:num(b.oddsIn),oddsOut:num(b.oddsOut),stake:Math.abs(num(b.stake)),minute:String(b.minute||''),profit:Math.round(profit*100)/100,note:'da partita EasyBet · '+(m.esito_manuale||'')});
+      oddsIn:num(b.oddsIn)||Number(op.oddsIn)||0,oddsOut:num(b.oddsOut)||Number(op.oddsOut)||0,stake:Math.abs(num(b.stake))||Number(op.stake)||0,minute:String(b.minute||op.minute||''),profit:Math.round((isOpen?(Number(op.profit)||0):profit)*100)/100,note:(isOpen&&!(Number(op.profit)))?'APERTA · ingresso dal Live Analyzer':'da partita EasyBet · '+(m.esito_manuale||'')});
     const dd=getDay(day); while(dd.sessions.length<=slot) dd.sessions.push(null);
     const tot=st.ops.filter(o=>o.day===day&&Number(o.slot)===slot).reduce((a,o)=>a+(Number(o.profit)||0),0);
     dd.sessions[slot]=Math.round(tot*100)/100; setDay(day,dd);
     const now=Date.now();
     await pool.query('UPDATE exchange_periods SET state=$2::jsonb, updated_at=$3 WHERE uid=$1',[row.uid,JSON.stringify(st),now]);
-    await pool.query('UPDATE matches SET diario_profit=$2, diario_linked_at=$3 WHERE id=$1',[id,Math.round(profit*100)/100,now]);
+    const entry={strategy,side:op.side,oddsIn:op.oddsIn,stake:op.stake,minute:op.minute,at:now};
+    if(isOpen) await pool.query('UPDATE matches SET diario_entry=$2 WHERE id=$1',[id,JSON.stringify(entry)]);
+    else await pool.query('UPDATE matches SET diario_profit=$2, diario_linked_at=$3, diario_entry=COALESCE(diario_entry,$4) WHERE id=$1',[id,Math.round(profit*100)/100,now,JSON.stringify(entry)]);
     res.json({ok:true,period:st.name||row.uid,day,slot:slot+1});
   }catch(err){ console.error('link-match:',err); res.status(500).json({error:'Impossibile registrare nel Diario.'}); }
 });

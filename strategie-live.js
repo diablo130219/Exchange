@@ -35,15 +35,26 @@
     var x = Number(String(v == null ? '' : v).replace(',', '.'));
     return Number.isFinite(x) && x > 1 ? x : null;
   }
-  function line(label, value, pass, weight) {
-    return [label, !!pass, value !== null && value !== undefined, weight || 1];
+  function line(label, value, pass, weight, need) {
+    return [label, !!pass, value !== null && value !== undefined, weight || 1, value, need];
+  }
+  function fmtVal(v) {
+    if (v === true) return 'sì';
+    if (v === false) return 'no';
+    var x = Number(v);
+    if (!Number.isFinite(x)) return String(v);
+    return Math.abs(x - Math.round(x)) < 1e-9 ? String(Math.round(x)) : (Math.round(x * 100) / 100).toFixed(2);
   }
   function weighted(list) {
     var available = list.filter(function (x) { return x[2]; });
     var totalW = available.reduce(function (a, x) { return a + (x[3] || 1); }, 0);
     var passW = available.filter(function (x) { return x[1]; }).reduce(function (a, x) { return a + (x[3] || 1); }, 0);
     var passed = available.filter(function (x) { return x[1]; }).length;
+    var missing = available.filter(function (x) { return !x[1]; })
+      .sort(function (a, b) { return (b[3] || 1) - (a[3] || 1); })
+      .map(function (x) { return x[0] + ' ' + fmtVal(x[4]) + (x[5] ? ' → serve ' + x[5] : ''); });
     return {
+      missing: missing,
       checks: available.map(function (x) { return [x[0], x[1]]; }),
       available: available.length,
       passed: passed,
@@ -55,19 +66,24 @@
     if (score === null || score === undefined || !Number.isFinite(Number(score))) return null;
     return Math.max(0, Math.min(100, Math.round(Number(score) * 100)));
   }
-  function sig(name, state, reason, why, criteria, score) {
-    return { name: name, state: state, reason: reason, why: why, criteria: criteria || [], score: score == null ? null : score, score100: score100(score) };
+  function sig(name, state, reason, why, criteria, score, extra) {
+    var o = { name: name, state: state, reason: reason, why: why, criteria: criteria || [], score: score == null ? null : score, score100: score100(score) };
+    if (extra) for (var k in extra) o[k] = extra[k];
+    return o;
   }
   function oddText(v) {
     var x = oddNum(v);
     return x == null ? '' : (' • quota ' + x.toFixed(2));
   }
   function softState(name, score, checks, greenAt, strongAt, waitAt, reasonBase, whyBase, core) {
-    if (checks.available < 2) return sig(name, 'DATI', 'Dati live insufficienti per una lettura affidabile.', 'Servono almeno 2 indicatori disponibili; le metriche mancanti vengono ignorate.', checks.checks, score);
-    if (score >= greenAt && core !== false) return sig(name, 'VERDE', reasonBase + ' ' + checks.passed + '/' + checks.available + ' criteri disponibili.', 'Punteggio adattivo: ' + Math.round(score * 100) + '%. ' + whyBase, checks.checks, score);
-    if (score >= strongAt) return sig(name, 'ATTENDI FORTE', 'Segnale vicino all’ingresso: ' + checks.passed + '/' + checks.available + ' criteri disponibili.', 'Punteggio adattivo: ' + Math.round(score * 100) + '%. Manca una conferma forte.', checks.checks, score);
-    if (score >= waitAt) return sig(name, 'ATTENDI', 'Segnali presenti ma ancora incompleti: ' + checks.passed + '/' + checks.available + '.', 'Punteggio adattivo: ' + Math.round(score * 100) + '%. ' + whyBase, checks.checks, score);
-    return sig(name, 'NO BET', 'Indicatori disponibili ancora troppo deboli.', 'Punteggio adattivo: ' + Math.round(score * 100) + '%. Le metriche assenti non penalizzano.', checks.checks, score);
+    var miss = (checks.missing || []).slice(0, 3);
+    var ex = { missing: checks.missing || [] };
+    var missTxt = miss.length ? 'Manca: ' + miss.join(' · ') + '.' : '';
+    if (checks.available < 2) return sig(name, 'DATI', 'Dati live insufficienti per una lettura affidabile.', 'Servono almeno 2 indicatori (xG, tiri, tiri in porta…). Incolla le statistiche o usa AUTO.', checks.checks, score, ex);
+    if (score >= greenAt && core !== false) return sig(name, 'VERDE', reasonBase + ' ' + checks.passed + '/' + checks.available + ' criteri ok.', whyBase, checks.checks, score, ex);
+    if (score >= strongAt) return sig(name, 'ATTENDI FORTE', 'Vicino all’ingresso: ' + checks.passed + '/' + checks.available + ' criteri ok.', missTxt || 'Manca una conferma forte (tiri in porta o xG).', checks.checks, score, ex);
+    if (score >= waitAt) return sig(name, 'ATTENDI', 'Segnali presenti ma incompleti: ' + checks.passed + '/' + checks.available + ' criteri ok.', missTxt || whyBase, checks.checks, score, ex);
+    return sig(name, 'NO BET', 'Pressione ancora troppo bassa: ' + checks.passed + '/' + checks.available + ' criteri ok.', missTxt || 'Indicatori deboli.', checks.checks, score, ex);
   }
 
   // UNICA configurazione dei paletti. Frontend e backend leggono questi stessi valori.
@@ -108,6 +124,12 @@
       weights: { dxg: 1.5, dsot: 1.5, dshots: 1.0, dtouches: 0.8, dbig: 1.1, quota: 0.7 },
       state: { green: 0.58, strong: 0.42, wait: 0.28 }
     },
+    under05ht: {
+      label: 'Under 0.5 HT',
+      system: 'EXCH UNDER 0.5 HT', // ingresso pre-match a quota >= 2.95, si tiene fino all'intervallo
+      quotaMin: 2.95,
+      warn: { xg: 0.80, sot: 3, big: 2 }
+    },
     favht: {
       label: 'Favorito HT',
       system: 'EXCH FAVORITO HT', // favorito in casa (quota 1 pre-match <= 1.60), ingresso solo all'intervallo
@@ -136,26 +158,33 @@
     var minuteText = String(context.minute == null ? '' : context.minute).trim();
     var isHT = /^(ht|intervallo|half\s*time)$/i.test(minuteText);
     var minuteN = isHT ? 45 : numFromText(context.minute);
+    function windowHint(from, to) {
+      if (minuteN == null) return '';
+      if (minuteN < from) return 'Finestra apre al ' + from + '’ (tra ' + Math.max(1, Math.round(from - minuteN)) + '’).';
+      if (minuteN <= to) { var nx = Math.min(to, Math.floor(minuteN) + 5); return 'Finestra aperta fino al ' + to + '’' + (nx > minuteN ? ' · ricontrolla al ' + nx + '’' : '') + '.'; }
+      return 'Finestra ' + from + '’–' + to + '’ chiusa.';
+    }
+    var htHint = isHT ? 'È intervallo: valuta ora.' : (minuteN == null ? '' : (minuteN < 45 ? 'Intervallo tra circa ' + Math.max(1, Math.round(45 - minuteN)) + '’.' : ''));
     var htOdds = oddNum(odds.ht), ftOdds = oddNum(odds.ft), layOdds = oddNum(odds.lay), favOdds = oddNum(odds.fav), awayLayOdds = oddNum(odds.away);
 
     var h = RULES.over05ht, f = RULES.over15ft, l = RULES.layx, bf = RULES.backfav, fh = RULES.favht;
     var q = weighted([
-      line('xG', xg, xg != null && xg >= h.base.xg, h.weights.xg),
-      line('SOT', sot, sot != null && sot >= h.base.sot, h.weights.sot),
-      line('Big chances', big, big != null && big >= h.base.big, h.weights.big),
-      line('Tiri area', box, box != null && box >= h.base.box, h.weights.box),
-      line('Tocchi area', touches, touches != null && touches >= h.base.touches, h.weights.touches),
-      line('Tiri', shots, shots != null && shots >= h.base.shots, h.weights.shots),
-      line('Quota', htOdds, htOdds != null && htOdds >= h.base.quotaMin && htOdds <= h.base.quotaMax, h.weights.quota)
+      line('xG', xg, xg != null && xg >= h.base.xg, h.weights.xg, '≥ ' + h.base.xg.toFixed(2)),
+      line('Tiri in porta', sot, sot != null && sot >= h.base.sot, h.weights.sot, '≥ ' + h.base.sot),
+      line('Big chances', big, big != null && big >= h.base.big, h.weights.big, '≥ ' + h.base.big),
+      line('Tiri in area', box, box != null && box >= h.base.box, h.weights.box, '≥ ' + h.base.box),
+      line('Tocchi area', touches, touches != null && touches >= h.base.touches, h.weights.touches, '≥ ' + h.base.touches),
+      line('Tiri', shots, shots != null && shots >= h.base.shots, h.weights.shots, '≥ ' + h.base.shots),
+      line('Quota', htOdds, htOdds != null && htOdds >= h.base.quotaMin && htOdds <= h.base.quotaMax, h.weights.quota, h.base.quotaMin.toFixed(2) + '–' + h.base.quotaMax.toFixed(2))
     ]);
     var s = weighted([
-      line('xG', xg, xg != null && xg >= f.base.xg, f.weights.xg),
-      line('SOT', sot, sot != null && sot >= f.base.sot, f.weights.sot),
-      line('Big chances', big, big != null && big >= f.base.big, f.weights.big),
-      line('Tiri area', box, box != null && box >= f.base.box, f.weights.box),
-      line('Tocchi area', touches, touches != null && touches >= f.base.touches, f.weights.touches),
-      line('Tiri', shots, shots != null && shots >= f.base.shots, f.weights.shots),
-      line('Quota', ftOdds, ftOdds != null && ftOdds >= f.base.quotaMin, f.weights.quota)
+      line('xG', xg, xg != null && xg >= f.base.xg, f.weights.xg, '≥ ' + f.base.xg.toFixed(2)),
+      line('Tiri in porta', sot, sot != null && sot >= f.base.sot, f.weights.sot, '≥ ' + f.base.sot),
+      line('Big chances', big, big != null && big >= f.base.big, f.weights.big, '≥ ' + f.base.big),
+      line('Tiri in area', box, box != null && box >= f.base.box, f.weights.box, '≥ ' + f.base.box),
+      line('Tocchi area', touches, touches != null && touches >= f.base.touches, f.weights.touches, '≥ ' + f.base.touches),
+      line('Tiri', shots, shots != null && shots >= f.base.shots, f.weights.shots, '≥ ' + f.base.shots),
+      line('Quota', ftOdds, ftOdds != null && ftOdds >= f.base.quotaMin, f.weights.quota, '≥ ' + f.base.quotaMin.toFixed(2))
     ]);
     var coreHT = (sot != null && sot >= h.core.sot) || (shots != null && shots >= h.core.shots) || (xg != null && xg >= h.core.xg);
     var coreFT = (sot != null && sot >= f.core.sot) || (shots != null && shots >= f.core.shots) || (xg != null && xg >= f.core.xg);
@@ -178,6 +207,7 @@
     else if (minuteN > h.window.to) ht = sig(h.label, 'NO BET', 'Finestra operativa superata.', 'Non inseguire il mercato troppo tardi.');
     else ht = softState(h.label, q.score, q, h.state.green, h.state.strong, h.state.wait, 'Pressione live compatibile con l’ingresso.', 'SOT ' + (sot == null ? 'N/D' : sot) + ' • Tiri ' + (shots == null ? 'N/D' : shots) + ' • xG ' + (round2(xg) == null ? 'N/D' : round2(xg)) + oddText(htOdds), coreHT);
 
+    ht.timing = windowHint(h.window.from, h.window.to);
     var earlyGoalBefore25 = !!context.earlyGoalBefore25;
     var firstGoalKnown = !!context.firstGoalKnown;
     var pressureReal = (big != null && big >= 1) || (box != null && box >= 6) || (touches != null && touches >= 12) || (shots != null && shots >= 8);
@@ -214,6 +244,7 @@
       }
     }
 
+    ft.timing = goals > 0 ? '' : windowHint(f.window.from, f.window.to);
     var dxg = diffPair(metrics.xg), dsot = diffPair(metrics.sot), dshots = diffPair(metrics.shots), dtouch = diffPair(metrics.touches), dbig = diffPair(metrics.big);
     var layDyn = weighted([
       line('ΔxG', dxg, dxg != null && Math.abs(dxg) >= l.dyn.dxg, l.weights.dxg),
@@ -286,7 +317,16 @@
       else if (awayLayOdds == null && favOdds == null) fht = sig(fh.label, 'ATTESA QUOTA', 'Favorito sotto: inserisci la quota del 2 (banca) o dell’1.', fhRule);
       else fht = sig(fh.label, 'NO BET', 'Quote fuori regola: 2 sopra ' + fh.trailLayMax.toFixed(2) + ' e 1 sotto ' + fh.trailBackMin.toFixed(2) + '.', fhRule);
     }
-    return [ht, ft, lay, fav, fht];
+    var u = RULES.under05ht, und;
+    var uRule = 'Regola ' + u.system + ': ingresso pre-match a quota ≥ ' + u.quotaMin.toFixed(2) + ', si tiene fino all’intervallo.';
+    var uWarn = (xg != null && xg >= u.warn.xg) || (sot != null && sot >= u.warn.sot) || (big != null && big >= u.warn.big);
+    if (goals > 0) und = sig(u.label, 'CHIUSA', 'Gol nel primo tempo: Under 0.5 HT perso.', uRule);
+    else if (isHT) und = sig(u.label, 'VERDE', '0-0 all’intervallo: Under 0.5 HT vinto.', uRule);
+    else if (minuteN == null) und = sig(u.label, 'DATI', 'Inserisci il minuto della partita.', uRule);
+    else if (minuteN > 45) und = sig(u.label, 'VERDE', 'Primo tempo chiuso sullo 0-0: Under 0.5 HT vinto.', uRule);
+    else und = sig(u.label, uWarn ? 'ATTENDI' : 'IN CORSO', uWarn ? ('0-0 ma pressione alta (xG ' + fmtVal(xg) + ', tiri in porta ' + fmtVal(sot == null ? 0 : sot) + '): valuta l’uscita.') : '0-0 e pressione sotto controllo: tieni.', uRule, [], null, { timing: htHint });
+    lay.timing = htHint; fht.timing = htHint;
+    return [ht, ft, lay, fav, und, fht];
   }
 
   function keyToSignal(strategyKey) {

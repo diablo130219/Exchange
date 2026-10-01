@@ -1938,3 +1938,85 @@ html[data-theme="dark"] body #grid.home-history .arch-bar i.n{background:#7d6f4f
   :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card) .team-name{overflow-wrap:anywhere!important;line-height:1.15!important}
   :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card)>.info-grid{min-width:0!important;overflow:hidden!important}
 }
+
+/* ===== Live Analyzer · migliorie ===== */
+#liveAnalyzerOverlay .la-signal{transition:box-shadow .2s ease,border-color .2s ease}
+#liveAnalyzerOverlay .la-signal p{font-size:.86rem!important;line-height:1.35!important}
+#liveAnalyzerOverlay .la-signal .la-signal-note{font-size:.76rem!important;line-height:1.4!important;opacity:.92}
+#liveAnalyzerOverlay .la-signal-timing{margin-top:5px;font-size:.74rem;font-weight:700;color:#8a6d2c}
+#liveAnalyzerOverlay .la-quota-check{display:inline-flex;margin-top:6px;font-size:.72rem;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(205,170,90,.14);color:#8a6d2c}
+#liveAnalyzerOverlay .la-quota-check.ok{background:rgba(111,154,115,.16);color:#4f7d55}
+#liveAnalyzerOverlay .la-quota-check.ko{background:rgba(194,122,99,.16);color:#a3604b}
+#liveAnalyzerOverlay .la-signal-count{font-size:.66rem!important}
+#liveAnalyzerOverlay .la-signal-score{display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:6px!important;min-width:130px}
+#liveAnalyzerOverlay .la-pill{font-size:.7rem!important;padding:6px 12px!important;border-radius:999px!important;white-space:nowrap}
+/* card rosse/gialle più tenui: colore pieno solo per il VERDE */
+html[data-theme="light"] body #liveAnalyzerOverlay .la-signal.red{background:#fffaf7!important;border-color:#ecc9bd!important;box-shadow:inset 4px 0 0 #d39b86!important}
+html[data-theme="light"] body #liveAnalyzerOverlay .la-signal.red .la-pill{background:#f6e3dc!important;color:#a3604b!important}
+html[data-theme="light"] body #liveAnalyzerOverlay .la-signal.yellow{background:#fffcf2!important;border-color:#eadbab!important;box-shadow:inset 4px 0 0 #e2c272!important}
+html[data-theme="light"] body #liveAnalyzerOverlay .la-signal.blue{background:#fbfcfe!important;border-color:#d6e0ec!important;box-shadow:inset 4px 0 0 #a9bfd9!important}
+html[data-theme="light"] body #liveAnalyzerOverlay .la-signal.green{background:#eef8f0!important;border-color:#8fc39c!important;box-shadow:inset 4px 0 0 #4f9d62,0 6px 18px rgba(79,157,98,.15)!important}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-signal.red{background:#17130f!important;border-color:rgba(211,155,134,.30)!important;box-shadow:inset 4px 0 0 rgba(211,155,134,.7)!important}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-signal.red .la-pill{background:rgba(211,155,134,.15)!important;color:#ebb8a5!important}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-signal.yellow{background:#17150f!important;border-color:rgba(226,194,114,.30)!important;box-shadow:inset 4px 0 0 rgba(226,194,114,.75)!important}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-signal-timing{color:#e3cd8f}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-quota-check{color:#e8cf8a}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-quota-check.ok{color:#b3d4b6}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-quota-check.ko{color:#ebb8a5}
+/* strategie secondarie compatte */
+#liveAnalyzerOverlay .la-signal.la-secondary{padding:8px 11px!important;opacity:.92}
+#liveAnalyzerOverlay .la-signal.la-secondary h5{font-size:.92rem!important}
+#liveAnalyzerOverlay .la-signal.la-secondary p{font-size:.78rem!important;margin:2px 0 0!important}
+#liveAnalyzerOverlay .la-signal.la-secondary .la-signal-note{display:none!important}
+#liveAnalyzerOverlay .la-signal.la-secondary .la-signal-icon{transform:scale(.85)}
+#liveAnalyzerOverlay .la-signal.la-secondary .la-signal-score{min-width:110px}
+#liveAnalyzerOverlay .la-signal.la-secondary.green .la-signal-note{display:block!important}
+#liveAnalyzerOverlay .la-signal.is-pre-match{border-width:1.5px!important}
+/* pulsante Sono entrata */
+#liveAnalyzerOverlay .la-entry-btn{border:1px solid rgba(205,170,90,.5);background:#fffaf0;color:#6b5320;font:inherit;font-size:.7rem;font-weight:800;padding:6px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
+#liveAnalyzerOverlay .la-entry-btn.hot{background:linear-gradient(180deg,#4f9d62,#3c8150);color:#fff;border-color:#3c8150;box-shadow:0 4px 12px rgba(60,129,80,.3)}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-btn:not(.hot){background:#211d15;color:#e8cf8a}
+/* avvisi */
+#liveAnalyzerOverlay .la-alerts-btn{border:1px solid rgba(205,170,90,.4);background:transparent;color:inherit;font:inherit;font-size:.72rem;font-weight:800;padding:7px 12px;border-radius:999px;cursor:pointer;margin-right:6px}
+#liveAnalyzerOverlay .la-alerts-btn.active{background:rgba(111,154,115,.16);border-color:#8fb393;color:#4f7d55}
+/* comandi rapidi */
+#liveAnalyzerOverlay .la-quick-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 10px}
+#liveAnalyzerOverlay .la-quick-bar span{font-size:.66rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#a0895b;margin-right:4px}
+#liveAnalyzerOverlay .la-quick-bar button{border:1px solid rgba(205,170,90,.4);background:#fffdf8;color:#4a3a18;font:inherit;font-size:.76rem;font-weight:800;padding:6px 11px;border-radius:10px;cursor:pointer}
+#liveAnalyzerOverlay .la-quick-bar button:hover{border-color:#d7ad39;background:#fff6dc}
+#liveAnalyzerOverlay .la-quick-bar button.goal{background:#f3f8f2;border-color:#bcd6bf;color:#3f6e46}
+#liveAnalyzerOverlay .la-quick-bar button.undo{background:transparent;color:#9a8763}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-quick-bar button{background:#1b1812;color:#eadfc8}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-quick-bar button.goal{background:#15201a;color:#a3c7a7;border-color:rgba(143,179,147,.35)}
+/* quota strategia evidenziata */
+#liveAnalyzerOverlay .la-odds-field.la-odd-primary input{border-color:#d7ad39!important;box-shadow:0 0 0 3px rgba(215,173,57,.18)!important;font-weight:800!important}
+#liveAnalyzerOverlay .la-odds-field.la-odd-primary label{color:#a87305!important;font-weight:900!important}
+#liveAnalyzerOverlay .la-odds-field.la-odd-primary label:after{content:' ★'}
+/* statistiche incollate: richiudibili */
+#liveAnalyzerOverlay .la-raw-bar:empty{display:none}
+#liveAnalyzerOverlay .la-raw-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:10px;background:rgba(111,154,115,.10);border:1px solid rgba(143,179,147,.35);font-size:.8rem;color:#4f7d55;margin:4px 0 6px}
+#liveAnalyzerOverlay .la-raw-bar button{border:0;background:none;color:#8a6d2c;font:inherit;font-weight:800;font-size:.76rem;cursor:pointer;text-decoration:underline}
+#liveAnalyzerOverlay .la-raw-field.collapsed .la-textarea{display:none!important}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-raw-bar{color:#a3c7a7}
+/* altre statistiche */
+#liveAnalyzerOverlay .la-more-metrics{margin-top:10px;border:1px dashed rgba(205,170,90,.35);border-radius:12px;padding:6px 10px}
+#liveAnalyzerOverlay .la-more-metrics>summary{cursor:pointer;font-size:.78rem;font-weight:800;color:#8a6d2c;padding:4px 2px}
+#liveAnalyzerOverlay .la-more-metrics[open]>summary{margin-bottom:8px}
+/* dialog ingresso */
+#liveAnalyzerOverlay .la-entry-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(20,15,8,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+#liveAnalyzerOverlay .la-entry-box{width:min(480px,100%);background:#fffdf8;color:#2a2318;border:1px solid #e3cf9b;border-radius:18px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+#liveAnalyzerOverlay .la-entry-box h4{margin:0 0 2px;font-size:1.05rem}
+#liveAnalyzerOverlay .la-entry-box p{margin:0 0 12px;color:#7a6a4c;font-size:.86rem}
+#liveAnalyzerOverlay .la-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#liveAnalyzerOverlay .la-entry-grid label{display:flex;flex-direction:column;gap:4px;font-size:.7rem;font-weight:800;color:#8d7b58}
+#liveAnalyzerOverlay .la-entry-grid input,#liveAnalyzerOverlay .la-entry-grid select{padding:8px 9px;border-radius:9px;border:1px solid #e1d2b1;background:#fff;font:inherit;color:inherit}
+#liveAnalyzerOverlay .la-entry-hint{display:block;margin-top:10px;font-size:.72rem;color:#8d7b58}
+#liveAnalyzerOverlay .la-entry-err{min-height:18px;margin-top:8px;font-size:.78rem;color:#a3604b}
+#liveAnalyzerOverlay .la-entry-ok{min-height:18px;margin-top:8px;font-size:.78rem;color:#4f7d55;font-weight:800}
+#liveAnalyzerOverlay .la-entry-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+#liveAnalyzerOverlay .la-entry-actions button{border:1px solid #e1d2b1;background:#fff;font:inherit;font-weight:800;font-size:.8rem;padding:8px 14px;border-radius:10px;cursor:pointer}
+#liveAnalyzerOverlay .la-entry-actions button.primary{background:linear-gradient(180deg,#f1d98f,#ddb95c);border-color:#d7ad39;color:#3a2c0e}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-box{background:#16130e;color:#eee5d3;border-color:rgba(216,173,61,.3)}
+html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-grid input,html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-grid select,html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-actions button:not(.primary){background:#1e1a13;border-color:#3a3328;color:#eee5d3}
+@media(max-width:640px){#liveAnalyzerOverlay .la-signal-score{min-width:0;align-items:flex-start!important}#liveAnalyzerOverlay .la-entry-grid{grid-template-columns:1fr}}
+#liveAnalyzerOverlay .la-quota-check{width:fit-content!important;max-width:100%}

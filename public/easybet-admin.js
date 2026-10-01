@@ -604,8 +604,9 @@
     function openDiarioDialog(m){
       if(!m) return;
       var old=document.getElementById('diarioDialog'); if(old) old.remove();
-      var win=m.esitoManuale==='entrata_vinta', sys=diarioSystemFor(m.tipoGiocata), side=/LAY X|SOTTO/.test(sys)?'Banca':'Punta';
-      var q=String(m.quotaIngresso||'').replace(',','.');
+      var en=m.diarioEntry||{};
+      var win=m.esitoManuale==='entrata_vinta', sys=(en.strategy&&DIARIO_SYSTEMS.indexOf(en.strategy)!==-1)?en.strategy:diarioSystemFor(m.tipoGiocata), side=en.side||(/LAY X|SOTTO/.test(sys)?'Banca':'Punta');
+      var q=String(en.oddsIn||m.quotaIngresso||'').replace(',','.');
       var wrap=document.createElement('div'); wrap.id='diarioDialog'; wrap.className='crest-dialog-backdrop';
       wrap.innerHTML='<div class="crest-dialog diario-dialog"><h3>📒 Registra nel Diario Exchange</h3><p>'+esc(m.casa+' - '+m.trasferta)+' · <b>'+(win?'ENTRATA · VINTA':'ENTRATA · PERSA')+'</b></p>'+
         '<div class="diario-grid">'+
@@ -613,7 +614,7 @@
           '<label>Punta / Banca<select id="dgSide"><option'+(side==='Punta'?' selected':'')+'>Punta</option><option'+(side==='Banca'?' selected':'')+'>Banca</option><option>Trading</option></select></label>'+
           '<label>Quota entrata<input id="dgIn" inputmode="decimal" value="'+esc(q)+'"></label>'+
           '<label>Quota uscita<input id="dgOut" inputmode="decimal" placeholder="facoltativa"></label>'+
-          '<label>Stake (€)<input id="dgStake" inputmode="decimal" placeholder="es. 2"></label>'+
+          '<label>Stake (€)<input id="dgStake" inputmode="decimal" placeholder="es. 2" value="'+esc(en.stake?String(en.stake):'')+'"></label>'+
           '<label>Profitto netto (€)<input id="dgProfit" inputmode="decimal" placeholder="'+(win?'es. 1,90':'es. -2')+'" value="'+(m.diarioProfit!=null?String(m.diarioProfit).replace('.',','):'')+'"></label>'+
         '</div>'+
         '<div class="crest-dialog-actions"><button type="button" class="btn" data-dg="calc">Calcola profitto (comm. 5%)</button><span></span></div>'+
@@ -638,7 +639,7 @@
           if(v('dgProfit')===''||!isFinite(pr)){ err.textContent='Scrivi il profitto netto oppure usa «Calcola profitto».'; return; }
           if(!win && pr>0) pr=-pr;
           err.textContent='Salvataggio…';
-          fetch('/api/exchange/link-match',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({matchId:m.id,strategy:v('dgSys'),side:v('dgSide'),oddsIn:v('dgIn'),oddsOut:v('dgOut'),stake:v('dgStake'),profit:pr})})
+          fetch('/api/exchange/link-match',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({matchId:m.id,strategy:v('dgSys'),side:v('dgSide'),oddsIn:v('dgIn'),oddsOut:v('dgOut'),stake:v('dgStake'),minute:en.minute||'',profit:pr})})
             .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
             .then(function(d){ wrap.remove(); loadMatches(); window.alert('Registrata nel Diario: '+(d.period||'')+' · '+String(d.day).split('-').reverse().join('/')+' · sessione '+d.slot); })
             .catch(function(e2){ err.textContent=e2.message||'Errore'; });
