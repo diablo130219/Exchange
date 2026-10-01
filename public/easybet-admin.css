@@ -364,3 +364,9 @@
 .esito-banner .ico{width:15px!important;height:15px!important;flex:0 0 15px!important}
 .esito-banner-text{flex:1 1 auto!important;min-width:0!important;align-items:center!important}
 .esito-banner .esito-select-inline{width:100%!important;max-width:100%!important;min-width:0!important;font-size:.76rem!important;text-overflow:ellipsis!important;padding:1px 2px!important}
+
+/* Selezione multipla rimossa */
+#bulkBar,.bulk-bar,.card-select{display:none!important}
+@media (min-width:1100px){
+  .grid.date-grid>.card{padding-left:18px!important;grid-template-columns:150px minmax(0,1.8fr) minmax(0,1.15fr) minmax(170px,1fr) 100px!important}
+}

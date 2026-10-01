@@ -283,7 +283,7 @@
       var bannerIcon = esito ? ICON_TROPHY : ICON_HOURGLASS;
       var searchText = [m.casa,m.trasferta,m.campionato,m.tipoGiocata,m.quotaIngresso].filter(Boolean).join(' ').toLowerCase();
       return '<div class="'+cls+'" data-id="'+esc(m.id)+'" data-search="'+esc(searchText)+'">'+
-        '<label class="card-select" title="Seleziona partita"><input type="checkbox" data-role="select" data-id="'+esc(m.id)+'"'+(selectedIds.has(String(m.id))?' checked':'')+'></label>'+
+
         '<div class="card-top2">'+
           '<div class="league-badge">'+ICON_SHIELD+'<span>'+esc(m.campionato||'—')+'</span></div>'+
           '<div class="kickoff">'+ICON_CLOCK+'<span>'+esc(fmtWhen(m))+'</span></div>'+

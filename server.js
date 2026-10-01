@@ -1399,6 +1399,8 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
     if (event === 'signal') {
       const score = Number((req.body || {}).score);
       const level = String((req.body || {}).level || 'verde').trim().toLowerCase();
+      const prevQ = await pool.query('SELECT signal_first_at, live_alert_sent, bot_enabled FROM matches WHERE id = $1', [id]);
+      const prev = prevQ.rows[0] || {};
       const { rows } = await pool.query(
         `UPDATE matches SET
           live_started_at = COALESCE(live_started_at, $1),
@@ -1412,6 +1414,25 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
       if ((level || 'verde') === 'verde') {
         const resultForSnapshot = { level: 'verde', score100: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null, summary: String((req.body || {}).summary || '') };
         await saveSignalSnapshot(rows[0], resultForSnapshot, (req.body || {}).snapshot || {}, String((req.body || {}).source || 'analyzer'), now);
+        // Notifica Telegram: una sola volta per partita (stesso flag dei segnali live automatici).
+        if (!prev.signal_first_at && !prev.live_alert_sent && prev.bot_enabled !== false && telegram.isConfigured) {
+          try {
+            const b = req.body || {}, m = rows[0], snap = b.snapshot || {};
+            const minute = String(b.minute != null && b.minute !== '' ? b.minute : (snap.minute != null ? snap.minute : '')).trim();
+            const sc = String(b.scoreText || (snap.scoreHome != null && snap.scoreAway != null ? snap.scoreHome + '-' + snap.scoreAway : '') || 'N/D');
+            const name = String(b.signalName || m.tipo_giocata || 'Segnale');
+            const text = '🟢 <b>SEGNALE LIVE — ' + escapeHtmlLite(name) + '</b>' + (m.campionato ? ' (' + escapeHtmlLite(m.campionato) + ')' : '') + '\n' +
+              '<b>' + escapeHtmlLite(m.casa) + ' - ' + escapeHtmlLite(m.trasferta) + '</b>\n' +
+              '⏱ ' + (minute ? escapeHtmlLite(minute) + (/^ht$/i.test(minute) ? '' : "'") : 'N/D') + ' • 📍 ' + escapeHtmlLite(sc) + '\n' +
+              (b.summary ? '📊 ' + escapeHtmlLite(String(b.summary).slice(0, 180)) + '\n' : '') +
+              (m.quota_ingresso ? '💶 Quota pre-match ' + escapeHtmlLite(m.quota_ingresso) + '\n' : '') +
+              '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
+              (Number.isFinite(score) ? '\n🎯 <b>' + Math.round(score) + '/100</b>' : '');
+            await telegram.broadcast(text);
+            await pool.query('UPDATE matches SET live_alert_sent = true, live_last_notified_at = $2 WHERE id = $1', [id, now]);
+            rows[0].live_alert_sent = true;
+          } catch (e) { console.error('telegram signal:', e.message); }
+        }
       }
       return res.json(matchOut(rows[0]));
     }
