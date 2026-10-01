@@ -1922,3 +1922,19 @@ html[data-theme="dark"] body #grid.home-history .archive-tiles .tone-bad .day-su
 html[data-theme="dark"] body #grid.home-history .archive-tiles .archive-copy strong,html[data-theme="dark"] body #grid.home-history .arch-cal b,html[data-theme="dark"] body #grid.home-history .archive-tiles .archive-meta b{color:#ece3d2!important}
 html[data-theme="dark"] body #grid.home-history .arch-bar i.o{background:#38342b!important}
 html[data-theme="dark"] body #grid.home-history .arch-bar i.n{background:#7d6f4f!important}
+/* Righe orizzontali: colonne ribilanciate, lifecycle e stemmi contenuti */
+@media (min-width:1100px){
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card){grid-template-columns:minmax(140px,180px) minmax(260px,1.6fr) minmax(170px,220px) minmax(250px,1fr) minmax(170px,200px)!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card)>*{min-width:0!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card)>.lifecycle-strip{grid-template-columns:1.3fr 1fr 1.2fr 1fr!important;gap:4px!important;padding:5px!important;overflow:hidden!important;align-self:center!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card) .lifecycle-step{padding:5px 2px!important;min-width:0!important;overflow:hidden!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card) .lifecycle-step b{font-size:.54rem!important;letter-spacing:.02em!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card) .lifecycle-step small{font-size:.48rem!important;max-width:100%!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card)>.matchup{align-self:center!important;overflow:hidden!important;align-items:center!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card)>.matchup .team{align-items:center!important;align-self:center!important;min-width:0!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card)>.matchup .team>*{margin:0!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card) .crest-wrap{width:48px!important;height:48px!important;flex:0 0 48px!important;display:grid!important;place-items:center!important;padding:0!important;align-self:center!important;transform:none!important;top:auto!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card) .crest-wrap img,:is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card) .crest{width:36px!important;height:36px!important;max-width:36px!important;max-height:36px!important;object-fit:contain!important;margin:0!important;position:static!important;transform:none!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card) .team-name{overflow-wrap:anywhere!important;line-height:1.15!important}
+  :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card.card)>.info-grid{min-width:0!important;overflow:hidden!important}
+}

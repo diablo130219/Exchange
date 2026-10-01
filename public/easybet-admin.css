@@ -359,3 +359,8 @@
 .date-summary{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .date-summary b{font-size:.66rem;padding:3px 8px;border-radius:999px;border:1px solid var(--border,#ddd);background:var(--surface,#fff)}
 .date-summary b.w{color:#2e9d5b}.date-summary b.l{color:#c0452f}.date-summary b.n{color:#9a7b2c}
+/* Esito: icona sempre dentro il riquadro */
+.esito-banner{min-width:0!important;overflow:hidden!important;justify-content:flex-start!important;gap:7px!important;padding-left:10px!important;padding-right:8px!important}
+.esito-banner .ico{width:15px!important;height:15px!important;flex:0 0 15px!important}
+.esito-banner-text{flex:1 1 auto!important;min-width:0!important;align-items:center!important}
+.esito-banner .esito-select-inline{width:100%!important;max-width:100%!important;min-width:0!important;font-size:.76rem!important;text-overflow:ellipsis!important;padding:1px 2px!important}
