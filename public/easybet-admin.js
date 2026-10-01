@@ -947,18 +947,23 @@
     function closeImportModal(){ importBackdrop.classList.remove('open'); }
 
     function renderImportPreview(){
-      if (!importPending.length){ importPreview.innerHTML = ''; return; }
-      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b><span>Strategia: '+esc(String(importPending[0].tipoGiocata||'').toUpperCase())+'</span><span>Quota ingresso: '+esc(importPending[0].quotaIngresso||'')+'</span></div>';
+      var ruleBox=document.getElementById('importRule');
+      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
+      var byStrat={};importPending.forEach(function(x){var k=String(x.tipoGiocata||'').toUpperCase()+' · '+(x.quotaIngresso||'');byStrat[k]=(byStrat[k]||0)+1});var stratKeys=Object.keys(byStrat);var first=importPending[0], isO15=String(first.tipoGiocata||'').toLowerCase().indexOf('1.5')!==-1;
+      if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+(isO15?'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.':'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
+      function isDup(m){var st=toStartAt(m.data,m.ora);return matches.some(function(x){return Number(x.startAt)===Number(st)&&String(x.tipoGiocata||'').trim().toLowerCase()===String(m.tipoGiocata||'').trim().toLowerCase()&&String(x.casa||'').trim().toLowerCase()===String(m.casa||'').trim().toLowerCase()&&String(x.trasferta||'').trim().toLowerCase()===String(m.trasferta||'').trim().toLowerCase();});}
+      var dupCount=importPending.filter(isDup).length;
+      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b>'+(stratKeys.length>1?'<span>Strategie: '+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</span>':'<span>Strategia: '+esc(String(importPending[0].tipoGiocata||'').toUpperCase())+'</span><span>Quota ingresso: '+esc(importPending[0].quotaIngresso||'')+'</span>')+(dupCount?'<span>'+dupCount+' già presenti: verranno saltate</span>':'')+'</div>';
       html += importPending.map(function(m, idx){
         return '<div class="preview-row">'+
-          '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
+          '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+(isDup(m)?'<br><b style="color:#b5452f">GIÀ PRESENTE · verrà saltata</b>':'')+'</span>'+
           '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
           '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
           (function(){var t=ebTrendFromImport(m.importData);if(!t)return '';return '<div class="preview-trend">'+t.main.concat(t.sub||[]).map(function(x){return '<span>'+esc(x[0])+' <b>'+pctLabel(x[1])+'</b></span>'}).join('')+'</div>';})()+
           '<div class="preview-fields fixed"><span>'+esc(String(m.tipoGiocata||'').toUpperCase())+'</span><b>'+esc(m.quotaIngresso||'')+'</b></div>'+
         '</div>';
       }).join('');
-      html += '<div class="modal-actions" style="margin-top:10px;"><div style="flex:1"></div><button class="btn btn-primary" id="importConfirmBtn">Importa '+importPending.length+' partite</button></div>';
+      html += '<div class="modal-actions" style="margin-top:10px;"><div style="flex:1"></div><button class="btn btn-primary" id="importConfirmBtn">Importa '+(importPending.length-dupCount)+' partite</button></div>';
       importPreview.innerHTML = html;
       Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-del'), function(btn){
         btn.addEventListener('click', function(){ importPending.splice(+btn.getAttribute('data-idx'),1); renderImportPreview(); });
@@ -983,7 +988,7 @@
         var startAt = toStartAt(m.data, m.ora);
         if (startAt == null) return;
         var duplicate = matches.some(function(x){
-          return Number(x.startAt)===Number(startAt) && sameText(x.casa,m.casa) && sameText(x.trasferta,m.trasferta);
+          return Number(x.startAt)===Number(startAt) && sameText(x.casa,m.casa) && sameText(x.trasferta,m.trasferta) && sameText(x.tipoGiocata,m.tipoGiocata);
         });
         if (duplicate){ skipped++; return; }
         chain = chain.then(function(){
@@ -1015,26 +1020,29 @@
     document.getElementById('importCancelBtn').addEventListener('click', closeImportModal);
     importBackdrop.addEventListener('click', function(e){ if (e.target === importBackdrop) closeImportModal(); });
     importCsvFile.addEventListener('change', function(){
-      var file=importCsvFile.files && importCsvFile.files[0];
-      if (!file) return;
+      var files=Array.prototype.slice.call(importCsvFile.files||[]);
+      if (!files.length) return;
       importErr.textContent='';
       importPreview.innerHTML='';
-      importFileName.textContent=file.name;
-      var reader=new FileReader();
-      reader.onload=function(){
-        var parsed=parseImportCsv(reader.result,file.name);
-        if (!parsed.length){
-          importPending=[];
-          importErr.textContent='CSV non riconosciuto. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
-          importBackdrop.classList.add('open');
-          return;
-        }
-        importPending=parsed;
+      importFileName.textContent=files.map(function(f){return f.name}).join(', ');
+      Promise.all(files.map(function(file){
+        return new Promise(function(resolve){
+          var reader=new FileReader();
+          reader.onload=function(){ resolve({name:file.name, rows:parseImportCsv(reader.result,file.name)}); };
+          reader.onerror=function(){ resolve({name:file.name, rows:[], error:true}); };
+          reader.readAsText(file,'UTF-8');
+        });
+      })).then(function(results){
+        var all=[], bad=[];
+        results.forEach(function(r){ if(!r.rows.length) bad.push(r.name); all=all.concat(r.rows); });
+        // stessa partita + stessa strategia presente in due file: tienila una volta sola
+        var seen={};
+        all=all.filter(function(m){var k=[m.data,m.ora,String(m.casa).toLowerCase(),String(m.trasferta).toLowerCase(),String(m.tipoGiocata).toLowerCase()].join('|');if(seen[k])return false;seen[k]=1;return true;});
+        importPending=all;
         importBackdrop.classList.add('open');
+        if (bad.length) importErr.textContent='File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
         renderImportPreview();
-      };
-      reader.onerror=function(){ importErr.textContent='Impossibile leggere il file CSV.'; importBackdrop.classList.add('open'); };
-      reader.readAsText(file,'UTF-8');
+      });
     });
 
     loadMatches();
