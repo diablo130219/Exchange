@@ -1722,3 +1722,35 @@ html[data-theme="light"] .csv-trend-card.public{border-color:#dec46e;background:
   .csv-trend-card.public .csv-trend-sub span{font-size:.60rem;padding:5px 4px}
 }
 @media(min-width:901px){.la-odds-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
+
+/* STEP — Pronostici: partite in orizzontale (una riga per partita) su schermi larghi */
+@media (min-width:1100px){
+  #grid.pronostici-detail-mode{grid-template-columns:1fr!important;gap:10px!important}
+  #grid.pronostici-detail-mode>.card{
+    display:grid!important;align-items:center!important;column-gap:18px!important;row-gap:6px!important;padding:12px 18px!important;min-height:0!important;
+    grid-template-columns:190px minmax(360px,1.7fr) 230px minmax(250px,1fr) 190px!important;
+    grid-template-areas:"head match info life status" "date match info life status" "trend trend trend trend trend"!important}
+  #grid.pronostici-detail-mode>.card>*{grid-column:1/-1;margin:0!important}
+  #grid.pronostici-detail-mode>.card>.card-head{grid-area:head!important;display:flex!important;gap:10px!important;align-items:center!important;justify-content:space-between!important}
+  #grid.pronostici-detail-mode>.card>.card-head .time{padding:4px 9px!important}
+  #grid.pronostici-detail-mode>.card>.date{grid-area:date!important;align-self:start!important}
+  #grid.pronostici-detail-mode>.card>.matchup{grid-area:match!important;padding:6px 10px!important;min-height:0!important}
+  #grid.pronostici-detail-mode>.card>.matchup .team{display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important}
+  #grid.pronostici-detail-mode>.card>.matchup .team:last-child{flex-direction:row-reverse!important;text-align:right!important}
+  #grid.pronostici-detail-mode>.card>.matchup .role{display:none!important}
+  #grid.pronostici-detail-mode>.card .crest-wrap{width:52px!important;height:52px!important;flex:0 0 52px!important;border-radius:12px!important}
+  #grid.pronostici-detail-mode>.card .crest{width:40px!important;height:40px!important}
+  #grid.pronostici-detail-mode>.card .team-name{font-size:.95rem!important}
+  #grid.pronostici-detail-mode>.card>.matchup .vs{width:38px!important;height:38px!important;font-size:.8rem!important}
+  #grid.pronostici-detail-mode>.card>.info-grid{grid-area:info!important}
+  #grid.pronostici-detail-mode>.card>.lifecycle-strip{grid-area:life!important}
+  #grid.pronostici-detail-mode>.card>.status{grid-area:status!important;min-height:52px!important}
+  #grid.pronostici-detail-mode>.card>.csv-trend-card{grid-area:trend!important}
+  #grid.pronostici-detail-mode>.card>.csv-trend-card{display:flex!important;flex-direction:row!important;justify-content:flex-start!important;min-height:0!important;align-items:center!important;gap:10px!important;flex-wrap:wrap!important;padding:7px 10px!important}
+  #grid.pronostici-detail-mode>.card>.csv-trend-card .csv-trend-title{margin:0 6px 0 0!important;width:auto!important;flex:0 0 auto!important;text-align:left!important;grid-column:auto!important}
+  #grid.pronostici-detail-mode>.card>.csv-trend-card>div{width:auto!important;flex:0 0 auto!important;grid-column:auto!important}
+  #grid.pronostici-detail-mode>.card>.csv-trend-card .csv-trend-main,#grid.pronostici-detail-mode>.card>.csv-trend-card .csv-trend-sub{display:flex!important;gap:6px!important;flex-wrap:wrap!important;margin:0!important;grid-template-columns:none!important}
+  #grid.pronostici-detail-mode>.card>.csv-trend-card span{flex:0 0 auto!important;width:auto!important;padding:4px 9px!important}
+  #grid.pronostici-detail-mode>.card>.info-grid{border-top:0!important;padding-top:0!important}
+  #grid.pronostici-detail-mode>.card>.info-grid::before,#grid.pronostici-detail-mode>.card>.info-grid::after,#grid.pronostici-detail-mode>.card>.matchup::before,#grid.pronostici-detail-mode>.card>.matchup::after,#grid.pronostici-detail-mode>.card::before,#grid.pronostici-detail-mode>.card::after{display:none!important}
+}
