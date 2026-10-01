@@ -285,3 +285,10 @@
   .csv-trend-card .csv-trend-main b,
   .csv-trend-card .csv-trend-sub b{font-size:.64rem}
 }
+
+.crest-dialog-backdrop{position:fixed;inset:0;z-index:10060;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
+.crest-dialog{width:min(440px,100%);background:var(--surface,#fff);color:var(--text,#222);border:1px solid var(--border,#ddd);border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px}
+.crest-dialog h3{margin:0;font-size:1.05rem}.crest-dialog p{margin:0;color:var(--text-faint,#777);font-size:.8rem}
+.crest-dialog-or{font-size:.75rem;color:var(--text-faint,#777);text-align:center}
+.crest-dialog-row{display:flex;gap:8px}.crest-dialog-row input{flex:1;min-width:0;padding:9px 10px;border-radius:10px;border:1px solid var(--border,#ddd);background:var(--surface,#fff);color:inherit;font:inherit}
+.crest-dialog-actions{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}.crest-dialog-err{min-height:1em;font-size:.78rem;color:#b5452f}

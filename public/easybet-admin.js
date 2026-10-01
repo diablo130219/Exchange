@@ -544,16 +544,7 @@
     document.getElementById('grid').addEventListener('click', function(e){
       var crestBtn = e.target.closest('[data-role="crest"]');
       if (crestBtn){
-        var team=crestBtn.getAttribute('data-team')||'';
-        var league=crestBtn.getAttribute('data-league')||'';
-        var url=window.prompt('URL dello stemma per '+team+'\n\nIncolla un URL immagine http/https. Scrivi AUTO per tornare alla ricerca automatica.','');
-        if(url===null) return;
-        fetch('/api/team-crest',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:team,campionato:league,url:url})})
-          .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
-          .then(function(){
-            Object.keys(crestCache).forEach(function(k){if(k.indexOf(String(team).toLowerCase())===0) delete crestCache[k];});
-            render();
-          }).catch(function(err){window.alert(err.message||'Errore salvataggio stemma');});
+        openCrestDialog(crestBtn.getAttribute('data-team')||'', crestBtn.getAttribute('data-league')||'');
         return;
       }
       var btn = e.target.closest('[data-role="edit"]');
@@ -562,6 +553,75 @@
       var m = matches.find(function(x){ return x.id === id; });
       if (m) openModal(m);
     });
+
+
+    // ---------- stemmi: dialogo (immagine dal computer / link / automatico) ----------
+    function crestFileToDataUrl(file){
+      return new Promise(function(resolve,reject){
+        var u=URL.createObjectURL(file), img=new Image();
+        img.onload=function(){
+          var S=256, c=document.createElement('canvas'); c.width=S; c.height=S;
+          var ctx=c.getContext('2d'), r=Math.min(S/img.width,S/img.height), w=img.width*r, h=img.height*r;
+          ctx.drawImage(img,(S-w)/2,(S-h)/2,w,h); URL.revokeObjectURL(u); resolve(c.toDataURL('image/png'));
+        };
+        img.onerror=function(){ URL.revokeObjectURL(u); reject(new Error('Immagine non leggibile: '+file.name)); };
+        img.src=u;
+      });
+    }
+    function clearCrestCacheFor(team){
+      var t=String(team||'').toLowerCase();
+      Object.keys(crestCache).forEach(function(k){ if(!t || k.indexOf(t)===0) delete crestCache[k]; });
+    }
+    function saveCrest(team, league, body){
+      return fetch('/api/team-crest',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({name:team,campionato:league},body))})
+        .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
+        .then(function(){ clearCrestCacheFor(team); render(); });
+    }
+    function openCrestDialog(team, league){
+      var old=document.getElementById('crestDialog'); if(old) old.remove();
+      var wrap=document.createElement('div'); wrap.id='crestDialog'; wrap.className='crest-dialog-backdrop';
+      wrap.innerHTML='<div class="crest-dialog"><h3>Stemma · '+esc(team)+'</h3><p>'+esc(league||'')+'</p>'+
+        '<button type="button" class="btn btn-primary" data-cd="file">🖼 Carica immagine dal computer</button>'+
+        '<div class="crest-dialog-or">oppure incolla il link dell’immagine</div>'+
+        '<div class="crest-dialog-row"><input type="text" id="crestUrlInput" placeholder="https://…/stemma.png"><button type="button" class="btn" data-cd="url">Salva link</button></div>'+
+        '<div class="crest-dialog-actions"><button type="button" class="btn" data-cd="auto">↺ Torna alla ricerca automatica</button><button type="button" class="btn" data-cd="close">Chiudi</button></div>'+
+        '<div class="crest-dialog-err" id="crestDialogErr"></div><input type="file" id="crestFileInput" accept="image/*" hidden></div>';
+      document.body.appendChild(wrap);
+      var err=wrap.querySelector('#crestDialogErr'), fileIn=wrap.querySelector('#crestFileInput');
+      function done(p){ err.textContent='Salvataggio…'; p.then(function(){ wrap.remove(); }).catch(function(e){ err.textContent=e.message||'Errore salvataggio stemma'; }); }
+      wrap.addEventListener('click',function(ev){
+        if(ev.target===wrap){ wrap.remove(); return; }
+        var b=ev.target.closest('[data-cd]'); if(!b) return;
+        var act=b.getAttribute('data-cd');
+        if(act==='close') wrap.remove();
+        else if(act==='file') fileIn.click();
+        else if(act==='auto') done(saveCrest(team,league,{url:'AUTO'}));
+        else if(act==='url'){ var v=wrap.querySelector('#crestUrlInput').value.trim(); if(!v){ err.textContent='Incolla prima un link.'; return; } done(saveCrest(team,league,{url:v})); }
+      });
+      fileIn.addEventListener('change',function(){
+        var f=fileIn.files&&fileIn.files[0]; if(!f) return;
+        done(crestFileToDataUrl(f).then(function(d){ return saveCrest(team,league,{imageData:d}); }));
+      });
+    }
+    var crestBulkBtn=document.getElementById('crestBulkBtn'), crestBulkFile=document.getElementById('crestBulkFile');
+    if(crestBulkBtn&&crestBulkFile){
+      crestBulkBtn.addEventListener('click',function(){ crestBulkFile.value=''; crestBulkFile.click(); });
+      crestBulkFile.addEventListener('change',function(){
+        var files=Array.prototype.slice.call(crestBulkFile.files||[]); if(!files.length) return;
+        crestBulkBtn.disabled=true; var label=crestBulkBtn.textContent; crestBulkBtn.textContent='Caricamento stemmi…';
+        Promise.all(files.map(function(f){
+          var name=f.name.replace(/\.[a-z0-9]+$/i,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim();
+          return crestFileToDataUrl(f).then(function(d){return {name:name,imageData:d};}).catch(function(){return {name:name,imageData:''};});
+        })).then(function(items){
+          return fetch('/api/team-crests/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:items})})
+            .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})});
+        }).then(function(d){
+          clearCrestCacheFor(''); render();
+          window.alert('Stemmi salvati: '+d.saved.length+(d.failed.length?'\nNon salvati: '+d.failed.join(', '):''));
+        }).catch(function(e){ window.alert(e.message||'Errore caricamento stemmi'); })
+          .finally(function(){ crestBulkBtn.disabled=false; crestBulkBtn.textContent=label; });
+      });
+    }
 
     // STEP 9 — azioni di massa
     var backupBtn=document.getElementById('backupBtn');

@@ -166,6 +166,16 @@ async function migrate() {
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_exchange_periods_start_date ON exchange_periods (start_date DESC);`);
 
+  // --- Stemmi caricati a mano (immagine normalizzata salvata nel database) ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS crest_images (
+      id TEXT PRIMARY KEY,
+      mime TEXT NOT NULL,
+      data BYTEA NOT NULL,
+      updated_at BIGINT NOT NULL
+    );
+  `);
+
   // --- Masaniello Studio integrato (stato JSON privato area admin) ---
   await pool.query(`
     CREATE TABLE IF NOT EXISTS masaniello_state (

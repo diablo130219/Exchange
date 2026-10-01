@@ -9,7 +9,10 @@ const liveStrategie = require('./strategie-live');
 const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
-app.use(express.json({ limit: '1mb' }));
+const jsonSmall = express.json({ limit: '1mb' });
+const jsonCrest = express.json({ limit: '12mb' }); // stemmi caricati a mano (immagini in base64)
+app.use((req, res, next) => (req.path === '/api/team-crest' || req.path === '/api/team-crests/bulk') ? jsonCrest(req, res, next) : jsonSmall(req, res, next));
+let sharpLib = null; try { sharpLib = require('sharp'); } catch (_) { sharpLib = null; }
 
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -2219,7 +2222,8 @@ app.get('/api/team-crest', async (req, res) => {
     // Preserva gli override manuali già inseriti dall'admin.
     const legacyHint = legacyCountryHintFromCampionato(req.query.country || '');
     const legacyKey = normCrestName(name) + (legacyHint ? '|' + normCountry(legacyHint) : '');
-    const manualQ = await pool.query('SELECT * FROM team_crests WHERE name_norm = ANY($1::text[]) AND manual=true ORDER BY name_norm = $2 DESC', [[baseKey, legacyKey], baseKey]);
+    const nameOnlyKey = normCrestName(name);
+    const manualQ = await pool.query('SELECT * FROM team_crests WHERE name_norm = ANY($1::text[]) AND manual=true ORDER BY (name_norm = $2) DESC, (name_norm = $3) DESC', [[baseKey, legacyKey, nameOnlyKey], baseKey, legacyKey]);
     const manualCached = manualQ.rows[0];
     if(manualCached) return res.json({url:manualCached.url||null,manual:true,source:'manual'});
 
@@ -2245,6 +2249,59 @@ app.get('/api/team-crest', async (req, res) => {
   }
 });
 
+// ---------- stemmi caricati a mano (salvati nel database, stessa misura per tutti) ----------
+async function normalizeCrestImage(dataUrl){
+  const m=String(dataUrl||'').match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
+  if(!m) throw Object.assign(new Error('Immagine non valida.'),{status:400});
+  let buf=Buffer.from(m[2],'base64'), mime=m[1].toLowerCase();
+  if(buf.length>10*1024*1024) throw Object.assign(new Error('Immagine troppo grande (max 10 MB).'),{status:400});
+  if(sharpLib){
+    const box={width:256,height:256,fit:'contain',background:{r:0,g:0,b:0,alpha:0}};
+    try{ buf=await sharpLib(buf).trim({threshold:12}).resize(box).png().toBuffer(); }
+    catch(_){ buf=await sharpLib(buf).resize(box).png().toBuffer(); }
+    mime='image/png';
+  }
+  return {buf,mime};
+}
+async function saveManualCrestImage(key, name, dataUrl){
+  const img=await normalizeCrestImage(dataUrl);
+  const id=crypto.createHash('sha1').update(key).digest('hex').slice(0,20);
+  const now=Date.now();
+  await pool.query(`INSERT INTO crest_images (id,mime,data,updated_at) VALUES ($1,$2,$3,$4)
+    ON CONFLICT (id) DO UPDATE SET mime=EXCLUDED.mime,data=EXCLUDED.data,updated_at=EXCLUDED.updated_at`,[id,img.mime,img.buf,now]);
+  const url='/api/crest-image/'+id+'?v='+now;
+  await pool.query(`INSERT INTO team_crests (name_norm,nome_originale,url,fetched_at,manual) VALUES ($1,$2,$3,$4,true)
+    ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=true`,[key,name,url,now]);
+  return url;
+}
+app.get('/api/crest-image/:id', async (req,res)=>{
+  try{
+    const { rows } = await pool.query('SELECT mime,data FROM crest_images WHERE id=$1',[String(req.params.id||'').slice(0,40)]);
+    if(!rows[0]) return res.status(404).end();
+    res.setHeader('Content-Type', rows[0].mime||'image/png');
+    res.setHeader('Cache-Control','public, max-age=31536000, immutable');
+    res.send(rows[0].data);
+  }catch(err){ console.error(err); res.status(500).end(); }
+});
+// Caricamento multiplo: il nome del file è il nome della squadra (es. "Westfalia.png").
+app.post('/api/team-crests/bulk', requireSameSiteAdmin, async (req,res)=>{
+  try{
+    const items=Array.isArray((req.body||{}).items)?req.body.items.slice(0,200):[];
+    const saved=[], failed=[];
+    for(const it of items){
+      const name=String(it&&it.name||'').trim();
+      if(!name||!it.imageData){ failed.push(name||'(senza nome)'); continue; }
+      try{
+        const key=normCrestName(name);
+        await saveManualCrestImage(key,name,it.imageData);
+        await pool.query("DELETE FROM team_crests WHERE name_norm LIKE $1 AND manual=false",['auto:'+CREST_CACHE_VERSION+'|'+key+'%']);
+        saved.push(name);
+      }catch(e){ failed.push(name); }
+    }
+    res.json({ok:true,saved,failed});
+  }catch(err){ console.error(err); res.status(500).json({error:'Errore nel caricamento degli stemmi.'}); }
+});
+
 // Override manuale dall'admin. URL vuoto o "AUTO" = torna alla ricerca automatica.
 app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
   try{
@@ -2257,9 +2314,15 @@ app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
     const autoKey='auto:'+CREST_CACHE_VERSION+'|'+key;
     const legacyHint=legacyCountryHintFromCampionato(campionato);
     const legacyKey=normCrestName(name)+(legacyHint?'|'+normCountry(legacyHint):'');
-    if(!rawUrl || rawUrl.toUpperCase()==='AUTO'){
+    if(!(req.body||{}).imageData && (!rawUrl || rawUrl.toUpperCase()==='AUTO')){
       await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[key,autoKey,legacyKey]]);
       return res.json({ok:true,url:null,manual:false,reset:true});
+    }
+    const imageData=String((req.body||{}).imageData||'');
+    if(imageData){
+      const url=await saveManualCrestImage(key,name,imageData);
+      await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[autoKey].concat(legacyKey!==key?[legacyKey]:[])]);
+      return res.json({ok:true,url,manual:true});
     }
     if(!/^https?:\/\//i.test(rawUrl)) return res.status(400).json({error:'Inserisci un URL http/https valido.'});
     await pool.query(
@@ -2270,7 +2333,7 @@ app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
     // Se imposto manualmente, elimino l'eventuale cache automatica della stessa squadra.
     await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[autoKey].concat(legacyKey!==key?[legacyKey]:[])]);
     res.json({ok:true,url:rawUrl,manual:true});
-  }catch(err){ console.error(err); res.status(500).json({error:'Errore nel salvataggio dello stemma.'}); }
+  }catch(err){ console.error(err); res.status(err.status||500).json({error:err.status?err.message:'Errore nel salvataggio dello stemma.'}); }
 });
 
 app.put('/api/alert-settings', requireSameSiteAdmin, async (req, res) => {
