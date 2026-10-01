@@ -1888,3 +1888,37 @@ html[data-theme="dark"] body #grid.home-history .archive-tiles .day-summary b.l{
 html[data-theme="dark"] body #grid.home-history .archive-tiles .day-summary b.n{background:rgba(217,195,138,.15)!important;color:#e3cd8f!important}
 html[data-theme="dark"] body #grid.home-history .archive-tiles .tone-good .day-summary b.r{background:#2e9d5b!important;color:#fff!important}
 html[data-theme="dark"] body #grid.home-history .archive-tiles .tone-bad .day-summary b.r{background:#c0452f!important;color:#fff!important}
+/* ===== Archivio: palette armoniosa (contrasti ammorbiditi) ===== */
+#grid.home-history .archive-tiles details.history-archive{border-color:rgba(205,175,110,.30)!important;box-shadow:0 6px 18px rgba(120,95,45,.06)!important}
+#grid.home-history .archive-tiles .day-summary b{font-weight:700!important;letter-spacing:.03em!important}
+#grid.home-history .archive-tiles .day-summary b.w{background:rgba(111,154,115,.13)!important;color:#5d8a62!important}
+#grid.home-history .archive-tiles .day-summary b.l{background:rgba(194,122,99,.13)!important;color:#b06d57!important}
+#grid.home-history .archive-tiles .day-summary b.n{background:rgba(190,165,110,.14)!important;color:#9a8455!important}
+#grid.home-history .archive-tiles .day-summary b.r,
+#grid.home-history .archive-tiles .tone-mid .day-summary b.r,
+#grid.home-history .archive-tiles .tone-none .day-summary b.r{background:rgba(205,170,90,.18)!important;color:#8a6d2c!important}
+#grid.home-history .archive-tiles .tone-good .day-summary b.r{background:rgba(111,154,115,.20)!important;color:#4f7d55!important}
+#grid.home-history .archive-tiles .tone-bad .day-summary b.r{background:rgba(194,122,99,.20)!important;color:#a3604b!important}
+#grid.home-history .arch-bar{height:3px!important;bottom:8px!important;left:16px!important;right:16px!important;background:rgba(205,175,110,.12)!important;gap:3px!important}
+#grid.home-history .arch-bar i.w{background:#8fb393!important}
+#grid.home-history .arch-bar i.l{background:#d39b86!important}
+#grid.home-history .arch-bar i.n{background:#e4d4ac!important}
+#grid.home-history .arch-bar i.o{background:#efe7d6!important}
+#grid.home-history .arch-cal{border-color:rgba(205,175,110,.35)!important;box-shadow:0 3px 8px rgba(120,95,45,.07)!important}
+#grid.home-history .arch-cal small{background:linear-gradient(180deg,#f3dfa4,#e2c272)!important;color:#5a4620!important}
+#grid.home-history .arch-cal b{color:#3a3122!important;font-weight:800!important}
+#grid.home-history .archive-tiles .archive-copy strong{color:#3a3122!important;font-weight:700!important}
+#grid.home-history .archive-tiles .archive-meta b{color:#3a3122!important;font-weight:700!important}
+#grid.home-history .archive-tiles .archive-meta{border-left-color:rgba(205,175,110,.25)!important}
+#grid.home-history .archive-tiles details.history-archive>summary:after{background:linear-gradient(180deg,#f1d98f,#ddb95c)!important;color:#4a3a18!important;box-shadow:0 3px 8px rgba(200,160,70,.22)!important}
+/* dark armonioso */
+html[data-theme="dark"] body #grid.home-history .archive-tiles .day-summary b.w{background:rgba(143,179,147,.14)!important;color:#a3c7a7!important}
+html[data-theme="dark"] body #grid.home-history .archive-tiles .day-summary b.l{background:rgba(211,155,134,.14)!important;color:#e0ad9a!important}
+html[data-theme="dark"] body #grid.home-history .archive-tiles .day-summary b.n{background:rgba(228,212,172,.10)!important;color:#d6c493!important}
+html[data-theme="dark"] body #grid.home-history .archive-tiles .day-summary b.r,
+html[data-theme="dark"] body #grid.home-history .archive-tiles .tone-mid .day-summary b.r{background:rgba(226,194,114,.16)!important;color:#e8cf8a!important}
+html[data-theme="dark"] body #grid.home-history .archive-tiles .tone-good .day-summary b.r{background:rgba(143,179,147,.20)!important;color:#b3d4b6!important}
+html[data-theme="dark"] body #grid.home-history .archive-tiles .tone-bad .day-summary b.r{background:rgba(211,155,134,.20)!important;color:#ebb8a5!important}
+html[data-theme="dark"] body #grid.home-history .archive-tiles .archive-copy strong,html[data-theme="dark"] body #grid.home-history .arch-cal b,html[data-theme="dark"] body #grid.home-history .archive-tiles .archive-meta b{color:#ece3d2!important}
+html[data-theme="dark"] body #grid.home-history .arch-bar i.o{background:#38342b!important}
+html[data-theme="dark"] body #grid.home-history .arch-bar i.n{background:#7d6f4f!important}
