@@ -2255,8 +2255,10 @@ app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
     const countryHint=countryHintFromCampionato(campionato);
     const key=normCrestName(name)+(countryHint?'|'+normCountry(countryHint):'');
     const autoKey='auto:'+CREST_CACHE_VERSION+'|'+key;
+    const legacyHint=legacyCountryHintFromCampionato(campionato);
+    const legacyKey=normCrestName(name)+(legacyHint?'|'+normCountry(legacyHint):'');
     if(!rawUrl || rawUrl.toUpperCase()==='AUTO'){
-      await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[key,autoKey]]);
+      await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[key,autoKey,legacyKey]]);
       return res.json({ok:true,url:null,manual:false,reset:true});
     }
     if(!/^https?:\/\//i.test(rawUrl)) return res.status(400).json({error:'Inserisci un URL http/https valido.'});
@@ -2266,7 +2268,7 @@ app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
       [key,name,rawUrl,Date.now()]
     );
     // Se imposto manualmente, elimino l'eventuale cache automatica della stessa squadra.
-    await pool.query('DELETE FROM team_crests WHERE name_norm=$1',[autoKey]);
+    await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[autoKey].concat(legacyKey!==key?[legacyKey]:[])]);
     res.json({ok:true,url:rawUrl,manual:true});
   }catch(err){ console.error(err); res.status(500).json({error:'Errore nel salvataggio dello stemma.'}); }
 });
