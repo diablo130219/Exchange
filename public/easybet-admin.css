@@ -350,3 +350,12 @@
 @media (min-width:1100px){
   .grid.date-grid>.card>.matchup .side .side-name{white-space:normal!important;overflow:visible!important;font-size:.88rem!important;line-height:1.12!important;overflow-wrap:anywhere!important}
 }
+
+.diario-dialog{width:min(560px,100%)}
+.diario-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.diario-grid label{display:flex;flex-direction:column;gap:4px;font-size:.72rem;color:var(--text-faint,#777);font-weight:700}
+.diario-grid input,.diario-grid select{padding:8px 9px;border-radius:9px;border:1px solid var(--border,#ddd);background:var(--surface,#fff);color:inherit;font:inherit}
+.icon-btn.diario-btn.linked{border-color:#3cb371;box-shadow:0 0 0 2px rgba(60,179,113,.18)}
+.date-summary{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.date-summary b{font-size:.66rem;padding:3px 8px;border-radius:999px;border:1px solid var(--border,#ddd);background:var(--surface,#fff)}
+.date-summary b.w{color:#2e9d5b}.date-summary b.l{color:#c0452f}.date-summary b.n{color:#9a7b2c}

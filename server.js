@@ -190,6 +190,7 @@ app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
       pool.query('SELECT * FROM team_crests ORDER BY name_norm ASC'),
       pool.query('SELECT * FROM exchange_periods ORDER BY start_date ASC, uid ASC')
     ]);
+    const crestImgRes = await pool.query('SELECT id, mime, encode(data, \'base64\') AS data_base64, updated_at FROM crest_images ORDER BY id ASC').catch(() => ({ rows: [] }));
 
     const payload = {
       format: 'easybet-backup',
@@ -200,14 +201,16 @@ app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
         matches: matchesRes.rows.length,
         signalSnapshots: snapshotsRes.rows.length,
         teamCrests: crestsRes.rows.length,
-        exchangePeriods: exchangeRes.rows.length
+        exchangePeriods: exchangeRes.rows.length,
+        crestImages: crestImgRes.rows.length
       },
       data: {
         matches: matchesRes.rows,
         signalSnapshots: snapshotsRes.rows,
         alertSettings: alertRes.rows[0] || null,
         teamCrests: crestsRes.rows,
-        exchangePeriods: exchangeRes.rows
+        exchangePeriods: exchangeRes.rows,
+        crestImages: crestImgRes.rows
       }
     };
 
@@ -329,6 +332,8 @@ function matchOut(row) {
     importSource: row.import_source || '',
     importMatchId: row.import_match_id || '',
     importData: row.import_data || null,
+    diarioProfit: row.diario_profit == null ? null : Number(row.diario_profit),
+    diarioLinkedAt: row.diario_linked_at == null ? null : Number(row.diario_linked_at),
     liveStartedAt: row.live_started_at === null || row.live_started_at === undefined ? null : Number(row.live_started_at),
     signalFirstAt: row.signal_first_at === null || row.signal_first_at === undefined ? null : Number(row.signal_first_at),
     signalFirstLevel: row.signal_first_level || '',
@@ -844,6 +849,54 @@ app.get('/api/exchange/export.csv', requireSameSiteAdmin, async (req, res) => {
     console.error('exchange export:', err);
     res.status(500).json({ error: 'Impossibile esportare il Diario Exchange.' });
   }
+});
+
+// ---------- Collegamento partita → Diario Exchange (esito registrato dall'admin) ----------
+const DIARIO_MARKETS = {
+  'EXCH O1.5 GOL 25-70':'Over/Under 1.5','O0.5 HT PRE+LIVE':'Over/Under 1° tempo 0.5','EXCH LAY X HT':'Match Odds',
+  'EXCH UNDER 0.5 HT':'Over/Under 1° tempo 0.5','EXCH FAVORITO HT · PARITÀ':'Match Odds','EXCH FAVORITO HT · SOTTO':'Match Odds','BET X PRE-MATCH':'Match Odds'
+};
+function romeDayIso(ms){
+  try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Number(ms))); }
+  catch(_){ return new Date(Number(ms)).toISOString().slice(0,10); }
+}
+function isoAddDays(iso,n){ const d=new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
+  try{
+    const b=req.body||{};
+    const id=String(b.matchId||'').trim();
+    const profit=Number(String(b.profit==null?'':b.profit).replace(',','.'));
+    if(!id) return res.status(400).json({error:'Partita mancante.'});
+    if(!Number.isFinite(profit)) return res.status(400).json({error:'Scrivi il profitto netto (es. 1,90 oppure -2).'});
+    const mq=await pool.query('SELECT * FROM matches WHERE id=$1',[id]);
+    const m=mq.rows[0]; if(!m) return res.status(404).json({error:'Partita non trovata.'});
+    const day=romeDayIso(m.start_at);
+    const pq=await pool.query('SELECT uid, state FROM exchange_periods ORDER BY start_date DESC, created_at DESC');
+    const row=pq.rows.find(r=>{const st=r.state||{};const start=String(st.start||'');const len=Math.max(1,Number(st.length)||31);return start&&day>=start&&day<=isoAddDays(start,len-1);});
+    if(!row) return res.status(404).json({error:'Nel Diario Exchange non c’è un periodo che contiene il '+day.split('-').reverse().join('/')+'. Crealo e riprova.'});
+    const st=row.state||{}; st.ops=Array.isArray(st.ops)?st.ops:[]; st.days=st.days&&typeof st.days==='object'?st.days:{};
+    const ref='match:'+id, event=(m.casa||'')+' - '+(m.trasferta||''), strategy=String(b.strategy||'').trim()||String(m.tipo_giocata||'');
+    const num=v=>{const x=Number(String(v==null?'':v).replace(',','.'));return Number.isFinite(x)?x:0;};
+    const getDay=d=>{const x=st.days[d]||{};return {sessions:Array.isArray(x.sessions)?x.sessions.slice(0,10):[],deposit:Number(x.deposit)||0,note:String(x.note||'')};};
+    const setDay=(d,x)=>{const s=x.sessions.slice(0,10);while(s.length&&s[s.length-1]==null)s.pop();if(!s.some(v=>v!=null)&&!x.deposit&&!x.note.trim())delete st.days[d];else st.days[d]={sessions:s,deposit:x.deposit,note:x.note};};
+    let op=st.ops.find(o=>o.ref===ref), slot;
+    if(op){ slot=Number(op.slot)||0; }
+    else{
+      const same=st.ops.find(o=>o.day===day&&String(o.event||'').trim().toLowerCase()===event.trim().toLowerCase());
+      if(same) slot=Number(same.slot)||0;
+      else{ const dd=getDay(day),used={}; dd.sessions.forEach((v,i)=>{if(v!=null)used[i]=1}); st.ops.forEach(o=>{if(o.day===day)used[Number(o.slot)||0]=1}); slot=null; for(let i=0;i<10;i++){ if(!used[i]){slot=i;break;} } if(slot==null) slot=9; }
+      op={uid:'op_'+crypto.randomBytes(5).toString('hex'),ref}; st.ops.push(op);
+    }
+    Object.assign(op,{day,slot,event,league:m.campionato||'',market:DIARIO_MARKETS[strategy]||String(b.market||m.tipo_giocata||''),strategy,side:['Punta','Banca','Trading'].includes(b.side)?b.side:'Punta',
+      oddsIn:num(b.oddsIn),oddsOut:num(b.oddsOut),stake:Math.abs(num(b.stake)),minute:String(b.minute||''),profit:Math.round(profit*100)/100,note:'da partita EasyBet · '+(m.esito_manuale||'')});
+    const dd=getDay(day); while(dd.sessions.length<=slot) dd.sessions.push(null);
+    const tot=st.ops.filter(o=>o.day===day&&Number(o.slot)===slot).reduce((a,o)=>a+(Number(o.profit)||0),0);
+    dd.sessions[slot]=Math.round(tot*100)/100; setDay(day,dd);
+    const now=Date.now();
+    await pool.query('UPDATE exchange_periods SET state=$2::jsonb, updated_at=$3 WHERE uid=$1',[row.uid,JSON.stringify(st),now]);
+    await pool.query('UPDATE matches SET diario_profit=$2, diario_linked_at=$3 WHERE id=$1',[id,Math.round(profit*100)/100,now]);
+    res.json({ok:true,period:st.name||row.uid,day,slot:slot+1});
+  }catch(err){ console.error('link-match:',err); res.status(500).json({error:'Impossibile registrare nel Diario.'}); }
 });
 
 // ---------- Masaniello Studio (privato, integrato in EasyBet) ----------

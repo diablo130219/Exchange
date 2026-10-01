@@ -321,6 +321,7 @@
         '<div class="card-foot">'+
           '<label class="bot-toggle"><input type="checkbox" data-role="bot" data-id="'+esc(m.id)+'"'+(m.botEnabled?' checked':'')+'> su Telegram</label>'+
           '<div class="card-actions">'+
+            (/^entrata_/.test(esito)?'<button class="icon-btn diario-btn'+(m.diarioLinkedAt?' linked':'')+'" data-role="diario" data-id="'+esc(m.id)+'" title="'+(m.diarioLinkedAt?'Nel Diario: '+fmtEuro(m.diarioProfit)+' · clicca per modificare':'Registra nel Diario Exchange')+'">📒</button>':'')+
             '<button class="icon-btn" data-role="edit" data-id="'+esc(m.id)+'" title="Modifica">✎</button>'+
           '</div>'+
         '</div>'+
@@ -425,11 +426,13 @@
       var scrollY = window.scrollY;
       grid.innerHTML = '<div class="date-groups">' + groups.map(function(group, idx){
         var countLabel = group.items.length + ' ' + (group.items.length === 1 ? 'partita' : 'partite');
+        var gW=0,gL=0,gN=0,gP=0,gHasP=false; group.items.forEach(function(x){ if(x.esitoManuale==='entrata_vinta')gW++; else if(x.esitoManuale==='entrata_persa')gL++; else if(x.esitoManuale==='non_entrata')gN++; if(x.diarioProfit!=null){gP+=Number(x.diarioProfit)||0;gHasP=true;} });
+        var daySummary=(gW+gL+gN)?'<span class="date-summary"><b class="w">'+gW+' V</b><b class="l">'+gL+' P</b><b class="n">'+gN+' NE</b>'+(gW+gL?'<b>'+Math.round(gW/(gW+gL)*100)+'%</b>':'')+(gHasP?'<b class="'+(gP>=0?'w':'l')+'">'+fmtEuro(gP)+'</b>':'')+'</span>':'';
         var shouldOpen = (hadSections && Object.prototype.hasOwnProperty.call(prevOpen, group.key)) ? prevOpen[group.key] : (group.key === keys.today || group.key === keys.tomorrow || (currentDateFilter !== 'tutte' && idx === 0));
         return '<details class="date-section"'+(shouldOpen?' open':'')+'>'+
           '<summary>'+
             '<div class="date-head">'+
-              '<div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span></div>'+
+              '<div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span>'+daySummary+'</div>'+
               '<div class="date-tools">'+
                 '<div class="date-search-wrap">'+
                   '<span class="date-search-icon">⌕</span>'+
@@ -564,10 +567,13 @@
         var idx = matches.findIndex(function(m){ return m.id === id; });
         if (idx !== -1) matches[idx] = updated;
         render();
+        if (role === 'esito' && /^entrata_/.test(String(payload.esitoManuale||''))) openDiarioDialog(updated);
       });
     });
 
     document.getElementById('grid').addEventListener('click', function(e){
+      var diarioBtn = e.target.closest('[data-role="diario"]');
+      if (diarioBtn){ var dm=matches.find(function(x){return String(x.id)===diarioBtn.getAttribute('data-id')}); if(dm) openDiarioDialog(dm); return; }
       var crestBtn = e.target.closest('[data-role="crest"]');
       if (crestBtn){
         openCrestDialog(crestBtn.getAttribute('data-team')||'', crestBtn.getAttribute('data-league')||'');
@@ -581,6 +587,64 @@
     });
 
 
+
+    // ---------- Collegamento esito → Diario Exchange ----------
+    function fmtEuro(v){ var n=Number(v); if(!isFinite(n)) return '—'; return (n>0?'+':'')+n.toFixed(2).replace('.',',')+' €'; }
+    var DIARIO_SYSTEMS=['EXCH O1.5 GOL 25-70','O0.5 HT PRE+LIVE','EXCH LAY X HT','EXCH UNDER 0.5 HT','EXCH FAVORITO HT · PARITÀ','EXCH FAVORITO HT · SOTTO','BET X PRE-MATCH'];
+    function diarioSystemFor(tipo){
+      var t=String(tipo||'').toLowerCase().replace(',','.');
+      if(/1\.?5/.test(t)) return 'EXCH O1.5 GOL 25-70';
+      if(/under/.test(t)) return 'EXCH UNDER 0.5 HT';
+      if(/banca|lay ?x/.test(t)) return 'EXCH LAY X HT';
+      if(/favorit/.test(t)) return 'EXCH FAVORITO HT · PARITÀ';
+      if(/0\.?5/.test(t)) return 'O0.5 HT PRE+LIVE';
+      if(/\bx\b/.test(t)) return 'BET X PRE-MATCH';
+      return DIARIO_SYSTEMS[0];
+    }
+    function openDiarioDialog(m){
+      if(!m) return;
+      var old=document.getElementById('diarioDialog'); if(old) old.remove();
+      var win=m.esitoManuale==='entrata_vinta', sys=diarioSystemFor(m.tipoGiocata), side=/LAY X|SOTTO/.test(sys)?'Banca':'Punta';
+      var q=String(m.quotaIngresso||'').replace(',','.');
+      var wrap=document.createElement('div'); wrap.id='diarioDialog'; wrap.className='crest-dialog-backdrop';
+      wrap.innerHTML='<div class="crest-dialog diario-dialog"><h3>📒 Registra nel Diario Exchange</h3><p>'+esc(m.casa+' - '+m.trasferta)+' · <b>'+(win?'ENTRATA · VINTA':'ENTRATA · PERSA')+'</b></p>'+
+        '<div class="diario-grid">'+
+          '<label>Sistema<select id="dgSys">'+DIARIO_SYSTEMS.map(function(s){return '<option'+(s===sys?' selected':'')+'>'+esc(s)+'</option>'}).join('')+'</select></label>'+
+          '<label>Punta / Banca<select id="dgSide"><option'+(side==='Punta'?' selected':'')+'>Punta</option><option'+(side==='Banca'?' selected':'')+'>Banca</option><option>Trading</option></select></label>'+
+          '<label>Quota entrata<input id="dgIn" inputmode="decimal" value="'+esc(q)+'"></label>'+
+          '<label>Quota uscita<input id="dgOut" inputmode="decimal" placeholder="facoltativa"></label>'+
+          '<label>Stake (€)<input id="dgStake" inputmode="decimal" placeholder="es. 2"></label>'+
+          '<label>Profitto netto (€)<input id="dgProfit" inputmode="decimal" placeholder="'+(win?'es. 1,90':'es. -2')+'" value="'+(m.diarioProfit!=null?String(m.diarioProfit).replace('.',','):'')+'"></label>'+
+        '</div>'+
+        '<div class="crest-dialog-actions"><button type="button" class="btn" data-dg="calc">Calcola profitto (comm. 5%)</button><span></span></div>'+
+        '<div class="crest-dialog-actions"><button type="button" class="btn" data-dg="skip">Salta</button><button type="button" class="btn btn-primary" data-dg="save">Registra nel Diario</button></div>'+
+        '<div class="crest-dialog-err" id="dgErr"></div></div>';
+      document.body.appendChild(wrap);
+      function v(id){ return String((wrap.querySelector('#'+id)||{}).value||'').trim().replace(',','.'); }
+      wrap.addEventListener('click',function(ev){
+        if(ev.target===wrap){ wrap.remove(); return; }
+        var b=ev.target.closest('[data-dg]'); if(!b) return;
+        var act=b.getAttribute('data-dg'), err=wrap.querySelector('#dgErr');
+        if(act==='skip'){ wrap.remove(); return; }
+        if(act==='calc'){
+          var st=Number(v('dgStake')), qi=Number(v('dgIn')), sd=v('dgSide'), p;
+          if(!(st>0)||!(qi>1)){ err.textContent='Servono stake e quota di entrata.'; return; }
+          if(sd==='Banca') p= win ? st*0.95 : -st*(qi-1);
+          else p= win ? st*(qi-1)*0.95 : -st;
+          wrap.querySelector('#dgProfit').value=(Math.round(p*100)/100).toFixed(2).replace('.',','); err.textContent=''; return;
+        }
+        if(act==='save'){
+          var pr=Number(v('dgProfit'));
+          if(v('dgProfit')===''||!isFinite(pr)){ err.textContent='Scrivi il profitto netto oppure usa «Calcola profitto».'; return; }
+          if(!win && pr>0) pr=-pr;
+          err.textContent='Salvataggio…';
+          fetch('/api/exchange/link-match',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({matchId:m.id,strategy:v('dgSys'),side:v('dgSide'),oddsIn:v('dgIn'),oddsOut:v('dgOut'),stake:v('dgStake'),profit:pr})})
+            .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
+            .then(function(d){ wrap.remove(); loadMatches(); window.alert('Registrata nel Diario: '+(d.period||'')+' · '+String(d.day).split('-').reverse().join('/')+' · sessione '+d.slot); })
+            .catch(function(e2){ err.textContent=e2.message||'Errore'; });
+        }
+      });
+    }
     // ---------- stemmi: dialogo (immagine dal computer / link / automatico) ----------
     function crestFileToDataUrl(file){
       return new Promise(function(resolve,reject){

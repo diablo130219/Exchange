@@ -98,6 +98,8 @@ async function migrate() {
   // --- Import CSV esterni (STEP 43): conserva i dati originali senza usare la quota del file ---
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_source TEXT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_match_id TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS diario_profit NUMERIC;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS diario_linked_at BIGINT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_data JSONB;`);
 
   // --- STEP 6: timeline PRE-MATCH → LIVE → SEGNALE → ESITO ---

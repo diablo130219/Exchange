@@ -134,7 +134,20 @@
     if(currentView==='statistiche'||currentView==='strategie'||currentView==='consigli'||currentView==='exchange'||currentView==='masaniello') return false;
     return isFinished(m);
   }
-  function matchesOutcomeFilter(m){return currentFilter==='tutte'||(m.esitoManuale||'')===currentFilter}
+  function matchesOutcomeFilter(m){return (currentFilter==='tutte'||(m.esitoManuale||'')===currentFilter)&&(!currentStrategyFilter||strategyKey(m.tipoGiocata)===currentStrategyFilter)}
+  var currentStrategyFilter='';
+  function renderStrategyPills(){
+    var host=document.getElementById('strategyPills');
+    if(!host){var tb=document.getElementById('toolbar');if(!tb)return;host=document.createElement('div');host.id='strategyPills';host.className='pills strategy-pills';tb.appendChild(host);
+      host.addEventListener('click',function(e){var b=e.target.closest('[data-s]');if(!b)return;currentStrategyFilter=b.getAttribute('data-s');render()});}
+    if(currentView!=='home'){host.style.display='none';return}
+    var seen={},keys=[];matches.filter(isFinished).forEach(function(m){var k=strategyKey(m.tipoGiocata);if(!seen[k]){seen[k]=strategyMeta(m.tipoGiocata);keys.push(k)}});
+    if(currentStrategyFilter&&!seen[currentStrategyFilter])currentStrategyFilter='';
+    if(keys.length<2){host.style.display='none';host.innerHTML='';return}
+    host.style.display='';
+    var html='<button type="button" class="pill'+(currentStrategyFilter?'':' active')+'" data-s="">Tutte le strategie</button>'+keys.map(function(k){return '<button type="button" class="pill'+(currentStrategyFilter===k?' active':'')+'" data-s="'+escAttr(k)+'">'+esc(seen[k].name)+'</button>'}).join('');
+    if(host.innerHTML!==html)host.innerHTML=html;
+  }
   function updateViewUI(){
     var title=document.getElementById('sectionTitle'),sub=document.getElementById('sectionSubtitle'),toolbar=document.getElementById('toolbar'),liveSearchBar=document.getElementById('liveSearchBar');
     document.body.classList.toggle('exchange-fullscreen',currentView==='exchange');
@@ -227,6 +240,18 @@
     var heads=[['label','Voce'],['total','Tot.'],['entered','Entrati'],['wins','V'],['losses','P'],['skipped','Non entr.'],['entryRate','Ingresso %'],['winRate','Win rate'],['avgQuota','Quota media']];
     return '<div class="stats-tablebox"><div class="stats-table-head"><div><div class="chart-title">'+esc(title)+'</div><div class="chart-sub">'+esc(sub)+'</div></div><span class="stats-click-hint">Clicca una riga per vedere le partite</span></div><div class="stats-tablewrap"><table class="stats-table"><thead><tr>'+heads.map(function(h){return '<th><button type="button" data-stats-sort="'+type+'" data-stats-key="'+h[0]+'">'+h[1]+statsSortArrow(type,h[0])+'</button></th>'}).join('')+'</tr></thead><tbody>'+rows.slice(0,40).map(function(r){return '<tr class="stats-drill-row" data-stats-drill="'+type+'" data-stats-label="'+escAttr(r.label)+'"><td title="'+escAttr(r.label)+'">'+esc(r.label)+'</td><td>'+Number(r.total||0)+'</td><td>'+Number(r.entered||0)+'</td><td>'+Number(r.wins||0)+'</td><td>'+Number(r.losses||0)+'</td><td>'+Number(r.skipped||0)+'</td><td>'+Number(r.entryRate||0)+'%</td><td class="'+performanceClass(r.winRate)+'">'+Number(r.winRate||0)+'%</td><td>'+fmtQuota(r.avgQuota)+'</td></tr>'}).join('')+'</tbody></table></div></div>';
   }
+  var BACKTEST_TARGETS={over15:{t:78.9,n:'OVER 1.5 FT'},over05:{t:66.0,n:'OVER 0.5 HT'},banca:{t:57.0,n:'BANCA LA X HT'},under05:{t:36.8,n:'UNDER 0.5 HT'},favht:{t:57.3,n:'FAVORITO HT'}};
+  function backtestCompareHtml(){
+    var rows=(performanceStats&&performanceStats.byStrategy)||[],out=[];
+    rows.forEach(function(r){var k=strategyKey(r.label),bt=BACKTEST_TARGETS[k];if(!bt)return;
+      var ent=Number(r.entered)||((Number(r.wins)||0)+(Number(r.losses)||0)),wr=ent?(Number(r.wins)||0)/ent*100:null,diff=wr==null?null:wr-bt.t;
+      var cls=wr==null?'grey':diff>=-1?'green':diff>-3?'yellow':'red';
+      var lbl={green:'In linea',yellow:'Attenzione',red:'Sotto target',grey:'Nessun ingresso'}[cls];
+      out.push('<tr><td><b>'+esc(bt.n)+'</b></td><td class="num">'+ent+'</td><td class="num">'+(wr==null?'—':wr.toFixed(1).replace('.',',')+'%')+'</td><td class="num">'+bt.t.toFixed(1).replace('.',',')+'%</td><td class="num">'+(diff==null?'—':(diff>0?'+':'')+diff.toFixed(1).replace('.',','))+'</td><td><span class="bt-light bt-'+cls+'"><i></i>'+lbl+(ent&&ent<30?' · campione piccolo':'')+'</span></td></tr>');
+    });
+    if(!out.length)return '';
+    return '<div class="stats-tablebox backtest-box"><div class="stats-table-head"><div><div class="chart-title">Strategie vs backtest</div><div class="chart-sub">Win rate reale degli ingressi confrontato con il target del backtest. Verde: entro 1 punto · Giallo: entro 3 punti · Rosso: oltre 3 punti sotto.</div></div></div><div class="stats-tablewrap"><table class="stats-table"><thead><tr><th>Strategia</th><th>Ingressi</th><th>Win reale</th><th>Target</th><th>Scarto</th><th>Stato</th></tr></thead><tbody>'+out.join('')+'</tbody></table></div><div class="stats-note">Sotto i 30 ingressi lo scarto è poco significativo: valuta il semaforo solo con un campione più ampio.</div></div>';
+  }
   function statsDetailHtml(){
     if(!statsDetailFilter||!performanceStats)return '';
     var d=Array.isArray(performanceStats.details)?performanceStats.details:[],type=statsDetailFilter.type,label=statsDetailFilter.label;
@@ -297,6 +322,7 @@
       '<div class="chart-box"><div class="chart-title">Andamento win rate</div><div class="chart-sub">Evoluzione giornaliera cumulativa sugli ingressi del periodo.</div>'+renderTrend((performanceStats.daily||[]).map(function(x){return {label:x.label,v:Number(x.winRate||0),entered:Number(x.entered||0),wins:Number(x.wins||0),losses:Number(x.losses||0)}}))+'</div>'+ 
       scoreValidationHtml()+
       minuteValidationHtml()+
+      backtestCompareHtml()+
       performanceTable('Rendimento per strategia','Ordina le colonne oppure apri una strategia per vedere le partite che compongono il dato.',performanceStats.byStrategy,'strategy')+
       performanceTable('Rendimento per campionato','Confronto per competizione nel periodo selezionato.',performanceStats.byLeague,'league')+
       '<div class="stats-note">Il win rate considera solo gli ingressi effettivi (vinte + perse). “Non entrati” resta separato, così puoi distinguere la qualità del segnale dalla frequenza con cui la strategia raggiunge le condizioni operative.</div>'+statsDetailHtml();
@@ -442,6 +468,11 @@
       var finishedExtra=isFinishedCard?finishedSignalSummary(m)+'<div class="finished-action-row">'+snapshotBtn+'</div>':'';
       return '<article class="card'+(isFinishedCard?' finished-card':'')+(m.signalFirstAt?' has-signal':' no-signal')+(e?' esito-'+e:'')+'"><div class="card-head"><div class="league"><small>Campionato</small>'+camp+'</div><div class="time"><small>Ora</small><strong class="num">'+esc(fmtTime(m))+'</strong></div></div><div class="date num">'+esc(fmtDate(m))+'</div><div class="matchup"><div class="team"><div class="role">Casa</div>'+crestImg(m.casa,m.campionato)+'<div class="team-name">'+esc(m.casa||'Squadra casa')+'</div></div><div class="vs">VS</div><div class="team"><div class="role">Trasferta</div>'+crestImg(m.trasferta,m.campionato)+'<div class="team-name">'+esc(m.trasferta||'Squadra trasferta')+'</div></div></div><div class="info-grid"><div class="info"><label>Quota ingresso</label><strong class="num">'+q+'</strong></div><div class="info strategy"><label>Strategia</label><strong>'+str+'</strong></div></div>'+csvTrendHtml(m)+lifecycleStrip(m)+finishedExtra+'<div class="status '+status+'"><span class="status-icon">'+icon+'</span><span class="status-copy"><small>'+ (e?'Esito':currentView==='live'?'Stato':'Stato') +'</small><strong>'+esc(label)+'</strong></span></div>'+analyzerBtn+'</article>'
     }
+  function daySummaryHtml(items){
+    var w=0,l=0,n=0;items.forEach(function(m){var e=m.esitoManuale||'';if(e==='entrata_vinta')w++;else if(e==='entrata_persa')l++;else if(e==='non_entrata')n++});
+    if(!(w+l+n))return '';
+    return '<span class="day-summary"><b class="w">'+w+' V</b><b class="l">'+l+' P</b><b class="n">'+n+' NE</b>'+(w+l?'<b class="r">'+Math.round(w/(w+l)*100)+'%</b>':'')+'</span>';
+  }
   function renderFinishedByDate(list,grid){
     var groups={};
     list.slice().sort(function(a,b){return Number(b.startAt)-Number(a.startAt)}).forEach(function(m){var k=dayKey(m);(groups[k]||(groups[k]=[])).push(m)});
@@ -449,7 +480,7 @@
     var html='';
     [today,yesterday].forEach(function(k){
       if(!groups[k])return;
-      html+='<section class="history-section recent"><div class="history-section-head"><div class="history-section-badge">'+relativeDateLabel(k)+'</div><div class="history-section-line"></div><div class="history-section-date">'+esc(shortDateLabelFromKey(k))+'</div></div><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></section>';
+      html+='<section class="history-section recent"><div class="history-section-head"><div class="history-section-badge">'+relativeDateLabel(k)+'</div><div class="history-section-line"></div>'+daySummaryHtml(groups[k])+'<div class="history-section-date">'+esc(shortDateLabelFromKey(k))+'</div></div><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></section>';
       delete groups[k];
     });
     var prevOpen={};Array.prototype.forEach.call(grid.querySelectorAll('details.history-archive[data-day]'),function(d){if(d.open)prevOpen[d.getAttribute('data-day')]=1});
@@ -457,7 +488,7 @@
     var archiveKeys=Object.keys(groups).sort().reverse();
     archiveKeys.forEach(function(k){
       var count=groups[k].length;
-      html+='<details class="date-group archive history-archive" data-day="'+esc(k)+'"'+(prevOpen[k]?' open':'')+'><summary><span class="archive-main"><span class="archive-icon" aria-hidden="true"></span><span class="archive-copy"><small>Archivio</small><strong>'+esc(dateLabelFromKey(k))+'</strong></span></span><span class="archive-meta"><b>'+count+'</b><span>'+(count===1?'partita':'partite')+'</span></span><span class="archive-story">OGNI PARTITA<br>UNA STORIA</span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
+      html+='<details class="date-group archive history-archive" data-day="'+esc(k)+'"'+(prevOpen[k]?' open':'')+'><summary><span class="archive-main"><span class="archive-icon" aria-hidden="true"></span><span class="archive-copy"><small>Archivio</small><strong>'+esc(dateLabelFromKey(k))+'</strong>'+daySummaryHtml(groups[k])+'</span></span><span class="archive-meta"><b>'+count+'</b><span>'+(count===1?'partita':'partite')+'</span></span><span class="archive-story">OGNI PARTITA<br>UNA STORIA</span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
     });
     grid.classList.add('home-history');
     grid.innerHTML=html||'<div class="empty">Nessuna partita terminata disponibile.</div>';
@@ -547,6 +578,7 @@
     var exb=document.getElementById('exchangeBoard');if(exb)exb.classList.remove('show');
     var mb2=document.getElementById('masanielloBoard');if(mb2)mb2.classList.remove('show');
     dash.classList.remove('show');dash.innerHTML='';grid.classList.remove('view-hidden','home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');grid.style.display='grid';
+    renderStrategyPills();
     var list=matches.filter(matchesView).filter(function(m){return currentView==='home'?matchesOutcomeFilter(m):true});
     if(currentView==='live' && liveSearchQuery){var q=liveSearchQuery.toLowerCase();list=list.filter(function(m){return [m.casa,m.trasferta,m.campionato,m.tipoGiocata,m.quotaIngresso].join(' ').toLowerCase().indexOf(q)!==-1;});}
     if(currentView==='live'){var cnt=document.getElementById('liveSearchCount');if(cnt)cnt.textContent=list.length+' '+(list.length===1?'partita':'partite');}
@@ -626,7 +658,7 @@
   }
   function setView(view,scroll){
     currentView=view||'home';currentFilter='tutte';if(currentView!=='pronostici')currentPronosticiStrategy=null;
-    document.querySelectorAll('.pill').forEach(function(p){p.classList.toggle('active',p.getAttribute('data-f')==='tutte')});
+    document.querySelectorAll('#pills .pill').forEach(function(p){p.classList.toggle('active',p.getAttribute('data-f')==='tutte')});
     render();
     if(currentView==='statistiche')loadPerformanceStats(true);
     if(currentView==='exchange'&&window.EasyBetExchange&&window.EasyBetExchange.render)window.EasyBetExchange.render();
@@ -634,7 +666,7 @@
     if(scroll) document.getElementById('partite').scrollIntoView({behavior:'smooth',block:'start'});
   }
   document.querySelectorAll('[data-view]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var v=a.getAttribute('data-view');if(!v)return;history.replaceState(null,'','#'+v);setView(v,true);if(mobileNav){mobileNav.classList.remove('open')}if(mobileMenuBtn){mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰'}})});
-  document.getElementById('pills').addEventListener('click',function(e){var b=e.target.closest('.pill');if(!b)return;currentFilter=b.getAttribute('data-f');document.querySelectorAll('.pill').forEach(function(p){p.classList.remove('active')});b.classList.add('active');render()});
+  document.getElementById('pills').addEventListener('click',function(e){var b=e.target.closest('.pill');if(!b)return;currentFilter=b.getAttribute('data-f');document.querySelectorAll('#pills .pill').forEach(function(p){p.classList.remove('active')});b.classList.add('active');render()});
   var liveSearchInput=document.getElementById('liveSearchInput');if(liveSearchInput){liveSearchInput.addEventListener('input',function(){liveSearchQuery=String(this.value||'').trim();render()});}
   document.getElementById('grid').addEventListener('click',function(e){var openBtn=e.target.closest('.js-open-strategy');if(openBtn){currentPronosticiStrategy=openBtn.getAttribute('data-strategy')||null;render();return}var backBtn=e.target.closest('.js-back-pronostici');if(backBtn){currentPronosticiStrategy=null;render()}});
   document.getElementById('grid').addEventListener('click',function(e){var b=e.target.closest('.js-live-analyze');if(!b)return;var key=b.getAttribute('data-match-key');var m=matches.find(function(x){return liveAnalyzerMatchKey(x)===key});if(m)openLiveAnalyzer(m)});
