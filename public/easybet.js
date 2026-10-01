@@ -452,13 +452,16 @@
       html+='<section class="history-section recent"><div class="history-section-head"><div class="history-section-badge">'+relativeDateLabel(k)+'</div><div class="history-section-line"></div><div class="history-section-date">'+esc(shortDateLabelFromKey(k))+'</div></div><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></section>';
       delete groups[k];
     });
+    var prevOpen={};Array.prototype.forEach.call(grid.querySelectorAll('details.history-archive[data-day]'),function(d){if(d.open)prevOpen[d.getAttribute('data-day')]=1});
+    var keepScroll=window.scrollY;
     var archiveKeys=Object.keys(groups).sort().reverse();
     archiveKeys.forEach(function(k){
       var count=groups[k].length;
-      html+='<details class="date-group archive history-archive"><summary><span class="archive-main"><span class="archive-icon" aria-hidden="true"></span><span class="archive-copy"><small>Archivio</small><strong>'+esc(dateLabelFromKey(k))+'</strong></span></span><span class="archive-meta"><b>'+count+'</b><span>'+(count===1?'partita':'partite')+'</span></span><span class="archive-story">OGNI PARTITA<br>UNA STORIA</span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
+      html+='<details class="date-group archive history-archive" data-day="'+esc(k)+'"'+(prevOpen[k]?' open':'')+'><summary><span class="archive-main"><span class="archive-icon" aria-hidden="true"></span><span class="archive-copy"><small>Archivio</small><strong>'+esc(dateLabelFromKey(k))+'</strong></span></span><span class="archive-meta"><b>'+count+'</b><span>'+(count===1?'partita':'partite')+'</span></span><span class="archive-story">OGNI PARTITA<br>UNA STORIA</span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
     });
     grid.classList.add('home-history');
     grid.innerHTML=html||'<div class="empty">Nessuna partita terminata disponibile.</div>';
+    if(Object.keys(prevOpen).length)window.scrollTo(0,keepScroll);
   }
   function livePriorityLevel(m){
     var raw=String(m.liveLastLevel||'').trim().toLowerCase();
@@ -569,12 +572,23 @@
     if(note) note.textContent=hasLoadedOnce?'ultimo aggiornamento mantenuto':'errore aggiornamento';
     if(grid&&!hasLoadedOnce) grid.innerHTML='<div class="empty">'+esc(message||'Impossibile caricare le partite. Riprovo automaticamente.')+'</div>';
   }
+  var publicLastSig='',publicLastAction=0;
+  ['pointerdown','keydown','wheel','touchstart'].forEach(function(ev){document.addEventListener(ev,function(){publicLastAction=Date.now()},{passive:true,capture:true})});
+  // Archivio Home: aprendo un giorno si chiude quello aperto prima.
+  document.addEventListener('toggle',function(e){var d=e.target;if(!d||!d.matches||!d.matches('#grid details.history-archive')||!d.open)return;Array.prototype.forEach.call(document.querySelectorAll('#grid details.history-archive[open]'),function(o){if(o!==d)o.open=false})},true);
   function applyPublicState(s){
     if(loadWatchdog){clearTimeout(loadWatchdog);loadWatchdog=null}
     var incoming=normalizeMatchesPayload(s);
-    matches=incoming.slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});
+    var sorted=incoming.slice().sort(function(a,b){return Number(a.startAt)-Number(b.startAt)});
+    var sig='';try{sig=JSON.stringify(sorted)}catch(_){sig=String(Math.random())}
+    var unchanged=hasLoadedOnce&&sig===publicLastSig;
+    // In Home non ridisegnare mentre la stai usando (clic/scroll nell'ultimo minuto): riprova al prossimo giro.
+    var busyHome=hasLoadedOnce&&currentView==='home'&&(Date.now()-publicLastAction<60000);
     hasLoadedOnce=true;
     loadInProgress=false;
+    if(unchanged||busyHome){var n0=document.getElementById('refreshNote');if(n0)n0.textContent='aggiornato alle '+new Date().toLocaleTimeString('it-IT');return}
+    publicLastSig=sig;
+    matches=sorted;
     render();
     if(currentView==='statistiche')loadPerformanceStats(true);
     var note=document.getElementById('refreshNote');
