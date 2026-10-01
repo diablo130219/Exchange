@@ -2020,3 +2020,48 @@ html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-box{backgroun
 html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-grid input,html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-grid select,html:not([data-theme="light"]) body #liveAnalyzerOverlay .la-entry-actions button:not(.primary){background:#1e1a13;border-color:#3a3328;color:#eee5d3}
 @media(max-width:640px){#liveAnalyzerOverlay .la-signal-score{min-width:0;align-items:flex-start!important}#liveAnalyzerOverlay .la-entry-grid{grid-template-columns:1fr}}
 #liveAnalyzerOverlay .la-quota-check{width:fit-content!important;max-width:100%}
+
+.la-toast-host{position:fixed;right:18px;bottom:18px;z-index:20000;display:flex;flex-direction:column;gap:10px;max-width:min(380px,calc(100vw - 32px))}
+.la-toast{position:relative;display:flex;flex-direction:column;gap:3px;padding:14px 40px 14px 16px;border-radius:14px;background:#eef8f0;border:1px solid #8fc39c;box-shadow:inset 4px 0 0 #4f9d62,0 14px 34px rgba(0,0,0,.22);color:#24452b;font-size:.84rem;animation:laToastIn .25s ease;transition:opacity .8s}
+.la-toast b{font-size:.95rem}.la-toast.fade{opacity:0}
+.la-toast button{position:absolute;top:8px;right:10px;border:0;background:none;font-size:1.2rem;cursor:pointer;color:inherit}
+html:not([data-theme="light"]) body .la-toast{background:#132018;border-color:rgba(143,179,147,.5);color:#cfe6d2}
+@keyframes laToastIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+/* Campanella card Live */
+.live-bell{display:inline-grid;place-items:center;width:34px;height:34px;margin-left:8px;border-radius:50%;border:1px solid rgba(205,175,110,.4);background:#fffaf0;font-size:1rem;cursor:pointer;vertical-align:middle;filter:grayscale(1);opacity:.55;transition:transform .15s;padding:0}
+.live-bell:hover{transform:scale(1.08);opacity:.85}
+.live-bell.bell-green{filter:none;opacity:1;background:#e7f5ea;border-color:#4f9d62;animation:bellPulse 1.6s infinite}
+.live-bell.bell-was{filter:none;opacity:.9;background:#eef6ef;border-color:#8fc39c}
+@keyframes bellPulse{0%{box-shadow:0 0 0 0 rgba(79,157,98,.55)}70%{box-shadow:0 0 0 10px rgba(79,157,98,0)}100%{box-shadow:0 0 0 0 rgba(79,157,98,0)}}
+@media (min-width:1100px){#grid.live-mode>.card>.date{display:flex!important;align-items:center!important;gap:6px}#grid.live-mode>.card>.date .live-bell{margin-left:auto}}
+html:not([data-theme="light"]) body .live-bell{background:#1d1a13}
+html:not([data-theme="light"]) body .live-bell.bell-green{background:#173b25}
+.live-bell-backdrop{position:fixed;inset:0;z-index:15000;background:rgba(20,15,8,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.live-bell-box{position:relative;width:min(460px,100%);background:#fffdf8;color:#2a2318;border:1px solid #e3cf9b;border-radius:20px;padding:20px 20px 16px;box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.live-bell-box h4{margin:2px 0 10px;font-size:1.15rem}
+.lb-kicker{font-size:.66rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#a0895b}
+.lb-close{position:absolute;top:10px;right:12px;border:0;background:none;font-size:1.4rem;cursor:pointer;color:inherit}
+.lb-status{font-size:.8rem;font-weight:900;padding:8px 12px;border-radius:12px;margin-bottom:12px}
+.lb-status.green{background:#e7f5ea;color:#2f7a43;border:1px solid #8fc39c}
+.lb-status.was{background:#f1f7f1;color:#4f7d55}
+.lb-status.idle{background:#f6f1e6;color:#8a7650}
+.lb-bet{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:14px;background:linear-gradient(180deg,#fff6dc,#fbeec6);border:1px solid #ecd48e;margin-bottom:10px}
+.lb-bet small{font-size:.62rem;font-weight:900;letter-spacing:.16em;color:#a07a1c}.lb-bet b{font-size:1.1rem}.lb-bet span{font-size:.76rem;color:#7a6a4c}
+.lb-row{display:grid;grid-template-columns:118px 1fr;gap:10px;padding:7px 2px;border-top:1px solid #efe5d0;font-size:.84rem}
+.lb-row small{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#9a8763;padding-top:2px}
+.lb-actions{display:flex;justify-content:flex-end;margin-top:12px}
+.lb-open{border:1px solid #d7ad39;background:linear-gradient(180deg,#f1d98f,#ddb95c);color:#3a2c0e;font:inherit;font-weight:800;font-size:.82rem;padding:9px 16px;border-radius:12px;cursor:pointer}
+html:not([data-theme="light"]) body .live-bell-box{background:#16130e;color:#eee5d3;border-color:rgba(216,173,61,.3)}
+html:not([data-theme="light"]) body .lb-bet{background:#231d12;border-color:rgba(216,173,61,.3)}
+html:not([data-theme="light"]) body .lb-row{border-top-color:#2c271d}
+html:not([data-theme="light"]) body .lb-status.idle{background:#1e1a13;color:#c9b88f}
+html:not([data-theme="light"]) body .lb-status.green{background:#173b25;color:#a6e5b7}
+@media(max-width:520px){.lb-row{grid-template-columns:1fr;gap:2px}}
+
+.live-bell{filter:none!important;opacity:1!important;color:#c9bfae}
+.live-bell svg{width:18px;height:18px;display:block}
+.live-bell.bell-green{color:#2f9a4f;background:#e7f5ea}
+.live-bell.bell-was{color:#7fb38a}
+.live-bell.bell-idle:hover{color:#9a8763}
+html:not([data-theme="light"]) body .live-bell{color:#5c5547}
+html:not([data-theme="light"]) body .live-bell.bell-green{color:#6fdc8f}

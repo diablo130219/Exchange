@@ -466,7 +466,7 @@
       var analyzerBtn=currentView==='live'?'<button type="button" class="live-analyze-btn js-live-analyze" data-match-key="'+esc(liveAnalyzerMatchKey(m))+'">⚡ ANALIZZA LIVE</button>':'';
       var snapshotBtn=(m.signalFirstAt&&m.id)?'<button type="button" class="finished-snapshot-btn js-signal-snapshot" data-match-id="'+escAttr(m.id)+'">◎ PERCHÉ VERDE?</button>':'<div class="finished-snapshot-placeholder">NESSUNO SNAPSHOT</div>';
       var finishedExtra=isFinishedCard?finishedSignalSummary(m)+'<div class="finished-action-row">'+snapshotBtn+'</div>':'';
-      return '<article class="card'+(isFinishedCard?' finished-card':'')+(m.signalFirstAt?' has-signal':' no-signal')+(e?' esito-'+e:'')+'"><div class="card-head"><div class="league"><small>Campionato</small>'+camp+'</div><div class="time"><small>Ora</small><strong class="num">'+esc(fmtTime(m))+'</strong></div></div><div class="date num">'+esc(fmtDate(m))+'</div><div class="matchup"><div class="team"><div class="role">Casa</div>'+crestImg(m.casa,m.campionato)+'<div class="team-name">'+esc(m.casa||'Squadra casa')+'</div></div><div class="vs">VS</div><div class="team"><div class="role">Trasferta</div>'+crestImg(m.trasferta,m.campionato)+'<div class="team-name">'+esc(m.trasferta||'Squadra trasferta')+'</div></div></div><div class="info-grid"><div class="info"><label>Quota ingresso</label><strong class="num">'+q+'</strong></div><div class="info strategy"><label>Strategia</label><strong>'+str+'</strong></div></div>'+csvTrendHtml(m)+lifecycleStrip(m)+finishedExtra+'<div class="status '+status+'"><span class="status-icon">'+icon+'</span><span class="status-copy"><small>'+ (e?'Esito':currentView==='live'?'Stato':'Stato') +'</small><strong>'+esc(label)+'</strong></span></div>'+analyzerBtn+'</article>'
+      return '<article class="card'+(isFinishedCard?' finished-card':'')+(m.signalFirstAt?' has-signal':' no-signal')+(e?' esito-'+e:'')+'"><div class="card-head"><div class="league"><small>Campionato</small>'+camp+'</div><div class="time"><small>Ora</small><strong class="num">'+esc(fmtTime(m))+'</strong></div></div><div class="date num">'+esc(fmtDate(m))+(currentView==='live'?liveBellHtml(m):'')+'</div><div class="matchup"><div class="team"><div class="role">Casa</div>'+crestImg(m.casa,m.campionato)+'<div class="team-name">'+esc(m.casa||'Squadra casa')+'</div></div><div class="vs">VS</div><div class="team"><div class="role">Trasferta</div>'+crestImg(m.trasferta,m.campionato)+'<div class="team-name">'+esc(m.trasferta||'Squadra trasferta')+'</div></div></div><div class="info-grid"><div class="info"><label>Quota ingresso</label><strong class="num">'+q+'</strong></div><div class="info strategy"><label>Strategia</label><strong>'+str+'</strong></div></div>'+csvTrendHtml(m)+lifecycleStrip(m)+finishedExtra+'<div class="status '+status+'"><span class="status-icon">'+icon+'</span><span class="status-copy"><small>'+ (e?'Esito':currentView==='live'?'Stato':'Stato') +'</small><strong>'+esc(label)+'</strong></span></div>'+analyzerBtn+'</article>'
     }
   function archiveCounts(items){var c={w:0,l:0,n:0,o:0};items.forEach(function(m){var e=m.esitoManuale||'';if(e==='entrata_vinta')c.w++;else if(e==='entrata_persa')c.l++;else if(e==='non_entrata')c.n++;else c.o++});return c}
   function archiveTone(items){var c=archiveCounts(items);if(!(c.w+c.l))return 'tone-none';var r=c.w/(c.w+c.l);return r>=0.6?'tone-good':r>=0.45?'tone-mid':'tone-bad'}
@@ -477,6 +477,44 @@
     if(!(w+l+n))return '';
     return '<span class="day-summary"><b class="w">'+w+' V</b><b class="l">'+l+' P</b><b class="n">'+n+' NE</b>'+(w+l?'<b class="r">'+Math.round(w/(w+l)*100)+'%</b>':'')+'</span>';
   }
+
+  // ---------- Campanella segnale nella card Live ----------
+  function liveBellState(m){
+    var key=liveAnalyzerMatchKey(m),st=(typeof liveAnalyzerState!=='undefined'&&liveAnalyzerState&&liveAnalyzerState[key])||{},local=st.alerted&&Object.keys(st.alerted).length;
+    var lvl=String(m.liveLastLevel||'').toLowerCase();
+    if(local||lvl==='verde'||lvl==='green')return 'green';
+    if(m.signalFirstAt)return 'was';
+    return 'idle';
+  }
+  function liveBellHtml(m){var s=liveBellState(m),t=s==='green'?'Segnale VERDE: clicca per la giocata':s==='was'?'Segnale verde registrato: clicca per i dettagli':'Nessun segnale ancora: clicca per la regola';return '<button type="button" class="live-bell bell-'+s+' js-live-bell" data-match-key="'+escAttr(liveAnalyzerMatchKey(m))+'" title="'+escAttr(t)+'" aria-label="'+escAttr(t)+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v3.6l-1.6 3A1 1 0 0 0 5.3 17h13.4a1 1 0 0 0 .9-1.4l-1.6-3V9a6 6 0 0 0-6-6z" fill="currentColor"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>'}
+  function liveBetPlan(m){
+    var R=(window.EasyBetLiveStrategies||{}).RULES||{},k=strategyKey(m.tipoGiocata),f=function(v,d){return v==null?d:Number(v).toFixed(2).replace('.',',')};
+    var o15=R.over15ft||{},o05=R.over05ht||{},lx=R.layx||{},fh=R.favht||{},u=R.under05ht||{};
+    var plans={
+      over15:{bet:'PUNTA Over 1.5 FT',entry:'Sullo 0-0 tra il '+((o15.window||{}).from||20)+'’ e il '+((o15.window||{}).to||30)+'’, quota ≥ '+f((o15.base||{}).quotaMin,'1,70')+'.',exit:'Al primo gol chiudi in verde (cash-out), altrimenti esci al '+(o15.exitMinute||71)+'’.',sys:'EXCH O1.5 GOL 25-70'},
+      over05:{bet:'PUNTA Over 0.5 HT',entry:'Sullo 0-0 tra il '+((o05.window||{}).from||15)+'’ e il '+((o05.window||{}).to||32)+'’, quota '+f((o05.base||{}).quotaMin,'1,60')+'–'+f((o05.base||{}).quotaMax,'2,10')+'.',exit:'Vinta al primo gol del primo tempo, persa all’intervallo sullo 0-0.',sys:'O0.5 HT PRE+LIVE'},
+      banca:{bet:'BANCA la X',entry:'Solo all’intervallo sullo 0-0 o 1-1, quota Lay X ≤ '+f(lx.quotaMax,'2,10')+'.',exit:'Tieni fino al 90’.',sys:'EXCH LAY X HT'},
+      under05:{bet:'PUNTA Under 0.5 HT',entry:'Pre-match a quota ≥ '+f(u.quotaMin,'2,95')+'.',exit:'Tieni fino all’intervallo: vinta se il primo tempo finisce 0-0.',sys:'EXCH UNDER 0.5 HT'},
+      favht:{bet:'Favorito HT · PUNTA 1 oppure BANCA 2',entry:'All’intervallo: in parità punta 1 a quota ≥ '+f(fh.drawBackMin,'1,85')+'; favorito sotto banca 2 a quota ≤ '+f(fh.trailLayMax,'2,10')+' (o punta 1 ≥ '+f(fh.trailBackMin,'3,90')+').',exit:'Una sola giocata, tieni fino al 90’.',sys:'EXCH FAVORITO HT'},
+      favorita:{bet:'PUNTA la favorita',entry:'Quando la favorita domina i dati live.',exit:'Gestisci in base al risultato.',sys:'Segna la favorita'}
+    };
+    return plans[k]||{bet:String(m.tipoGiocata||'Giocata'),entry:'Vedi la regola della strategia.',exit:'—',sys:String(m.tipoGiocata||'')};
+  }
+  function openLiveBell(m){
+    var old=document.getElementById('liveBellPop');if(old)old.remove();
+    var s=liveBellState(m),p=liveBetPlan(m),key=liveAnalyzerMatchKey(m),st=liveAnalyzerState[key]||{};
+    var q=String(m.quotaIngresso||'').replace('.',',');
+    var when=m.signalFirstAt?new Date(Number(m.signalFirstAt)).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'';
+    var greens=Object.keys(st.alerted||{});
+    var status=s==='green'?'<div class="lb-status green">🟢 SEGNALE VERDE · VALUTA L’INGRESSO ORA</div>':s==='was'?'<div class="lb-status was">✓ Segnale verde registrato'+(when?' alle '+esc(when):'')+'</div>':'<div class="lb-status idle">Nessun segnale verde per ora</div>';
+    var extra=(m.liveLastSummary?'<div class="lb-row"><small>Ultima lettura</small><span>'+esc(m.liveLastSummary)+'</span></div>':'')+(greens.length?'<div class="lb-row"><small>Verde nel Live Analyzer</small><span>'+esc(greens.join(', '))+'</span></div>':'')+(st.minute?'<div class="lb-row"><small>Ultimo dato</small><span>'+esc(String(st.minute))+(String(st.minute).toUpperCase()==='HT'?'':'’')+' · '+esc(st.score||'—')+'</span></div>':'');
+    var w=document.createElement('div');w.id='liveBellPop';w.className='live-bell-backdrop';
+    w.innerHTML='<div class="live-bell-box" role="dialog" aria-label="Giocata"><button type="button" class="lb-close" aria-label="Chiudi">×</button><small class="lb-kicker">'+esc(m.campionato||'')+'</small><h4>'+esc((m.casa||'')+' – '+(m.trasferta||''))+'</h4>'+status+'<div class="lb-bet"><small>GIOCATA</small><b>'+esc(p.bet)+'</b>'+(q?'<span>Quota pre-match '+esc(q)+'</span>':'')+'</div><div class="lb-row"><small>Quando entrare</small><span>'+esc(p.entry)+'</span></div><div class="lb-row"><small>Quando uscire</small><span>'+esc(p.exit)+'</span></div><div class="lb-row"><small>Sistema</small><span>'+esc(p.sys)+'</span></div>'+extra+'<div class="lb-actions"><button type="button" class="lb-open">⚡ Apri Live Analyzer</button></div></div>';
+    document.body.appendChild(w);
+    w.addEventListener('click',function(ev){if(ev.target===w||ev.target.closest('.lb-close')){w.remove();return}if(ev.target.closest('.lb-open')){w.remove();openLiveAnalyzer(m)}});
+  }
+  document.addEventListener('click',function(e){var b=e.target.closest('.js-live-bell');if(!b)return;e.preventDefault();e.stopPropagation();var key=b.getAttribute('data-match-key');var m=matches.find(function(x){return liveAnalyzerMatchKey(x)===key});if(m)openLiveBell(m)});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){var p=document.getElementById('liveBellPop');if(p)p.remove()}});
   function renderFinishedByDate(list,grid){
     var groups={};
     list.slice().sort(function(a,b){return Number(b.startAt)-Number(a.startAt)}).forEach(function(m){var k=dayKey(m);(groups[k]||(groups[k]=[])).push(m)});
@@ -794,7 +832,7 @@
   function laApplyBancaXHardQuotaGate(arr,odds){var sig=arr.find(function(x){return x.name==='Banca X'});if(!sig)return arr;var eng=window.EasyBetLiveStrategies,max=(eng&&eng.RULES&&eng.RULES.layx&&eng.RULES.layx.quotaMax)||2.10,q=laTargetOddNum((odds||{}).lay);sig.liveQuota=q;sig.targetQuota=max;if(sig.state==='VERDE'){if(q==null){sig.state='ATTESA QUOTA';sig.reason='Pareggio all’intervallo, quota Lay X mancante.';sig.why='Inserisci la quota Lay X corrente: ingresso consentito solo a '+max.toFixed(2)+' o inferiore.';}else if(q>max+0.0001){sig.state='NO BET';sig.reason='Quota Lay X troppo alta: non entrare.';sig.why='Quota live '+q.toFixed(2)+' • massimo '+max.toFixed(2)+'.';}}return arr}
   var laHistoryActive=false;
   function openLiveAnalyzer(m){markLifecycle(m,'live');laAutoManualOnly=false;liveAnalyzerCurrentKey=liveAnalyzerMatchKey(m);var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{};var selectedStrategy=st.strategy||m.tipoGiocata||'',targetQuota=st.targetQuota!=null?st.targetQuota:(m.quotaIngresso||'');st=Object.assign({},st,{strategy:selectedStrategy,targetQuota:targetQuota});liveAnalyzerState[liveAnalyzerCurrentKey]=st;laSaveStoredStates();document.getElementById('laHome').value=m.casa||'';document.getElementById('laAway').value=m.trasferta||'';document.getElementById('laMinute').value=st.minute||'';document.getElementById('laScore').value=st.score||'';document.getElementById('laFirstGoal').value=(st.firstGoalObservedMinute!=null?st.firstGoalObservedMinute:'');document.getElementById('laFavorite').value=st.favorite||'none';document.getElementById('laRaw').value=st.raw||'';var oo=st.odds||{};document.getElementById('laOddHT').value=oo.ht||'';document.getElementById('laOddFT').value=oo.ft||'';document.getElementById('laOddLay').value=oo.lay||'';document.getElementById('laOddFav').value=oo.fav||'';var oaw=document.getElementById('laOddAway');if(oaw)oaw.value=oo.away||'';laPrefillPrimaryOdd(m,laStrategySignalName(selectedStrategy));laRawUserOpen=false;laPaintAlertsBtn();var rememberedMode=st.sourceMode==='manual'?'manual':'auto';laSetMode(rememberedMode);var laOverlay=document.getElementById('liveAnalyzerOverlay'),wasAlreadyOpen=laOverlay.classList.contains('open');document.body.classList.add('live-analyzer-open');laOverlay.classList.add('open');laOverlay.setAttribute('aria-hidden','false');if(!wasAlreadyOpen){try{history.pushState({easybetLiveAnalyzer:true,key:liveAnalyzerCurrentKey},'',location.href);laHistoryActive=true}catch(_){laHistoryActive=false}}if(st.raw)renderLiveAnalyzer();else{var sum=document.getElementById('laSummary');if(sum)sum.innerHTML='<div class="la-stat"><small>Stato</small><strong>In attesa dei dati</strong></div><div class="la-stat strategy-focus"><small>Strategia pre-match</small><strong>'+esc(selectedStrategy||'Non definita')+'</strong></div>';var sig=document.getElementById('laSignals');if(sig&&selectedStrategy){sig.innerHTML='<div class="la-pre-banner"><span>★</span><div><small>Strategia selezionata pre-match</small><br><b>'+esc(selectedStrategy)+'</b> — il relativo segnale verrà evidenziato appena analizzi il live.</div></div>'}}if(rememberedMode==='auto')laStartAuto();else{laStopAuto();laAutoManualOnly=true;laSetAutoStatus('MODALITÀ MANUALE • dati conservati finché non premi SVUOTA DATI.','manual')}}
-  function closeLiveAnalyzer(fromHistory){laStopAuto();document.body.classList.remove('live-analyzer-open');var ov=document.getElementById('liveAnalyzerOverlay');if(ov){ov.classList.remove('open');ov.setAttribute('aria-hidden','true')}var shouldBack=!fromHistory&&laHistoryActive&&history.state&&history.state.easybetLiveAnalyzer;laHistoryActive=false;if(shouldBack){try{history.back()}catch(_){}}}
+  function closeLiveAnalyzer(fromHistory){laStopAuto();setTimeout(function(){try{if(currentView==='live')render()}catch(e){}},0);document.body.classList.remove('live-analyzer-open');var ov=document.getElementById('liveAnalyzerOverlay');if(ov){ov.classList.remove('open');ov.setAttribute('aria-hidden','true')}var shouldBack=!fromHistory&&laHistoryActive&&history.state&&history.state.easybetLiveAnalyzer;laHistoryActive=false;if(shouldBack){try{history.back()}catch(_){}}}
   // STEP 3: storico locale dei polling per pressione recente e trend 5/10 minuti.
   function laPairTotal(p){if(!p||!Array.isArray(p))return null;var vals=p.filter(function(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}).map(Number);return vals.length?vals.reduce(function(a,b){return a+b},0):null}
   function laSnapshotStats(stats){stats=stats||{};var keys=['xg','shots','sot','big','corners','boxshots','touches'];var out={};keys.forEach(function(k){out[k]=laPairTotal(stats[k])});return out}
@@ -895,16 +933,28 @@
   }
   // avvisi
   function laAlertsOn(){try{return localStorage.getItem('easybet-la-alerts')==='1'}catch(e){return false}}
-  function laSetAlerts(on){try{localStorage.setItem('easybet-la-alerts',on?'1':'0')}catch(e){}laPaintAlertsBtn();if(on&&window.Notification&&Notification.permission==='default'){try{Notification.requestPermission()}catch(e){}}if(on)laBeep()}
+  function laSetAlerts(on){try{localStorage.setItem('easybet-la-alerts',on?'1':'0')}catch(e){}laPaintAlertsBtn();if(!on)return;var test=function(){laFireAlert('🔔 Avvisi EasyBet attivi','Prova: così vedrai i segnali VERDI.','easybet-test')};if(window.Notification&&Notification.permission==='default'){try{var p=Notification.requestPermission(test);if(p&&p.then)p.then(test)}catch(e){test()}}else{test();if(window.Notification&&Notification.permission==='denied')laToast('Notifiche di Windows bloccate','Clicca il lucchetto accanto all’indirizzo → Permessi → Invia notifiche → Consenti. Intanto vedrai questo avviso dentro il sito.')}}
   function laPaintAlertsBtn(){var b=document.getElementById('laAlertsBtn');if(b){var on=laAlertsOn();b.classList.toggle('active',on);b.textContent=on?'🔔 Avvisi attivi':'🔕 Avvisi spenti'}}
   function laBeep(){try{var C=window.AudioContext||window.webkitAudioContext;if(!C)return;var ctx=laBeep.ctx||(laBeep.ctx=new C());[0,0.18,0.36].forEach(function(t,i){var o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=i===2?1175:880;g.gain.setValueAtTime(0.0001,ctx.currentTime+t);g.gain.exponentialRampToValueAtTime(0.25,ctx.currentTime+t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+t+0.16);o.connect(g);g.connect(ctx.destination);o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.18)})}catch(e){}}
+  function laFireAlert(title,body,tag){
+    laBeep();
+    try{if(window.Notification&&Notification.permission==='granted'){var n=new Notification(title,{body:body,tag:tag||'easybet',requireInteraction:true});n.onclick=function(){try{window.focus()}catch(e){}n.close()}}}catch(e){}
+    laToast(title,body);laFlashTitle(title);
+  }
+  function laToast(title,body){
+    var host=document.getElementById('laToastHost');if(!host){host=document.createElement('div');host.id='laToastHost';host.className='la-toast-host';document.body.appendChild(host)}
+    var t=document.createElement('div');t.className='la-toast';t.innerHTML='<b>'+esc(title)+'</b><span>'+esc(body)+'</span><button type="button" aria-label="Chiudi">×</button>';
+    t.querySelector('button').onclick=function(){t.remove()};host.appendChild(t);setTimeout(function(){t.classList.add('fade')},25000);setTimeout(function(){t.remove()},26000);
+  }
+  var laTitleTimer=null,laTitleBase=null;
+  function laFlashTitle(msg){if(laTitleBase==null)laTitleBase=document.title;clearInterval(laTitleTimer);var on=false,n=0;laTitleTimer=setInterval(function(){on=!on;n++;document.title=on?msg:laTitleBase;if(n>40||(n>6&&document.hasFocus())){clearInterval(laTitleTimer);document.title=laTitleBase}},900)}
   function laCheckAlerts(arr,priority){
-    if(!liveAnalyzerCurrentKey)return;var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{},prev=st.lastStates||{},next={},fired=[];
-    arr.forEach(function(x){next[x.name]=x.state;if(x.state==='VERDE'&&prev[x.name]&&prev[x.name]!=='VERDE'&&x.name!=='Under 0.5 HT')fired.push(x)});
-    st.lastStates=next;liveAnalyzerState[liveAnalyzerCurrentKey]=st;laSaveStoredStates();
+    if(!liveAnalyzerCurrentKey)return;var st=liveAnalyzerState[liveAnalyzerCurrentKey]||{},prev=st.lastStates||{},next={},fired=[],alerted=st.alerted||{};
+    arr.forEach(function(x){next[x.name]=x.state;if(x.state!=='VERDE'){delete alerted[x.name];return}if(x.name==='Under 0.5 HT')return;if(prev[x.name]!=='VERDE'&&!alerted[x.name]){fired.push(x);alerted[x.name]=Date.now()}});
+    st.lastStates=next;st.alerted=alerted;liveAnalyzerState[liveAnalyzerCurrentKey]=st;laSaveStoredStates();
     if(!fired.length||!laAlertsOn())return;
-    laBeep();var home=(document.getElementById('laHome')||{}).value||'',away=(document.getElementById('laAway')||{}).value||'';
-    fired.forEach(function(x){try{if(window.Notification&&Notification.permission==='granted')new Notification('EasyBet · VERDE '+x.name,{body:home+' – '+away+' · '+(x.reason||''),tag:'easybet-'+liveAnalyzerCurrentKey+'-'+x.name})}catch(e){}});
+    var home=(document.getElementById('laHome')||{}).value||'',away=(document.getElementById('laAway')||{}).value||'';
+    fired.forEach(function(x){laFireAlert('🟢 VERDE · '+x.name,home+' – '+away+' · '+(x.reason||''),'easybet-'+liveAnalyzerCurrentKey+'-'+x.name)});
   }
   // comandi rapidi
   function laQuick(act){
