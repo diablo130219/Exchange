@@ -616,7 +616,7 @@
   }
 
   function render(){
-    updateViewUI();
+    updateViewUI();try{gdPaintUsage()}catch(e){}
     renderLivePriorityDashboard();
     var grid=document.getElementById('grid'),dash=document.getElementById('statsDashboard'),board=document.getElementById('strategiesBoard'),advice=document.getElementById('adviceBoard'),exchangeBoard=document.getElementById('exchangeBoard'),masanielloBoard=document.getElementById('masanielloBoard');
     if(exchangeBoard&&currentView!=='exchange')exchangeBoard.classList.remove('show');
