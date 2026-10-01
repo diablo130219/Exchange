@@ -1897,8 +1897,33 @@ const COUNTRY_ALIASES = {
 function countryHintFromCampionato(campionato) {
   const s = String(campionato || '').trim();
   if (!s) return '';
+  // Formati: "Italia: Serie A" oppure CGMBet "USA - MLS" / "Wales - Premier League".
+  const m = s.split(/\s*:\s*|\s+-\s+/);
+  return (m[0] || s).trim();
+}
+// Vecchio calcolo (solo ':'), usato per ritrovare gli stemmi manuali già salvati.
+function legacyCountryHintFromCampionato(campionato) {
+  const s = String(campionato || '').trim();
+  if (!s) return '';
   const idx = s.indexOf(':');
   return (idx === -1 ? s : s.slice(0, idx)).trim();
+}
+const COUNTRY_DEMONYMS = {
+  'wales':['welsh'],'england':['english'],'scotland':['scottish'],'ireland':['irish'],'northern ireland':['northern irish'],
+  'germany':['german'],'norway':['norwegian'],'brazil':['brazil'],'serbia':['serbian'],'united states':['american','united states'],
+  'italy':['italian'],'spain':['spanish'],'france':['french'],'netherlands':['dutch'],'chile':['chilean'],'argentina':['argentin'],
+  'mexico':['mexican'],'japan':['japanese'],'south korea':['south korean','korean'],'china':['chinese'],'sweden':['swedish'],
+  'denmark':['danish'],'finland':['finnish'],'croatia':['croatian'],'slovenia':['sloven'],'slovakia':['slovak'],'czechia':['czech'],
+  'poland':['polish'],'romania':['romanian'],'bulgaria':['bulgarian'],'hungary':['hungarian'],'austria':['austrian'],'belgium':['belgian'],
+  'switzerland':['swiss'],'portugal':['portuguese'],'greece':['greek'],'turkey':['turkish'],'russia':['russian'],'ukraine':['ukrainian'],
+  'australia':['australian'],'lithuania':['lithuanian'],'iceland':['icelandic'],'estonia':['estonian'],'latvia':['latvian'],
+  'colombia':['colombian'],'uruguay':['uruguayan'],'paraguay':['paraguayan'],'peru':['peruvian'],'ecuador':['ecuadorian']
+};
+function descMatchesCountry(descNorm, countryHint){
+  if(!countryHint) return false;
+  const c=normCountry(countryHint);
+  if(descNorm.includes(c)) return true;
+  return (COUNTRY_DEMONYMS[c]||[]).some(d=>descNorm.includes(d));
 }
 function normCountry(s){
   const n=normCrestName(s);
@@ -2011,7 +2036,7 @@ async function lookupCrestWikidata(name,countryHint){
           if(label.includes(req)||req.includes(label)) score+=55;
           const toks=meaningfulCrestTokens(clean);
           score+=toks.filter(t=>label.includes(t)).length*25;
-          if(countryHint && descNorm.includes(normCountry(countryHint))) score+=25;
+          if(descMatchesCountry(descNorm,countryHint)) score+=25;
           if(score>bestScore){bestScore=score;best=item;}
         }
       }catch(err){ console.error('Lookup Wikidata stemma "'+q+'":',err.message); }
@@ -2074,6 +2099,57 @@ async function lookupCrestWikipedia(name,countryHint){
   return {url:null,matched:null};
 }
 
+// Ricerca diretta tra le entità Wikidata "club calcistico" (P31=Q476028): evita città, persone e omonimi.
+async function lookupCrestWikidataClub(name,countryHint){
+  const clean=String(name||'').trim();
+  if(!clean) return {url:null,matched:null};
+  const req=normCrestName(clean), toks=meaningfulCrestTokens(clean);
+  const youth=/\b(women|ladies|femenino|feminino|frauen|reserves?|ii|b|u\d{2}|under \d{2}|academy|youth|juniors?)\b/;
+  const ids=[];
+  const qs=[...new Set([clean].concat(crestQueries(clean).slice(0,3)))];
+  for(const q of qs){
+    try{
+      const url='https://www.wikidata.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q+' haswbstatement:P31=Q476028')+'&srlimit=8&format=json&origin=*';
+      const r=await fetch(url,{headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}});
+      if(!r.ok) continue;
+      const d=await r.json();
+      ((d&&d.query&&d.query.search)||[]).forEach(x=>{ if(x&&x.title&&!ids.includes(x.title)) ids.push(x.title); });
+    }catch(err){ console.error('Wikidata club search "'+q+'":',err.message); }
+    if(ids.length>=8) break;
+  }
+  if(!ids.length) return {url:null,matched:null};
+  try{
+    const url='https://www.wikidata.org/w/api.php?action=wbgetentities&ids='+encodeURIComponent(ids.slice(0,12).join('|'))+'&props=labels|aliases|descriptions|claims&languages=en|it|de|es|pt|fr&format=json&origin=*';
+    const r=await fetch(url,{headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}});
+    if(!r.ok) return {url:null,matched:null};
+    const d=await r.json();
+    let best=null,bestScore=-Infinity;
+    for(const id of ids){
+      const ent=d&&d.entities&&d.entities[id];
+      if(!ent) continue;
+      const filename=chooseBestWikidataLogoClaim(ent.claims||{});
+      if(!filename) continue;
+      const names=[];
+      Object.values(ent.labels||{}).forEach(l=>names.push(normCrestName(l.value)));
+      Object.values(ent.aliases||{}).forEach(arr=>(arr||[]).forEach(a=>names.push(normCrestName(a.value))));
+      const desc=normCrestName(Object.values(ent.descriptions||{}).map(x=>x.value).join(' '));
+      let score=0;
+      if(names.includes(req)) score+=120;
+      else if(names.some(n=>n.includes(req)||req.includes(n))) score+=60;
+      const label=names[0]||'';
+      score+=toks.filter(t=>names.some(n=>n.split(' ').includes(t))).length*25;
+      if(descMatchesCountry(desc,countryHint)) score+=40;
+      if(youth.test(label)&&!youth.test(req)) score-=90;
+      if(score>bestScore){bestScore=score;best={id,filename,label:(ent.labels&&ent.labels.en&&ent.labels.en.value)||label};}
+    }
+    if(!best||bestScore<60) return {url:null,matched:null};
+    return {url:'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(best.filename)+'?width=320',matched:best.label,source:'wikidata-club'};
+  }catch(err){
+    console.error('Wikidata club entities "'+clean+'":',err.message);
+    return {url:null,matched:null};
+  }
+}
+
 async function lookupCrest(name,countryHint){
   const key=normCrestName(name);
 
@@ -2083,6 +2159,10 @@ async function lookupCrest(name,countryHint){
     const fixed=await lookupCrestWikidataById(fixedId,name);
     if(fixed&&fixed.url) return fixed;
   }
+
+  // 1b) Ricerca mirata tra i club di calcio di Wikidata.
+  const club=await lookupCrestWikidataClub(name,countryHint);
+  if(club && club.url) return club;
 
   // 2) Wikidata prima dei motori fuzzy: cerchiamo un'entità descritta come club/team di calcio
   // e chiediamo esplicitamente logo/stemma. Questo evita città, leghe e club omonimi.
@@ -2119,6 +2199,14 @@ async function lookupCrest(name,countryHint){
   return await lookupCrestWikipedia(name,countryHint);
 }
 
+// Massimo 3 ricerche stemma contemporanee: troppe richieste insieme fanno bloccare Wikimedia (429) e i loghi restano vuoti.
+let crestActive=0; const crestWaiting=[];
+function withCrestSlot(fn){
+  return new Promise((resolve,reject)=>{
+    const run=()=>{crestActive++;Promise.resolve().then(fn).then(resolve,reject).finally(()=>{crestActive--;const nx=crestWaiting.shift();if(nx)nx();});};
+    if(crestActive<3) run(); else crestWaiting.push(run);
+  });
+}
 app.get('/api/team-crest', async (req, res) => {
   try {
     const name = String(req.query.name || '').trim();
@@ -2129,7 +2217,9 @@ app.get('/api/team-crest', async (req, res) => {
     const now=Date.now();
 
     // Preserva gli override manuali già inseriti dall'admin.
-    const manualQ = await pool.query('SELECT * FROM team_crests WHERE name_norm = $1 AND manual=true', [baseKey]);
+    const legacyHint = legacyCountryHintFromCampionato(req.query.country || '');
+    const legacyKey = normCrestName(name) + (legacyHint ? '|' + normCountry(legacyHint) : '');
+    const manualQ = await pool.query('SELECT * FROM team_crests WHERE name_norm = ANY($1::text[]) AND manual=true ORDER BY name_norm = $2 DESC', [[baseKey, legacyKey], baseKey]);
     const manualCached = manualQ.rows[0];
     if(manualCached) return res.json({url:manualCached.url||null,manual:true,source:'manual'});
 
@@ -2142,7 +2232,7 @@ app.get('/api/team-crest', async (req, res) => {
       if(fresh) return res.json({url:cached.url||null,manual:false,source:'cache'});
     }
 
-    const found=await lookupCrest(name,countryHint);
+    const found=await withCrestSlot(()=>lookupCrest(name,countryHint));
     await pool.query(
       `INSERT INTO team_crests (name_norm,nome_originale,url,fetched_at,manual) VALUES ($1,$2,$3,$4,false)
        ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=false`,
