@@ -1729,7 +1729,7 @@ html[data-theme="light"] .csv-trend-card.public{border-color:#dec46e;background:
   #grid.home-history .date-group-grid{flex-direction:column!important;flex-wrap:nowrap!important;gap:10px!important}
   :is(#grid.pronostici-detail-mode>.card,#grid.live-mode>.card,#grid.home-history .date-group-grid>.card){
     display:grid!important;align-items:center!important;column-gap:18px!important;row-gap:6px!important;padding:12px 18px!important;min-height:0!important;width:100%!important;max-width:none!important;flex:0 0 auto!important;
-    grid-template-columns:190px minmax(360px,1.7fr) 230px minmax(250px,1fr) 200px!important;
+    grid-template-columns:minmax(150px,190px) minmax(280px,1.7fr) minmax(180px,230px) minmax(200px,1fr) minmax(170px,200px)!important;
     grid-template-areas:"head match info life status" "date match info life btn" "trend trend trend trend trend" "note note note note note"!important}
   :is(#grid.pronostici-detail-mode,#grid.live-mode,#grid.home-history .date-group-grid)>.card>*{grid-column:1/-1;margin:0!important}
   :is(#grid.pronostici-detail-mode,#grid.live-mode,#grid.home-history .date-group-grid)>.card>.card-head{grid-area:head!important;display:flex!important;gap:10px!important;align-items:center!important;justify-content:space-between!important}
@@ -1762,7 +1762,7 @@ html[data-theme="light"] .csv-trend-card.public{border-color:#dec46e;background:
   #grid.home-history .date-group-grid{flex-direction:column!important;flex-wrap:nowrap!important;gap:10px!important}
   #grid.home-history .date-group-grid>.card.card{
     display:grid!important;align-items:center!important;column-gap:18px!important;row-gap:6px!important;padding:12px 18px!important;min-height:0!important;width:100%!important;max-width:none!important;flex:0 0 auto!important;
-    grid-template-columns:190px minmax(360px,1.7fr) 230px minmax(250px,1fr) 200px!important;
+    grid-template-columns:minmax(150px,190px) minmax(280px,1.7fr) minmax(180px,230px) minmax(200px,1fr) minmax(170px,200px)!important;
     grid-template-areas:"head match info life status" "date match info life btn" "trend trend trend trend trend" "note note note note note"!important}
   #grid.home-history .date-group-grid>.card.card>*{grid-column:1/-1;margin:0!important}
   #grid.home-history .date-group-grid>.card.card>.card-head{grid-area:head!important;display:flex!important;gap:10px!important;align-items:center!important;justify-content:space-between!important}
@@ -1812,3 +1812,25 @@ html[data-theme="light"] .csv-trend-card.public{border-color:#dec46e;background:
 .bt-light{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:700}
 .bt-light i{width:11px;height:11px;border-radius:50%;display:inline-block;box-shadow:0 0 0 3px rgba(0,0,0,.05)}
 .bt-green i{background:#2e9d5b}.bt-yellow i{background:#e0a923}.bt-red i{background:#c0452f}.bt-grey i{background:#aaa}
+
+/* Archivio Home: tessere compatte affiancate */
+#grid.home-history .archive-tiles{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;width:100%!important;align-items:start!important}
+#grid.home-history .archive-tiles details.history-archive{margin:0!important;min-width:0!important}
+#grid.home-history .archive-tiles details.history-archive+details.history-archive{margin-top:0!important}
+#grid.home-history .archive-tiles details.history-archive[open]{grid-column:1/-1!important}
+#grid.home-history .archive-tiles details.history-archive>summary{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto 32px!important;grid-template-rows:auto!important;align-items:center!important;gap:12px!important;min-height:64px!important;height:auto!important;padding:9px 14px!important;position:relative!important}
+#grid.home-history .archive-tiles details.history-archive>summary>*{grid-row:1!important;margin:0!important;align-self:center!important}
+#grid.home-history .archive-tiles details.history-archive>summary:after{grid-row:1!important;grid-column:4!important;position:static!important;margin:0!important}
+#grid.home-history .archive-tiles details.history-archive>summary:before{right:52px!important;width:120px!important}
+#grid.home-history .archive-tiles .archive-main{grid-column:1!important}
+#grid.home-history .archive-tiles .archive-meta{grid-column:2!important;position:static!important;padding-left:12px!important;white-space:nowrap!important}
+#grid.home-history .archive-tiles .archive-story{grid-column:3!important;position:relative!important;display:flex!important;font-size:.6rem!important;gap:7px!important;white-space:nowrap!important}
+#grid.home-history .archive-tiles .archive-story:before{width:28px!important;height:28px!important;font-size:.8rem!important}
+#grid.home-history .archive-tiles .archive-story:after{display:none!important}
+#grid.home-history .archive-tiles .archive-copy strong{font-size:.98rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#grid.home-history .archive-tiles .archive-copy .day-summary{margin-top:4px!important}
+@media(min-width:1500px){#grid.home-history .archive-tiles{grid-template-columns:repeat(3,minmax(0,1fr))!important}#grid.home-history .archive-tiles .archive-story{display:none!important}#grid.home-history .archive-tiles details.history-archive>summary{grid-template-columns:minmax(0,1fr) auto 32px!important}#grid.home-history .archive-tiles details.history-archive>summary:after{grid-column:3!important}}
+@media(max-width:1180px){#grid.home-history .archive-tiles .archive-story{display:none!important}#grid.home-history .archive-tiles details.history-archive>summary{grid-template-columns:minmax(0,1fr) auto 32px!important}#grid.home-history .archive-tiles details.history-archive>summary:after{grid-column:3!important}}
+@media(max-width:760px){#grid.home-history .archive-tiles{grid-template-columns:1fr!important}}
+#grid.home-history .archive-tiles details.date-group.archive.history-archive,#grid.home-history .archive-tiles details.date-group.archive.history-archive+details.date-group.archive.history-archive{margin:0!important}
+@media(max-width:760px){#grid.home-history .archive-tiles .archive-copy strong{white-space:normal!important}}

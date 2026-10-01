@@ -486,10 +486,12 @@
     var prevOpen={};Array.prototype.forEach.call(grid.querySelectorAll('details.history-archive[data-day]'),function(d){if(d.open)prevOpen[d.getAttribute('data-day')]=1});
     var keepScroll=window.scrollY;
     var archiveKeys=Object.keys(groups).sort().reverse();
+    if(archiveKeys.length)html+='<div class="archive-tiles">';
     archiveKeys.forEach(function(k){
       var count=groups[k].length;
       html+='<details class="date-group archive history-archive" data-day="'+esc(k)+'"'+(prevOpen[k]?' open':'')+'><summary><span class="archive-main"><span class="archive-icon" aria-hidden="true"></span><span class="archive-copy"><small>Archivio</small><strong>'+esc(dateLabelFromKey(k))+'</strong>'+daySummaryHtml(groups[k])+'</span></span><span class="archive-meta"><b>'+count+'</b><span>'+(count===1?'partita':'partite')+'</span></span><span class="archive-story">OGNI PARTITA<br>UNA STORIA</span></summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
     });
+    if(archiveKeys.length)html+='</div>';
     grid.classList.add('home-history');
     grid.innerHTML=html||'<div class="empty">Nessuna partita terminata disponibile.</div>';
     if(Object.keys(prevOpen).length)window.scrollTo(0,keepScroll);
