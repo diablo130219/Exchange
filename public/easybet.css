@@ -2072,3 +2072,22 @@ html:not([data-theme="light"]) body .live-bell.bell-green{color:#6fdc8f}
 .la-toast-clear{align-self:flex-end;border:1px solid rgba(143,179,147,.6);background:#fff;color:#3f6e46;font:inherit;font-size:.74rem;font-weight:800;padding:6px 12px;border-radius:999px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.12)}
 html:not([data-theme="light"]) body .la-toast-clear{background:#132018;color:#cfe6d2}
 .la-toast-host{max-height:62vh!important}.la-toast{padding:10px 36px 10px 14px!important;font-size:.8rem!important}
+
+/* Contatore API GoalDir */
+#gdUsage{margin-left:auto;margin-right:14px}
+.gd-usage{min-width:230px;max-width:300px;padding:8px 12px;border-radius:12px;border:1px solid rgba(205,175,110,.35);background:#fffdf8;font-size:.72rem;color:#5a4a2c}
+.gd-usage .gd-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.gd-usage .gd-top b{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:#a0895b}
+.gd-usage .gd-top strong{font-size:.95rem;color:#3a3122}
+.gd-bar{height:5px;border-radius:99px;background:rgba(205,175,110,.18);margin:5px 0 4px;overflow:hidden}
+.gd-bar i{display:block;height:100%;border-radius:99px;background:#8fb393}
+.gd-usage.warn .gd-bar i{background:#e2c272}.gd-usage.low .gd-bar i{background:#d39b86}
+.gd-usage.low .gd-top strong{color:#a3604b}
+.gd-sub{font-size:.64rem;color:#8d7b58}.gd-sub em{font-style:normal;color:#a3604b;font-weight:800}
+.gd-usage.off{opacity:.7}
+#laGdUsage .gd-usage{margin-top:8px;max-width:none}
+html:not([data-theme="light"]) body .gd-usage{background:#17150f;color:#d8ccb3;border-color:rgba(216,173,61,.25)}
+html:not([data-theme="light"]) body .gd-usage .gd-top strong{color:#f1eadf}
+@media(max-width:760px){#gdUsage{margin:8px 0 0;width:100%}.gd-usage{max-width:none}}
+.section-head{flex-wrap:wrap}
+.gd-usage{min-width:280px;max-width:340px}.gd-usage .gd-top{white-space:nowrap}

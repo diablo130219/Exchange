@@ -989,6 +989,45 @@ function gdPick(obj, keys) {
   }
   return null;
 }
+// --- Contatore richieste GoalDir (piano mensile) + piccola cache per non sprecare chiamate ---
+const GOALDIR_DAILY_LIMIT = Math.max(1, Number(process.env.GOALDIR_DAILY_LIMIT || 7500)); // piano Free: 7.500 richieste/giorno
+const GOALDIR_RESERVE = Math.max(0, Number(process.env.GOALDIR_RESERVE || 300)); // richieste lasciate al Live Analyzer manuale
+const gdCache = new Map();
+function gdMonthKey(t) { return new Date(t || Date.now()).toISOString().slice(0, 10); } // chiave giornaliera (UTC)
+function gdParseRate(rate, policy) {
+  const out = { remaining: null, limit: null };
+  const r = String(rate || ''), p = String(policy || '');
+  const rm = r.match(/remaining\s*=\s*(\d+)/i) || r.match(/r\s*=\s*(\d+)/i); if (rm) out.remaining = Number(rm[1]);
+  const lm = r.match(/limit\s*=\s*(\d+)/i) || p.match(/^\s*(\d+)/); if (lm) out.limit = Number(lm[1]);
+  return out;
+}
+async function gdTrackCall(rate, policy) {
+  try {
+    const pr = gdParseRate(rate, policy), now = Date.now();
+    await pool.query(`INSERT INTO api_usage (provider, month, calls, remaining, limit_hdr, updated_at) VALUES ('goaldir',$1,1,$2,$3,$4)
+      ON CONFLICT (provider, month) DO UPDATE SET calls = api_usage.calls + 1, remaining = COALESCE($2, api_usage.remaining), limit_hdr = COALESCE($3, api_usage.limit_hdr), updated_at = $4`,
+      [gdMonthKey(now), pr.remaining, pr.limit, now]);
+  } catch (e) { console.warn('api_usage:', e.message); }
+}
+async function gdUsage() {
+  const month = gdMonthKey();
+  let row = null;
+  try { row = (await pool.query("SELECT * FROM api_usage WHERE provider='goaldir' AND month=$1", [month])).rows[0] || null; } catch (_) {}
+  const used = row ? Number(row.calls) || 0 : 0;
+  const limit = row && row.limit_hdr ? Number(row.limit_hdr) : GOALDIR_DAILY_LIMIT;
+  const remainingReal = row && row.remaining != null ? Number(row.remaining) : null;
+  const remaining = remainingReal != null ? remainingReal : Math.max(0, limit - used);
+  const resetAt = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1);
+  return { period: 'day', day: month, resetAt, month, used, limit, remaining, remainingFromApi: remainingReal != null, reserve: GOALDIR_RESERVE, updatedAt: row ? Number(row.updated_at) || null : null };
+}
+async function gdFetchCached(pathname, ttlMs) {
+  const hit = gdCache.get(pathname), now = Date.now();
+  if (hit && now - hit.at < ttlMs) return hit.value;
+  const value = await gdFetch(pathname);
+  gdCache.set(pathname, { at: now, value });
+  if (gdCache.size > 200) { for (const k of gdCache.keys()) { gdCache.delete(k); if (gdCache.size < 120) break; } }
+  return value;
+}
 async function gdFetch(pathname, timeoutMs = 9000) {
   if (!GOALDIR_API_KEY) {
     const e = new Error('GOALDIR_API_KEY non configurata.'); e.code = 'NO_GOALDIR_KEY'; throw e;
@@ -1004,10 +1043,14 @@ async function gdFetch(pathname, timeoutMs = 9000) {
     let data = null;
     try { data = bodyText ? JSON.parse(bodyText) : null; } catch (_) { data = { raw: bodyText }; }
     if (!r.ok) {
+      if (r.status !== 401 && r.status !== 403) gdTrackCall(r.headers.get('ratelimit') || '', r.headers.get('ratelimit-policy') || '');
       const e = new Error((data && (data.detail || data.error || data.message)) || ('GoalDir HTTP ' + r.status));
       e.status = r.status; e.payload = data; throw e;
     }
-    return { data, rate: r.headers.get('ratelimit') || '', policy: r.headers.get('ratelimit-policy') || '' };
+    const rate = r.headers.get('ratelimit') || r.headers.get('x-ratelimit-remaining') && ('remaining=' + r.headers.get('x-ratelimit-remaining')) || '';
+    const policy = r.headers.get('ratelimit-policy') || r.headers.get('x-ratelimit-limit') || '';
+    gdTrackCall(rate, policy);
+    return { data, rate, policy };
   } finally { clearTimeout(timer); }
 }
 function gdNormalizeStats(statsData) {
@@ -1121,8 +1164,13 @@ function gdFirstGoalMinute(incidentsData, statsData) {
 }
 
 
+app.get('/api/goaldir/usage', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const u = await gdUsage();
+  res.json(Object.assign({ configured: !!GOALDIR_API_KEY }, u, { autoscan: { enabled: LIVE_SCAN_ENABLED && !!GOALDIR_API_KEY, everySeconds: Math.round(LIVE_SCAN_MS / 1000), paused: liveScanLast.paused || '', last: liveScanLast } }));
+});
 app.get('/api/goaldir/status', async (req, res) => {
-  res.json({ configured: !!GOALDIR_API_KEY, provider: 'GoalDir / BSD', mode: 'REST', pollSeconds: 60 });
+  res.json({ configured: !!GOALDIR_API_KEY, provider: 'GoalDir / BSD', mode: 'REST', pollSeconds: 60, dailyLimit: GOALDIR_DAILY_LIMIT });
 });
 
 app.get('/api/goaldir/live-stats', async (req, res) => {
@@ -1131,7 +1179,7 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
   if (!home || !away) return res.status(400).json({ error: 'Squadre mancanti.' });
   if (!GOALDIR_API_KEY) return res.status(503).json({ code: 'NO_GOALDIR_KEY', error: 'GOALDIR_API_KEY non configurata sul server.' });
   try {
-    const liveResp = await gdFetch('/events/live/');
+    const liveResp = await gdFetchCached('/events/live/', 45000);
     const payload = liveResp.data;
     const events = Array.isArray(payload) ? payload : (Array.isArray(payload && payload.results) ? payload.results : (Array.isArray(payload && payload.events) ? payload.events : []));
     let best = null, bestScore = 0;
@@ -1152,9 +1200,10 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
     }
     const eventId = gdEventId(best);
     if (!eventId) return res.status(502).json({ error: 'Evento GoalDir senza ID.' });
-    const statsResp = await gdFetch('/events/' + encodeURIComponent(eventId) + '/stats/');
+    const statsResp = await gdFetchCached('/events/' + encodeURIComponent(eventId) + '/stats/', 55000);
     let incidentsData = null;
-    try {
+    const needIncidents = !/^0\s*-\s*0$/.test(gdLiveScore(best)) && gdFirstGoalMinute(null, statsResp.data || {}) === null;
+    if (needIncidents) try {
       const incidentsResp = await gdFetch('/events/' + encodeURIComponent(eventId) + '/incidents/');
       incidentsData = incidentsResp.data || null;
     } catch (incErr) {
@@ -1415,7 +1464,9 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
         const resultForSnapshot = { level: 'verde', score100: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null, summary: String((req.body || {}).summary || '') };
         await saveSignalSnapshot(rows[0], resultForSnapshot, (req.body || {}).snapshot || {}, String((req.body || {}).source || 'analyzer'), now);
         // Notifica Telegram: una sola volta per partita (stesso flag dei segnali live automatici).
-        if (!prev.signal_first_at && !prev.live_alert_sent && prev.bot_enabled !== false && telegram.isConfigured) {
+        let tgStatus = prev.live_alert_sent ? 'already' : prev.bot_enabled === false ? 'bot_off' : !telegram.isConfigured ? 'not_configured' : 'pending';
+        res.locals.tgStatus = tgStatus;
+        if (tgStatus === 'pending') {
           try {
             const b = req.body || {}, m = rows[0], snap = b.snapshot || {};
             const minute = String(b.minute != null && b.minute !== '' ? b.minute : (snap.minute != null ? snap.minute : '')).trim();
@@ -1428,13 +1479,14 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
               (m.quota_ingresso ? '💶 Quota pre-match ' + escapeHtmlLite(m.quota_ingresso) + '\n' : '') +
               '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
               (Number.isFinite(score) ? '\n🎯 <b>' + Math.round(score) + '/100</b>' : '');
-            await telegram.broadcast(text);
+            const sentTo = await telegram.broadcast(text);
             await pool.query('UPDATE matches SET live_alert_sent = true, live_last_notified_at = $2 WHERE id = $1', [id, now]);
             rows[0].live_alert_sent = true;
-          } catch (e) { console.error('telegram signal:', e.message); }
+            res.locals.tgStatus = sentTo > 0 ? 'sent' : 'no_subscribers';
+          } catch (e) { console.error('telegram signal:', e.message); res.locals.tgStatus = 'error'; }
         }
       }
-      return res.json(matchOut(rows[0]));
+      return res.json(Object.assign(matchOut(rows[0]), { telegramStatus: res.locals.tgStatus || null }));
     }
     return res.status(400).json({ error: 'Evento lifecycle non valido.' });
   } catch (err) {
@@ -2443,6 +2495,128 @@ app.post('/api/cron/telegram', async (req, res) => {
 });
 
 
+
+// ---------- Scanner LIVE automatico lato server (GoalDir) ----------
+// Ogni 60s controlla tutte le partite iniziate e ancora senza esito, legge le statistiche GoalDir,
+// calcola il segnale con lo stesso motore del Live Analyzer e, al primo VERDE, accende la campanella
+// (signal_first_at) e invia un solo messaggio Telegram per partita.
+const LIVE_SCAN_ENABLED = String(process.env.LIVE_AUTOSCAN || '1') !== '0';
+const LIVE_SCAN_MS = Math.max(30000, Number(process.env.LIVE_AUTOSCAN_SECONDS || 60) * 1000);
+let liveScanBusy = false, liveScanTimer = null, liveScanLast = { at: 0, checked: 0, found: 0, alerts: 0, error: '' };
+function scanSignalName(tipo) {
+  const t = String(tipo || '').toLowerCase().replace(',', '.');
+  if (/under/.test(t)) return null; // pre-match: nessun segnale live
+  if (/favorit/.test(t) && /ht/.test(t)) return 'Favorito HT';
+  if (/banca|lay\s*x/.test(t)) return 'Banca X';
+  if (/1\.?5/.test(t)) return 'Over 1.5 FT';
+  if (/0\.?5/.test(t)) return 'Over 0.5 HT';
+  return null;
+}
+// Finestre in minuti trascorsi dal calcio d'inizio: fuori da queste lo scanner NON chiama GoalDir.
+function scanWindow(name) {
+  if (name === 'Over 0.5 HT') return [15, 33];
+  if (name === 'Over 1.5 FT') return [19, 31];
+  if (name === 'Banca X' || name === 'Favorito HT') return [46, 63]; // intervallo (45' + recupero + pausa)
+  return null;
+}
+function scanLevel(state) {
+  if (state === 'VERDE') return 'verde';
+  if (state === 'INGIOCABILE') return 'ingiocabile';
+  if (state === 'CHIUSA') return 'chiusa';
+  if (/^ATTENDI|ATTESA|VALUTA|RIVALUTA/.test(state)) return 'giallo';
+  return 'rosso';
+}
+async function liveAutoScanOnce() {
+  if (liveScanBusy || !GOALDIR_API_KEY) return;
+  liveScanBusy = true;
+  const now = Date.now();
+  let checked = 0, found = 0, alerts = 0;
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM matches WHERE start_at <= $1 AND start_at >= $2 AND (esito_manuale IS NULL OR esito_manuale = '')`,
+      [now, now - 135 * 60 * 1000]);
+    const targets = rows.filter(m => {
+      const name = scanSignalName(m.tipo_giocata), w = scanWindow(name);
+      if (!name || !w || m.signal_first_at || m.live_alert_sent) return false;
+      const el = (now - Number(m.start_at)) / 60000;
+      return el >= w[0] && el <= w[1];
+    });
+    if (!targets.length) { liveScanLast = { at: now, checked: 0, found: 0, alerts: 0, error: '', paused: '', idle: 'Nessuna partita nella finestra di controllo' }; return; }
+    const usage = await gdUsage();
+    if (usage.remaining <= usage.reserve) { liveScanLast = { at: now, checked: 0, found: 0, alerts: 0, error: '', paused: 'Limite giornaliero GoalDir quasi raggiunto: restano ' + usage.remaining + ' richieste oggi (riserva ' + usage.reserve + ' per il Live Analyzer).' }; return; }
+    const liveResp = await gdFetchCached('/events/live/', 45000);
+    const payload = liveResp.data;
+    const events = Array.isArray(payload) ? payload : (Array.isArray(payload && payload.results) ? payload.results : (Array.isArray(payload && payload.events) ? payload.events : []));
+    for (const m of targets) {
+      checked++;
+      let best = null, bestScore = 0;
+      for (const ev of events) {
+        const eh = gdEventTeamName(ev, 'home'), ea = gdEventTeamName(ev, 'away');
+        const sc = (gdNameScore(m.casa, eh) + gdNameScore(m.trasferta, ea)) / 2;
+        if (sc > bestScore) { bestScore = sc; best = ev; }
+      }
+      if (!best || bestScore < 0.5) continue;
+      const eventId = gdEventId(best); if (!eventId) continue;
+      found++;
+      let statsData = {};
+      try { statsData = (await gdFetchCached('/events/' + encodeURIComponent(eventId) + '/stats/', 55000)).data || {}; } catch (e) { continue; }
+      const stats = gdNormalizeStats(statsData);
+      const minute = gdIsHalftime(best) ? 'HT' : gdLiveMinute(best);
+      const score = gdLiveScore(best);
+      const fg = gdFirstGoalMinute(null, statsData);
+      const fav = m.live_favorita === 'casa' ? 'home' : m.live_favorita === 'trasferta' ? 'away' : (/favorit/i.test(m.tipo_giocata || '') ? 'home' : 'none');
+      const sigs = liveStrategie.analyzeAll(stats, { minute, score, favorite: fav, homeName: m.casa, awayName: m.trasferta, odds: {}, earlyGoalBefore25: fg !== null && fg < 25, firstGoalKnown: fg !== null });
+      const name = scanSignalName(m.tipo_giocata);
+      const sig = sigs.find(x => x.name === name);
+      if (!sig) continue;
+      // Banca X / Favorito HT: senza quota live il motore si ferma a "ATTESA QUOTA" = condizione di ingresso raggiunta.
+      const htReady = (name === 'Banca X' || name === 'Favorito HT') && sig.state === 'ATTESA QUOTA';
+      const isGreen = sig.state === 'VERDE' || htReady;
+      const level = isGreen ? 'verde' : scanLevel(sig.state);
+      const summary = (sig.reason || '') + (sig.missing && sig.missing.length && !isGreen ? ' · Manca: ' + sig.missing.slice(0, 2).join(' · ') : '');
+      await pool.query('UPDATE matches SET live_last_level=$2, live_last_summary=$3, live_last_updated=$4, live_last_score=$5, live_started_at=COALESCE(live_started_at,$4) WHERE id=$1',
+        [m.id, level, summary.slice(0, 300), now, sig.score100 == null ? null : sig.score100]);
+      if (!isGreen || m.signal_first_at || m.live_alert_sent) continue;
+      const sp = scorePairFromAny(score);
+      const snap = { minute: typeof minute === 'number' ? minute : 45, scoreHome: sp[0], scoreAway: sp[1], xg: stats.xg, sot: stats.sot, shots: stats.shots, chances: stats.big, boxshots: stats.boxshots, touches: stats.touches, source: 'autoscan' };
+      const upd = await pool.query(`UPDATE matches SET signal_first_at=COALESCE(signal_first_at,$2), signal_first_level=COALESCE(signal_first_level,'verde'), signal_first_score=COALESCE(signal_first_score,$3) WHERE id=$1 AND signal_first_at IS NULL RETURNING *`, [m.id, now, sig.score100 == null ? null : sig.score100]);
+      if (!upd.rows[0]) continue;
+      try { await saveSignalSnapshot(upd.rows[0], { level: 'verde', score100: sig.score100, summary: sig.reason || '' }, snap, 'autoscan', now); } catch (_) {}
+      if (m.bot_enabled !== false && telegram.isConfigured) {
+        const minTxt = minute === 'HT' ? 'HT' : (minute == null ? 'N/D' : Math.round(minute) + "'");
+        const tot = p => (p && p[0] != null && p[1] != null) ? Number(p[0]) + Number(p[1]) : null;
+        const xg = tot(stats.xg), sot = tot(stats.sot), sh = tot(stats.shots);
+        const text = '🟢 <b>SEGNALE LIVE — ' + escapeHtmlLite(name) + '</b>' + (m.campionato ? ' (' + escapeHtmlLite(m.campionato) + ')' : '') + '\n' +
+          '<b>' + escapeHtmlLite(m.casa) + ' - ' + escapeHtmlLite(m.trasferta) + '</b>\n' +
+          '⏱ ' + minTxt + ' • 📍 ' + escapeHtmlLite(score || 'N/D') + '\n' +
+          '📊 xG ' + (xg == null ? 'N/D' : xg.toFixed(2)) + ' • Tiri in porta ' + (sot == null ? 'N/D' : sot) + ' • Tiri ' + (sh == null ? 'N/D' : sh) + '\n' +
+          (htReady ? '⚠️ Condizione raggiunta: <b>controlla la quota</b> prima di entrare.\n' : '') +
+          (m.quota_ingresso ? '💶 Quota pre-match ' + escapeHtmlLite(m.quota_ingresso) + '\n' : '') +
+          '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
+          (sig.score100 != null && !htReady ? '\n🎯 <b>' + sig.score100 + '/100</b>' : '');
+        try {
+          await telegram.broadcast(text);
+          await pool.query('UPDATE matches SET live_alert_sent=true, live_last_notified_at=$2 WHERE id=$1', [m.id, now]);
+          alerts++;
+        } catch (e) { console.error('autoscan telegram:', e.message); }
+      }
+    }
+    liveScanLast = { at: now, checked, found, alerts, error: '', paused: '' };
+  } catch (err) {
+    liveScanLast = { at: now, checked, found, alerts, error: String(err && err.message || err) };
+    console.error('live autoscan:', liveScanLast.error);
+  } finally { liveScanBusy = false; }
+}
+function startLiveAutoScan() {
+  if (!LIVE_SCAN_ENABLED || !GOALDIR_API_KEY || liveScanTimer) return;
+  liveScanTimer = setInterval(() => { liveAutoScanOnce(); }, LIVE_SCAN_MS);
+  setTimeout(() => { liveAutoScanOnce(); }, 15000);
+  console.log('Scanner live automatico attivo ogni ' + Math.round(LIVE_SCAN_MS / 1000) + 's');
+}
+app.get('/api/live-autoscan/status', (req, res) => {
+  res.json({ enabled: LIVE_SCAN_ENABLED && !!GOALDIR_API_KEY, everySeconds: Math.round(LIVE_SCAN_MS / 1000), last: liveScanLast });
+});
+
 // Motore condiviso delle strategie LIVE: stesso file usato dal backend e dal browser.
 app.get('/strategie-live.js', function(req, res){
   res.type('application/javascript');
@@ -2464,6 +2638,7 @@ let httpServer = null;
 
 async function shutdown(signal) {
   console.log(signal + ' ricevuto: arresto pulito in corso...');
+  if (liveScanTimer) { clearInterval(liveScanTimer); liveScanTimer = null; }
   try { await telegram.stopPolling(); } catch (err) { console.error('Errore stop Telegram:', err.message); }
   if (httpServer) {
     httpServer.close(function(){ process.exit(0); });
@@ -2483,6 +2658,7 @@ migrate()
     });
     telegram.startPolling();
     scheduler.start();
+    startLiveAutoScan();
   })
   .catch(function(err){
     console.error('Errore durante la migrazione del database:', err);

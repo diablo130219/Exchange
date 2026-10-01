@@ -101,6 +101,7 @@ async function migrate() {
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS diario_profit NUMERIC;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS diario_linked_at BIGINT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS diario_entry TEXT;`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS api_usage (provider TEXT NOT NULL, month TEXT NOT NULL, calls INTEGER NOT NULL DEFAULT 0, remaining INTEGER, limit_hdr INTEGER, updated_at BIGINT, PRIMARY KEY (provider, month));`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_data JSONB;`);
 
   // --- STEP 6: timeline PRE-MATCH → LIVE → SEGNALE → ESITO ---
