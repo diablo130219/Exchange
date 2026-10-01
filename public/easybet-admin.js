@@ -416,9 +416,16 @@
       groups.sort(function(a,b){ return b.key.localeCompare(a.key); });
 
       var keys = relativeDateKeys();
+      var prevOpen = {}, prevSearch = {}, hadSections = false;
+      Array.prototype.forEach.call(grid.querySelectorAll('details.date-section'), function(d){
+        var inp = d.querySelector('[data-date-search]'); if (!inp) return;
+        var k = inp.getAttribute('data-date-search'); hadSections = true;
+        prevOpen[k] = d.open; if (inp.value) prevSearch[k] = inp.value;
+      });
+      var scrollY = window.scrollY;
       grid.innerHTML = '<div class="date-groups">' + groups.map(function(group, idx){
         var countLabel = group.items.length + ' ' + (group.items.length === 1 ? 'partita' : 'partite');
-        var shouldOpen = group.key === keys.today || group.key === keys.tomorrow || (currentDateFilter !== 'tutte' && idx === 0);
+        var shouldOpen = (hadSections && Object.prototype.hasOwnProperty.call(prevOpen, group.key)) ? prevOpen[group.key] : (group.key === keys.today || group.key === keys.tomorrow || (currentDateFilter !== 'tutte' && idx === 0));
         return '<details class="date-section"'+(shouldOpen?' open':'')+'>'+
           '<summary>'+
             '<div class="date-head">'+
@@ -436,6 +443,11 @@
           '<div class="grid date-grid">' + group.items.map(renderCard).join('') + '<div class="date-search-empty">Nessuna partita trovata per questa ricerca.</div></div>'+
         '</details>';
       }).join('') + '</div>';
+      Object.keys(prevSearch).forEach(function(k){
+        var inp = grid.querySelector('[data-date-search="'+k+'"]');
+        if (inp){ inp.value = prevSearch[k]; filterDateSection(inp); }
+      });
+      if (hadSections) window.scrollTo(0, scrollY);
       updateBulkUI();
     }
 
@@ -487,9 +499,23 @@
       if (e.target.closest('.date-search')) e.stopPropagation();
     });
 
-    function loadMatches(){
+    // Aggiornamento automatico "gentile": non ridisegna la pagina mentre stai lavorando.
+    var lastMatchesSig='', lastUserAction=0;
+    ['pointerdown','keydown','wheel','touchstart'].forEach(function(ev){ document.addEventListener(ev,function(){ lastUserAction=Date.now(); },{passive:true,capture:true}); });
+    function adminBusy(){
+      if (document.querySelector('.modal-backdrop.open, #importBackdrop.open, #crestDialog')) return true;
+      if (selectedIds.size>0) return true;
+      var a=document.activeElement;
+      if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && a.type!=='checkbox') return true;
+      return Date.now()-lastUserAction < 60000;
+    }
+    function loadMatches(auto){
       return fetch('/api/state').then(function(r){ return r.json(); }).then(function(s){
-        matches = (s.matches || []).slice().sort(function(a,b){ return b.startAt - a.startAt; });
+        var list=(s.matches || []).slice().sort(function(a,b){ return b.startAt - a.startAt; });
+        var sig=JSON.stringify(list);
+        if (auto===true && (sig===lastMatchesSig || adminBusy())) return;
+        lastMatchesSig=sig;
+        matches = list;
         render();
       }).catch(function(){
         document.getElementById('grid').innerHTML = '<div class="empty">Errore nel caricamento.</div>';
@@ -1125,6 +1151,6 @@
     });
 
     loadMatches();
-    setInterval(loadMatches, 30000);
+    setInterval(function(){ loadMatches(true); }, 30000);
   }
 })();
