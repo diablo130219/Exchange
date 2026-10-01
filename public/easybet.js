@@ -25,7 +25,9 @@
     var s=String(raw||'').trim().toUpperCase();
     if(/OVER\s*1[\.,]?5/.test(s)) return 'over15';
     if(/OVER\s*0[\.,]?5\s*HT/.test(s)||/OVER\s*0[\.,]?5\s*1T/.test(s)) return 'over05';
-    if(/BANCA\s*LA\s*X/.test(s)) return 'banca';
+    if(/BANCA\s*(LA\s*)?X|LAY\s*X/.test(s)) return 'banca';
+    if(/UNDER\s*0[\.,]?5/.test(s)) return 'under05';
+    if(/FAVORITO/.test(s)) return 'favht';
     if(/SEGNA\s*LA\s*FAVORITA/.test(s)||/FAVORITA/.test(s)) return 'favorita';
     return s.toLowerCase().replace(/[^a-z0-9]+/g,'-')||'custom';
   }
@@ -37,6 +39,8 @@
       favorita:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 17.8h11.6l-1-6.2-2.8 2.15-2-4.1-2 4.1-2.8-2.15-1 6.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8.3 19.2h7.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
       custom:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 8h8M8 12h8M8 16h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'
     };
+    if(key==='under05')return map.over05||map.custom;
+    if(key==='favht')return map.favorita||map.custom;
     return map[key]||map.custom;
   }
   function strategyMeta(raw){
@@ -45,11 +49,13 @@
     var map={
       over15:{name:'OVER 1.5 FT',desc:'Almeno 2 gol nella partita.'},
       over05:{name:'OVER 0.5 HT',desc:'Almeno 1 gol nel primo tempo.'},
-      banca:{name:'BANCA LA X',desc:'0-0 / 1-1 a HT, ingresso nel secondo tempo quando la quota Lay X arriva a 2.00 o meno.'},
+      banca:{name:'BANCA X HT',desc:'All’intervallo sullo 0-0 o 1-1, banca la X fino a quota 2,10.',quotaLabel:'Quota max'},
+      under05:{name:'UNDER 0.5 HT',desc:'Nessun gol nel primo tempo, pre-match da quota 2,95.',quotaLabel:'Quota min'},
+      favht:{name:'FAVORITO HT',desc:'Favorito in casa all’intervallo: in parità punta 1, sotto banca 2.',quotaLabel:'Quota min'},
       favorita:{name:'SEGNA LA FAVORITA',desc:'La favorita deve trovare il gol.'}
     };
     var base=map[key]||{name:name,desc:'Pronostici raggruppati per questa strategia.'};
-    return {key:key,name:base.name,desc:base.desc,icon:strategyIcon(key)};
+    return {key:key,name:base.name,desc:base.desc,quotaLabel:base.quotaLabel||'Quota media',icon:strategyIcon(key)};
   }
   function summarizeByStrategy(list){
     var groups={};
@@ -78,7 +84,7 @@
       var more=g.count>3?'<div class="pstrategy-more">+'+(g.count-3)+' altre partite</div>':'';
       var nextTime=g.next?fmtTime(g.next):'—';
       var avg=g.avgQuota!=null?String((Math.round(g.avgQuota*100)/100).toFixed(2)).replace('.',','):'—';
-      return '<article class="pstrategy-card"><div class="pstrategy-head"><div class="pstrategy-titlebox"><div class="pstrategy-icon">'+g.meta.icon+'</div><div><h3>'+esc(g.meta.name)+'</h3><p>'+esc(g.meta.desc)+'</p></div></div><span class="pstrategy-badge">'+g.count+' '+(g.count===1?'partita':'partite')+'</span></div><div class="pstrategy-list">'+preview+more+'</div><div class="pstrategy-foot"><div class="pstrategy-metric"><span>Prossima partita</span><strong>'+esc(nextTime)+'</strong></div><div class="pstrategy-metric"><span>Quota media</span><strong>'+esc(avg)+'</strong></div></div><button class="pstrategy-btn js-open-strategy" data-strategy="'+escAttr(g.meta.key)+'">VEDI '+g.count+' '+(g.count===1?'PARTITA':'PARTITE')+' →</button></article>';
+      return '<article class="pstrategy-card"><div class="pstrategy-head"><div class="pstrategy-titlebox"><div class="pstrategy-icon">'+g.meta.icon+'</div><div><h3>'+esc(g.meta.name)+'</h3><p>'+esc(g.meta.desc)+'</p></div></div><span class="pstrategy-badge">'+g.count+' '+(g.count===1?'partita':'partite')+'</span></div><div class="pstrategy-list">'+preview+more+'</div><div class="pstrategy-foot"><div class="pstrategy-metric"><span>Prossima partita</span><strong>'+esc(nextTime)+'</strong></div><div class="pstrategy-metric"><span>'+esc(g.meta.quotaLabel)+'</span><strong>'+esc(avg)+'</strong></div></div><button class="pstrategy-btn js-open-strategy" data-strategy="'+escAttr(g.meta.key)+'">VEDI '+g.count+' '+(g.count===1?'PARTITA':'PARTITE')+' →</button></article>';
     }).join('')+'</div>';
     grid.innerHTML=html;
   }
