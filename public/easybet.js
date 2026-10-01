@@ -396,8 +396,34 @@
     return ESITO_LABEL[e]||'In attesa';
   }
   function csvPctLabel(v){var n=Number(v);if(!isFinite(n))return '—';var r=Math.round(n*10)/10;return String(r).replace('.',',')+'%'}
-  function csvTrend(m){var d=m&&m.importData,e=d&&d._easybet;if(!e)return null;var h=Number(e.over05HomePct),a=Number(e.over05AwayPct),h15=Number(e.home1545Pct),a15=Number(e.away1545Pct);h=isFinite(h)?h:null;a=isFinite(a)?a:null;h15=isFinite(h15)?h15:null;a15=isFinite(a15)?a15:null;if(h==null&&a==null&&h15==null&&a15==null)return null;var vals=[h,a].filter(function(x){return x!=null});return{home:h,away:a,h1545:h15,a1545:a15,avg:vals.length?vals.reduce(function(x,y){return x+y},0)/vals.length:null}}
-  function csvTrendHtml(m){var t=csvTrend(m);if(!t)return '';return '<div class="csv-trend-card public"><div class="csv-trend-title">PRESA ULTIME 5</div><div class="csv-trend-main"><span>Casa <b>'+csvPctLabel(t.home)+'</b></span><span>Trasferta <b>'+csvPctLabel(t.away)+'</b></span><span class="media">Media <b>'+csvPctLabel(t.avg)+'</b></span></div><div class="csv-trend-sub"><span>Gol 15–45 casa <b>'+csvPctLabel(t.h1545)+'</b></span><span>Gol 15–45 trasf. <b>'+csvPctLabel(t.a1545)+'</b></span></div></div>'}
+  function ebTrendFromImport(d){
+    if(!d||typeof d!=='object')return null;
+    var e=d._easybet||{};
+    function num(v){if(v==null||v==='')return null;var n=parseFloat(String(v).replace('%','').replace(',','.'));return isFinite(n)?n:null}
+    function nk(k){return String(k||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+    function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++)if(k===names[j])return num(d[ks[i]])}return null}
+    function avg(a,b){var v=[a,b].filter(function(x){return x!=null});return v.length?v.reduce(function(x,y){return x+y},0)/v.length:null}
+    var h25=e.home2570Pct!=null?num(e.home2570Pct):find(['home gol 25 70']),a25=e.away2570Pct!=null?num(e.away2570Pct):find(['osp gol 25 70','ospite gol 25 70']);
+    if(e.type==='o15_2570'||h25!=null||a25!=null){
+      var h00=e.home00at70Pct!=null?num(e.home00at70Pct):find(['home 0 0 al 70']),a00=e.away00at70Pct!=null?num(e.away00at70Pct):find(['osp 0 0 al 70','ospite 0 0 al 70']);
+      return {title:'GOL 25–70 · EXCH O1.5',main:[['Casa',h25],['Trasferta',a25],['Media',avg(h25,a25),'media']],sub:[['0-0 al 70’ casa',h00],['0-0 al 70’ trasf.',a00]]};
+    }
+    var h=num(e.over05HomePct),a=num(e.over05AwayPct),h15=num(e.home1545Pct),a15=num(e.away1545Pct);
+    if(h!=null||a!=null||h15!=null||a15!=null)return {title:'PRESA ULTIME 5',main:[['Casa',h],['Trasferta',a],['Media',avg(h,a),'media']],sub:[['Gol 15–45 casa',h15],['Gol 15–45 trasf.',a15]]};
+    var gen=Object.keys(d).filter(function(k){return /^\{.*\}$/.test(String(k).trim())&&num(d[k])!=null});
+    if(!gen.length)return null;
+    var items=gen.map(function(k){return [String(k).trim().replace(/^\{|\}$/g,''),num(d[k])]});
+    return {title:'STATISTICHE CSV',main:items.slice(0,3),sub:items.slice(3,6)};
+  }
+  function ebTrendHtml(t,extraClass){
+    if(!t)return '';
+    function lab(v){if(v==null)return '—';var r=Math.round(v*10)/10;return String(r).replace('.',',')+'%'}
+    function esc2(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+    function spans(list){return list.map(function(x){return '<span'+(x[2]?' class="'+x[2]+'"':'')+'>'+esc2(x[0])+' <b>'+lab(x[1])+'</b></span>'}).join('')}
+    return '<div class="csv-trend-card'+(extraClass?' '+extraClass:'')+'"><div class="csv-trend-title">'+esc2(t.title)+'</div><div class="csv-trend-main">'+spans(t.main)+'</div>'+(t.sub&&t.sub.length?'<div class="csv-trend-sub">'+spans(t.sub)+'</div>':'')+'</div>';
+  }
+  
+  function csvTrendHtml(m){return ebTrendHtml(ebTrendFromImport(m&&m.importData),'public')}
   function renderMatchCard(m){
       var e=m.esitoManuale||'',status=e?e:'attesa',camp=esc(m.campionato||'Campionato'),q=esc(m.quotaIngresso||'—'),str=esc(m.tipoGiocata||'Da definire');
       var icon,label,isFinishedCard=currentView==='home';
