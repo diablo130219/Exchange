@@ -239,17 +239,6 @@ function countryFlag(league) {
   return map[country] || '🏆';
 }
 
-// Regola di entrata per strategia (dai backtest), mostrata nell'alert Telegram.
-function strategyRuleLine(tipo) {
-  const s = String(tipo || '').toUpperCase().replace(',', '.');
-  if (/OVER\s*1\.?5/.test(s)) return '<b>Regola:</b> entra sullo 0-0 tra 20\' e 30\' a quota ≥ 1.70 • esci al primo gol o al 71\'.';
-  if (/OVER\s*0\.?5/.test(s)) return '<b>Regola:</b> live sullo 0-0 al 15\' a quota ≥ 1.60 (pre-match ≥ 1.33).';
-  if (/UNDER\s*0\.?5/.test(s)) return '<b>Regola:</b> pre-match Under 0.5 HT a quota ≥ 2.95 exchange (≥ 2.85 bookmaker).';
-  if (/BANCA|LAY\s*X/.test(s)) return '<b>Regola:</b> all\'intervallo sullo 0-0 / 1-1 banca la X solo a quota ≤ 2.10, tieni fino al 90\'.';
-  if (/FAVORITO/.test(s)) return '<b>Regola:</b> all\'intervallo, favorito in parità → punta 1 ≥ 1.85 • favorito sotto → banca 2 ≤ 2.10.';
-  return 'Attendi le condizioni live previste dalla strategia.';
-}
-
 function formatClassicAlert(match, minutesLeft) {
   const mins = Math.max(0, Number(minutesLeft) || 0);
   const league = escHtml(match.campionato || 'Campionato');
@@ -272,7 +261,7 @@ function formatClassicAlert(match, minutesLeft) {
     '',
     `💰 <b>QUOTA: ${quota}</b>`,
     '',
-    '✅ ' + strategyRuleLine(match.tipo_giocata)
+    '✅ Attendi le condizioni live previste dalla strategia.'
   ].join('\n');
 }
 
@@ -370,4 +359,4 @@ function startPolling() {
 }
 async function stopPolling() { running = false; await releaseLeaderLock(); try { await leaderLoopPromise; } catch (_) {} leaderLoopPromise = null; }
 
-module.exports = { strategyRuleLine, sendMessage, broadcast, broadcastAlert, createAlertCard, startPolling, stopPolling, isConfigured: !!API_BASE };
+module.exports = { sendMessage, broadcast, broadcastAlert, createAlertCard, startPolling, stopPolling, isConfigured: !!API_BASE };

@@ -43,7 +43,7 @@
 <div class="head-actions">
 <button class="add-btn ghost-btn" id="backupBtn" type="button">💾 Backup JSON</button>
 <button class="add-btn ghost-btn" id="exportCsvBtn" type="button">↧ CSV partite</button>
-<button class="add-btn ghost-btn" id="importBtn">📋 Importa elenco</button><button class="add-btn ghost-btn" id="crestBulkBtn" title="Seleziona più immagini: il nome del file deve essere il nome della squadra (es. Westfalia.png)">🛡 Carica stemmi</button><input id="crestBulkFile" type="file" accept="image/*" multiple hidden/>
+<button class="add-btn ghost-btn" id="importBtn">📋 Importa elenco</button>
 <button class="add-btn" id="addBtn">+ Aggiungi partita</button>
 </div>
 </div>
@@ -144,18 +144,18 @@
 </div>
 </div>
 </div>
-<input id="importCsvFile" type="file" accept=".csv,text/csv" hidden multiple/>
+<input id="importCsvFile" type="file" accept=".csv,text/csv" hidden/>
 <div class="modal-backdrop" id="importBackdrop">
 <div class="modal wide">
 <h3>Importa elenco da CSV</h3>
 <div class="csv-import-head">
   <div>
     <strong id="importFileName">Nessun file selezionato</strong>
-    <div class="import-hint">Formati riconosciuti in automatico: <b>Over 0.5 HT</b> (OVER 0.5 CASA/TRASF., GOL 15-45) e <b>Over 1.5 25-70</b> (HOME/OSP GOL 25-70, 0-0 al 70). Vengono importati campionato, data/ora e squadre; tutte le colonne originali vengono conservate.</div>
+    <div class="import-hint">Formato supportato: CSV come “PROVA OVER 0.5HT.csv”. Vengono importati campionato, data/ora e squadre. Tutte le colonne originali vengono conservate nei dati importati.</div>
   </div>
   <button class="btn btn-ghost" id="importChooseBtn" type="button">Scegli altro CSV</button>
 </div>
-<div class="csv-fixed-rule" id="importRule"><span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small></div>
+<div class="csv-fixed-rule"><span>Strategia</span><b>OVER 0.5 HT</b><span>Ingresso consigliato</span><b>1.55</b><small>Le quote presenti nel CSV vengono ignorate perché riferite all’Over 1.5 finale.</small></div>
 <div class="modal-actions">
 <button class="btn btn-ghost" id="importCancelBtn" type="button">Chiudi</button>
 </div>
