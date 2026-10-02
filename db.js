@@ -98,6 +98,14 @@ async function migrate() {
   // --- Import CSV esterni (STEP 43): conserva i dati originali senza usare la quota del file ---
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_source TEXT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_match_id TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS diario_profit NUMERIC;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS diario_linked_at BIGINT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS diario_entry TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_excluded_at BIGINT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_excluded_reason TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS settle_state TEXT;`);
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS esito_auto BOOLEAN NOT NULL DEFAULT false;`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS api_usage (provider TEXT NOT NULL, month TEXT NOT NULL, calls INTEGER NOT NULL DEFAULT 0, remaining INTEGER, limit_hdr INTEGER, updated_at BIGINT, PRIMARY KEY (provider, month));`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS import_data JSONB;`);
 
   // --- STEP 6: timeline PRE-MATCH → LIVE → SEGNALE → ESITO ---
@@ -165,6 +173,16 @@ async function migrate() {
     );
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_exchange_periods_start_date ON exchange_periods (start_date DESC);`);
+
+  // --- Stemmi caricati a mano (immagine normalizzata salvata nel database) ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS crest_images (
+      id TEXT PRIMARY KEY,
+      mime TEXT NOT NULL,
+      data BYTEA NOT NULL,
+      updated_at BIGINT NOT NULL
+    );
+  `);
 
   // --- Masaniello Studio integrato (stato JSON privato area admin) ---
   await pool.query(`

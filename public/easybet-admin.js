@@ -283,7 +283,7 @@
       var bannerIcon = esito ? ICON_TROPHY : ICON_HOURGLASS;
       var searchText = [m.casa,m.trasferta,m.campionato,m.tipoGiocata,m.quotaIngresso].filter(Boolean).join(' ').toLowerCase();
       return '<div class="'+cls+'" data-id="'+esc(m.id)+'" data-search="'+esc(searchText)+'">'+
-        '<label class="card-select" title="Seleziona partita"><input type="checkbox" data-role="select" data-id="'+esc(m.id)+'"'+(selectedIds.has(String(m.id))?' checked':'')+'></label>'+
+
         '<div class="card-top2">'+
           '<div class="league-badge">'+ICON_SHIELD+'<span>'+esc(m.campionato||'—')+'</span></div>'+
           '<div class="kickoff">'+ICON_CLOCK+'<span>'+esc(fmtWhen(m))+'</span></div>'+
@@ -307,9 +307,9 @@
           '<div class="stat">'+ICON_CHART+'<div class="stat-text"><span class="stat-label">Quota ingresso</span><span class="stat-value">'+esc(m.quotaIngresso||'—')+'</span></div></div>'+
           '<div class="stat">'+ICON_TARGET+'<div class="stat-text"><span class="stat-label">Strategia</span><span class="stat-value">'+esc(m.tipoGiocata||'—')+'</span></div></div>'+
         '</div>'+
-        (function(){var t=importTrend(m);return t?'<div class="csv-trend-card"><div class="csv-trend-title">PRESA ULTIME 5</div><div class="csv-trend-main"><span>Casa <b>'+pctLabel(t.home)+'</b></span><span>Trasferta <b>'+pctLabel(t.away)+'</b></span><span class="media">Media <b>'+pctLabel(t.avg)+'</b></span></div><div class="csv-trend-sub"><span>Gol 15–45 casa <b>'+pctLabel(t.h1545)+'</b></span><span>Gol 15–45 trasf. <b>'+pctLabel(t.a1545)+'</b></span></div></div>':'';})()+
+        ebTrendHtml(ebTrendFromImport(m&&m.importData),'')+
         '<div class="esito-banner '+bannerCls+'">'+bannerIcon+
-          '<div class="esito-banner-text"><span class="esito-tag">Esito</span>'+
+          '<div class="esito-banner-text"><span class="esito-tag">Esito'+(m.esitoAuto?' · auto':'')+'</span>'+
             '<select class="esito-select-inline" data-id="'+esc(m.id)+'" data-role="esito">'+
               '<option value=""'+(esito===''?' selected':'')+'>In attesa</option>'+
               '<option value="entrata_vinta"'+(esito==='entrata_vinta'?' selected':'')+'>Entrata • Vinta</option>'+
@@ -321,6 +321,7 @@
         '<div class="card-foot">'+
           '<label class="bot-toggle"><input type="checkbox" data-role="bot" data-id="'+esc(m.id)+'"'+(m.botEnabled?' checked':'')+'> su Telegram</label>'+
           '<div class="card-actions">'+
+            (/^entrata_/.test(esito)?'<button class="icon-btn diario-btn'+(m.diarioLinkedAt?' linked':'')+'" data-role="diario" data-id="'+esc(m.id)+'" title="'+(m.diarioLinkedAt?'Nel Diario: '+fmtEuro(m.diarioProfit)+' · clicca per modificare':'Registra nel Diario Exchange')+'">📒</button>':'')+
             '<button class="icon-btn" data-role="edit" data-id="'+esc(m.id)+'" title="Modifica">✎</button>'+
           '</div>'+
         '</div>'+
@@ -416,13 +417,22 @@
       groups.sort(function(a,b){ return b.key.localeCompare(a.key); });
 
       var keys = relativeDateKeys();
+      var prevOpen = {}, prevSearch = {}, hadSections = false;
+      Array.prototype.forEach.call(grid.querySelectorAll('details.date-section'), function(d){
+        var inp = d.querySelector('[data-date-search]'); if (!inp) return;
+        var k = inp.getAttribute('data-date-search'); hadSections = true;
+        prevOpen[k] = d.open; if (inp.value) prevSearch[k] = inp.value;
+      });
+      var scrollY = window.scrollY;
       grid.innerHTML = '<div class="date-groups">' + groups.map(function(group, idx){
         var countLabel = group.items.length + ' ' + (group.items.length === 1 ? 'partita' : 'partite');
-        var shouldOpen = group.key === keys.today || group.key === keys.tomorrow || (currentDateFilter !== 'tutte' && idx === 0);
+        var gW=0,gL=0,gN=0,gP=0,gHasP=false; group.items.forEach(function(x){ if(x.esitoManuale==='entrata_vinta')gW++; else if(x.esitoManuale==='entrata_persa')gL++; else if(x.esitoManuale==='non_entrata')gN++; if(x.diarioProfit!=null){gP+=Number(x.diarioProfit)||0;gHasP=true;} });
+        var daySummary=(gW+gL+gN)?'<span class="date-summary"><b class="w">'+gW+' V</b><b class="l">'+gL+' P</b><b class="n">'+gN+' NE</b>'+(gW+gL?'<b>'+Math.round(gW/(gW+gL)*100)+'%</b>':'')+(gHasP?'<b class="'+(gP>=0?'w':'l')+'">'+fmtEuro(gP)+'</b>':'')+'</span>':'';
+        var shouldOpen = (hadSections && Object.prototype.hasOwnProperty.call(prevOpen, group.key)) ? prevOpen[group.key] : (group.key === keys.today || group.key === keys.tomorrow || (currentDateFilter !== 'tutte' && idx === 0));
         return '<details class="date-section"'+(shouldOpen?' open':'')+'>'+
           '<summary>'+
             '<div class="date-head">'+
-              '<div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span></div>'+
+              '<div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span>'+daySummary+'</div>'+
               '<div class="date-tools">'+
                 '<div class="date-search-wrap">'+
                   '<span class="date-search-icon">⌕</span>'+
@@ -436,6 +446,11 @@
           '<div class="grid date-grid">' + group.items.map(renderCard).join('') + '<div class="date-search-empty">Nessuna partita trovata per questa ricerca.</div></div>'+
         '</details>';
       }).join('') + '</div>';
+      Object.keys(prevSearch).forEach(function(k){
+        var inp = grid.querySelector('[data-date-search="'+k+'"]');
+        if (inp){ inp.value = prevSearch[k]; filterDateSection(inp); }
+      });
+      if (hadSections) window.scrollTo(0, scrollY);
       updateBulkUI();
     }
 
@@ -487,9 +502,23 @@
       if (e.target.closest('.date-search')) e.stopPropagation();
     });
 
-    function loadMatches(){
+    // Aggiornamento automatico "gentile": non ridisegna la pagina mentre stai lavorando.
+    var lastMatchesSig='', lastUserAction=0;
+    ['pointerdown','keydown','wheel','touchstart'].forEach(function(ev){ document.addEventListener(ev,function(){ lastUserAction=Date.now(); },{passive:true,capture:true}); });
+    function adminBusy(){
+      if (document.querySelector('.modal-backdrop.open, #importBackdrop.open, #crestDialog')) return true;
+      if (selectedIds.size>0) return true;
+      var a=document.activeElement;
+      if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && a.type!=='checkbox') return true;
+      return Date.now()-lastUserAction < 60000;
+    }
+    function loadMatches(auto){
       return fetch('/api/state').then(function(r){ return r.json(); }).then(function(s){
-        matches = (s.matches || []).slice().sort(function(a,b){ return b.startAt - a.startAt; });
+        var list=(s.matches || []).slice().sort(function(a,b){ return b.startAt - a.startAt; });
+        var sig=JSON.stringify(list);
+        if (auto===true && (sig===lastMatchesSig || adminBusy())) return;
+        lastMatchesSig=sig;
+        matches = list;
         render();
       }).catch(function(){
         document.getElementById('grid').innerHTML = '<div class="empty">Errore nel caricamento.</div>';
@@ -538,22 +567,16 @@
         var idx = matches.findIndex(function(m){ return m.id === id; });
         if (idx !== -1) matches[idx] = updated;
         render();
+        if (role === 'esito' && /^entrata_/.test(String(payload.esitoManuale||''))) openDiarioDialog(updated);
       });
     });
 
     document.getElementById('grid').addEventListener('click', function(e){
+      var diarioBtn = e.target.closest('[data-role="diario"]');
+      if (diarioBtn){ var dm=matches.find(function(x){return String(x.id)===diarioBtn.getAttribute('data-id')}); if(dm) openDiarioDialog(dm); return; }
       var crestBtn = e.target.closest('[data-role="crest"]');
       if (crestBtn){
-        var team=crestBtn.getAttribute('data-team')||'';
-        var league=crestBtn.getAttribute('data-league')||'';
-        var url=window.prompt('URL dello stemma per '+team+'\n\nIncolla un URL immagine http/https. Scrivi AUTO per tornare alla ricerca automatica.','');
-        if(url===null) return;
-        fetch('/api/team-crest',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:team,campionato:league,url:url})})
-          .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
-          .then(function(){
-            Object.keys(crestCache).forEach(function(k){if(k.indexOf(String(team).toLowerCase())===0) delete crestCache[k];});
-            render();
-          }).catch(function(err){window.alert(err.message||'Errore salvataggio stemma');});
+        openCrestDialog(crestBtn.getAttribute('data-team')||'', crestBtn.getAttribute('data-league')||'');
         return;
       }
       var btn = e.target.closest('[data-role="edit"]');
@@ -562,6 +585,134 @@
       var m = matches.find(function(x){ return x.id === id; });
       if (m) openModal(m);
     });
+
+
+
+    // ---------- Collegamento esito → Diario Exchange ----------
+    function fmtEuro(v){ var n=Number(v); if(!isFinite(n)) return '—'; return (n>0?'+':'')+n.toFixed(2).replace('.',',')+' €'; }
+    var DIARIO_SYSTEMS=['EXCH O1.5 GOL 25-70','O0.5 HT PRE+LIVE','EXCH LAY X HT','EXCH UNDER 0.5 HT','EXCH FAVORITO HT · PARITÀ','EXCH FAVORITO HT · SOTTO','BET X PRE-MATCH'];
+    function diarioSystemFor(tipo){
+      var t=String(tipo||'').toLowerCase().replace(',','.');
+      if(/1\.?5/.test(t)) return 'EXCH O1.5 GOL 25-70';
+      if(/under/.test(t)) return 'EXCH UNDER 0.5 HT';
+      if(/banca|lay ?x/.test(t)) return 'EXCH LAY X HT';
+      if(/favorit/.test(t)) return 'EXCH FAVORITO HT · PARITÀ';
+      if(/0\.?5/.test(t)) return 'O0.5 HT PRE+LIVE';
+      if(/\bx\b/.test(t)) return 'BET X PRE-MATCH';
+      return DIARIO_SYSTEMS[0];
+    }
+    function openDiarioDialog(m){
+      if(!m) return;
+      var old=document.getElementById('diarioDialog'); if(old) old.remove();
+      var en=m.diarioEntry||{};
+      var win=m.esitoManuale==='entrata_vinta', sys=(en.strategy&&DIARIO_SYSTEMS.indexOf(en.strategy)!==-1)?en.strategy:diarioSystemFor(m.tipoGiocata), side=en.side||(/LAY X|SOTTO/.test(sys)?'Banca':'Punta');
+      var q=String(en.oddsIn||m.quotaIngresso||'').replace(',','.');
+      var wrap=document.createElement('div'); wrap.id='diarioDialog'; wrap.className='crest-dialog-backdrop';
+      wrap.innerHTML='<div class="crest-dialog diario-dialog"><h3>📒 Registra nel Diario Exchange</h3><p>'+esc(m.casa+' - '+m.trasferta)+' · <b>'+(win?'ENTRATA · VINTA':'ENTRATA · PERSA')+'</b></p>'+
+        '<div class="diario-grid">'+
+          '<label>Sistema<select id="dgSys">'+DIARIO_SYSTEMS.map(function(s){return '<option'+(s===sys?' selected':'')+'>'+esc(s)+'</option>'}).join('')+'</select></label>'+
+          '<label>Punta / Banca<select id="dgSide"><option'+(side==='Punta'?' selected':'')+'>Punta</option><option'+(side==='Banca'?' selected':'')+'>Banca</option><option>Trading</option></select></label>'+
+          '<label>Quota entrata<input id="dgIn" inputmode="decimal" value="'+esc(q)+'"></label>'+
+          '<label>Quota uscita<input id="dgOut" inputmode="decimal" placeholder="facoltativa"></label>'+
+          '<label>Stake (€)<input id="dgStake" inputmode="decimal" placeholder="es. 2" value="'+esc(en.stake?String(en.stake):'')+'"></label>'+
+          '<label>Profitto netto (€)<input id="dgProfit" inputmode="decimal" placeholder="'+(win?'es. 1,90':'es. -2')+'" value="'+(m.diarioProfit!=null?String(m.diarioProfit).replace('.',','):'')+'"></label>'+
+        '</div>'+
+        '<div class="crest-dialog-actions"><button type="button" class="btn" data-dg="calc">Calcola profitto (comm. 5%)</button><span></span></div>'+
+        '<div class="crest-dialog-actions"><button type="button" class="btn" data-dg="skip">Salta</button><button type="button" class="btn btn-primary" data-dg="save">Registra nel Diario</button></div>'+
+        '<div class="crest-dialog-err" id="dgErr"></div></div>';
+      document.body.appendChild(wrap);
+      function v(id){ return String((wrap.querySelector('#'+id)||{}).value||'').trim().replace(',','.'); }
+      wrap.addEventListener('click',function(ev){
+        if(ev.target===wrap){ wrap.remove(); return; }
+        var b=ev.target.closest('[data-dg]'); if(!b) return;
+        var act=b.getAttribute('data-dg'), err=wrap.querySelector('#dgErr');
+        if(act==='skip'){ wrap.remove(); return; }
+        if(act==='calc'){
+          var st=Number(v('dgStake')), qi=Number(v('dgIn')), sd=v('dgSide'), p;
+          if(!(st>0)||!(qi>1)){ err.textContent='Servono stake e quota di entrata.'; return; }
+          if(sd==='Banca') p= win ? st*0.95 : -st*(qi-1);
+          else p= win ? st*(qi-1)*0.95 : -st;
+          wrap.querySelector('#dgProfit').value=(Math.round(p*100)/100).toFixed(2).replace('.',','); err.textContent=''; return;
+        }
+        if(act==='save'){
+          var pr=Number(v('dgProfit'));
+          if(v('dgProfit')===''||!isFinite(pr)){ err.textContent='Scrivi il profitto netto oppure usa «Calcola profitto».'; return; }
+          if(!win && pr>0) pr=-pr;
+          err.textContent='Salvataggio…';
+          fetch('/api/exchange/link-match',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({matchId:m.id,strategy:v('dgSys'),side:v('dgSide'),oddsIn:v('dgIn'),oddsOut:v('dgOut'),stake:v('dgStake'),minute:en.minute||'',profit:pr})})
+            .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
+            .then(function(d){ wrap.remove(); loadMatches(); window.alert('Registrata nel Diario: '+(d.period||'')+' · '+String(d.day).split('-').reverse().join('/')+' · sessione '+d.slot); })
+            .catch(function(e2){ err.textContent=e2.message||'Errore'; });
+        }
+      });
+    }
+    // ---------- stemmi: dialogo (immagine dal computer / link / automatico) ----------
+    function crestFileToDataUrl(file){
+      return new Promise(function(resolve,reject){
+        var u=URL.createObjectURL(file), img=new Image();
+        img.onload=function(){
+          var S=256, c=document.createElement('canvas'); c.width=S; c.height=S;
+          var ctx=c.getContext('2d'), r=Math.min(S/img.width,S/img.height), w=img.width*r, h=img.height*r;
+          ctx.drawImage(img,(S-w)/2,(S-h)/2,w,h); URL.revokeObjectURL(u); resolve(c.toDataURL('image/png'));
+        };
+        img.onerror=function(){ URL.revokeObjectURL(u); reject(new Error('Immagine non leggibile: '+file.name)); };
+        img.src=u;
+      });
+    }
+    function clearCrestCacheFor(team){
+      var t=String(team||'').toLowerCase();
+      Object.keys(crestCache).forEach(function(k){ if(!t || k.indexOf(t)===0) delete crestCache[k]; });
+    }
+    function saveCrest(team, league, body){
+      return fetch('/api/team-crest',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({name:team,campionato:league},body))})
+        .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})})
+        .then(function(){ clearCrestCacheFor(team); render(); });
+    }
+    function openCrestDialog(team, league){
+      var old=document.getElementById('crestDialog'); if(old) old.remove();
+      var wrap=document.createElement('div'); wrap.id='crestDialog'; wrap.className='crest-dialog-backdrop';
+      wrap.innerHTML='<div class="crest-dialog"><h3>Stemma · '+esc(team)+'</h3><p>'+esc(league||'')+'</p>'+
+        '<button type="button" class="btn btn-primary" data-cd="file">🖼 Carica immagine dal computer</button>'+
+        '<div class="crest-dialog-or">oppure incolla il link dell’immagine</div>'+
+        '<div class="crest-dialog-row"><input type="text" id="crestUrlInput" placeholder="https://…/stemma.png"><button type="button" class="btn" data-cd="url">Salva link</button></div>'+
+        '<div class="crest-dialog-actions"><button type="button" class="btn" data-cd="auto">↺ Torna alla ricerca automatica</button><button type="button" class="btn" data-cd="close">Chiudi</button></div>'+
+        '<div class="crest-dialog-err" id="crestDialogErr"></div><input type="file" id="crestFileInput" accept="image/*" hidden></div>';
+      document.body.appendChild(wrap);
+      var err=wrap.querySelector('#crestDialogErr'), fileIn=wrap.querySelector('#crestFileInput');
+      function done(p){ err.textContent='Salvataggio…'; p.then(function(){ wrap.remove(); }).catch(function(e){ err.textContent=e.message||'Errore salvataggio stemma'; }); }
+      wrap.addEventListener('click',function(ev){
+        if(ev.target===wrap){ wrap.remove(); return; }
+        var b=ev.target.closest('[data-cd]'); if(!b) return;
+        var act=b.getAttribute('data-cd');
+        if(act==='close') wrap.remove();
+        else if(act==='file') fileIn.click();
+        else if(act==='auto') done(saveCrest(team,league,{url:'AUTO'}));
+        else if(act==='url'){ var v=wrap.querySelector('#crestUrlInput').value.trim(); if(!v){ err.textContent='Incolla prima un link.'; return; } done(saveCrest(team,league,{url:v})); }
+      });
+      fileIn.addEventListener('change',function(){
+        var f=fileIn.files&&fileIn.files[0]; if(!f) return;
+        done(crestFileToDataUrl(f).then(function(d){ return saveCrest(team,league,{imageData:d}); }));
+      });
+    }
+    var crestBulkBtn=document.getElementById('crestBulkBtn'), crestBulkFile=document.getElementById('crestBulkFile');
+    if(crestBulkBtn&&crestBulkFile){
+      crestBulkBtn.addEventListener('click',function(){ crestBulkFile.value=''; crestBulkFile.click(); });
+      crestBulkFile.addEventListener('change',function(){
+        var files=Array.prototype.slice.call(crestBulkFile.files||[]); if(!files.length) return;
+        crestBulkBtn.disabled=true; var label=crestBulkBtn.textContent; crestBulkBtn.textContent='Caricamento stemmi…';
+        Promise.all(files.map(function(f){
+          var name=f.name.replace(/\.[a-z0-9]+$/i,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim();
+          return crestFileToDataUrl(f).then(function(d){return {name:name,imageData:d};}).catch(function(){return {name:name,imageData:''};});
+        })).then(function(items){
+          return fetch('/api/team-crests/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:items})})
+            .then(function(r){return r.json().then(function(d){if(!r.ok) throw new Error(d.error||'Errore'); return d;})});
+        }).then(function(d){
+          clearCrestCacheFor(''); render();
+          window.alert('Stemmi salvati: '+d.saved.length+(d.failed.length?'\nNon salvati: '+d.failed.join(', '):''));
+        }).catch(function(e){ window.alert(e.message||'Errore caricamento stemmi'); })
+          .finally(function(){ crestBulkBtn.disabled=false; crestBulkBtn.textContent=label; });
+      });
+    }
 
     // STEP 9 — azioni di massa
     var backupBtn=document.getElementById('backupBtn');
@@ -771,7 +922,7 @@
     // L'import amministrativo usa direttamente il file CSV: niente più copia/incolla.
     // Per i file di scouting OVER 0.5 HT la quota del CSV (O1.5 FT) viene volutamente ignorata.
     var IMPORT_STRATEGY = 'Over 0.5 HT';
-    var IMPORT_QUOTA = '1.55';
+    var IMPORT_QUOTA = '1.60';
 
     function toStartAt(dataStr, oraStr){
       var dm = (dataStr||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -820,6 +971,34 @@
       var rounded=Math.round(n*10)/10;
       return String(rounded).replace('.',',')+'%';
     }
+    function ebTrendFromImport(d){
+      if(!d||typeof d!=='object')return null;
+      var e=d._easybet||{};
+      if(e.type==='plain')return null;
+      function num(v){if(v==null||v==='')return null;var n=parseFloat(String(v).replace('%','').replace(',','.'));return isFinite(n)?n:null}
+      function nk(k){return String(k||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+      function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++)if(k===names[j])return num(d[ks[i]])}return null}
+      function avg(a,b){var v=[a,b].filter(function(x){return x!=null});return v.length?v.reduce(function(x,y){return x+y},0)/v.length:null}
+      var h25=e.home2570Pct!=null?num(e.home2570Pct):find(['home gol 25 70']),a25=e.away2570Pct!=null?num(e.away2570Pct):find(['osp gol 25 70','ospite gol 25 70']);
+      if(e.type==='o15_2570'||h25!=null||a25!=null){
+        var h00=e.home00at70Pct!=null?num(e.home00at70Pct):find(['home 0 0 al 70']),a00=e.away00at70Pct!=null?num(e.away00at70Pct):find(['osp 0 0 al 70','ospite 0 0 al 70']);
+        return {title:'GOL 25–70 · EXCH O1.5',main:[['Casa',h25],['Trasferta',a25],['Media',avg(h25,a25),'media']],sub:[['0-0 al 70’ casa',h00],['0-0 al 70’ trasf.',a00]]};
+      }
+      var h=num(e.over05HomePct),a=num(e.over05AwayPct),h15=num(e.home1545Pct),a15=num(e.away1545Pct);
+      if(h!=null||a!=null||h15!=null||a15!=null)return {title:'PRESA ULTIME 5',main:[['Casa',h],['Trasferta',a],['Media',avg(h,a),'media']],sub:[['Gol 15–45 casa',h15],['Gol 15–45 trasf.',a15]]};
+      var gen=Object.keys(d).filter(function(k){return /^\{.*\}$/.test(String(k).trim())&&num(d[k])!=null});
+      if(!gen.length)return null;
+      var items=gen.map(function(k){return [String(k).trim().replace(/^\{|\}$/g,''),num(d[k])]});
+      return {title:'STATISTICHE CSV',main:items.slice(0,3),sub:items.slice(3,6)};
+    }
+    function ebTrendHtml(t,extraClass){
+      if(!t)return '';
+      function lab(v){if(v==null)return '—';var r=Math.round(v*10)/10;return String(r).replace('.',',')+'%'}
+      function esc2(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+      function spans(list){return list.map(function(x){return '<span'+(x[2]?' class="'+x[2]+'"':'')+'>'+esc2(x[0])+' <b>'+lab(x[1])+'</b></span>'}).join('')}
+      return '<div class="csv-trend-card'+(extraClass?' '+extraClass:'')+'"><div class="csv-trend-title">'+esc2(t.title)+'</div><div class="csv-trend-main">'+spans(t.main)+'</div>'+(t.sub&&t.sub.length?'<div class="csv-trend-sub">'+spans(t.sub)+'</div>':'')+'</div>';
+    }
+    
     function importTrend(m){
       var d=m&&m.importData;
       if(!d||typeof d!=='object') return null;
@@ -862,6 +1041,28 @@
       var iOverAway=idx('over 0 5 trasf','over 0 5 trasferta');
       var iHome1545=idx('home gol 15 445','home gol 15 45');
       var iAway1545=idx('osp gol 15 45','ospite gol 15 45','away gol 15 45');
+      var iH2570=idx('home gol 25 70'), iA2570=idx('osp gol 25 70','ospite gol 25 70');
+      var iH00=idx('home 0 0 al 70'), iA00=idx('osp 0 0 al 70','ospite 0 0 al 70');
+      var isO15=iH2570>=0||iA2570>=0;
+      var isO05=iOverHome>=0||iOverAway>=0||iHome1545>=0||iAway1545>=0;
+      // Riconoscimento dal nome del file per i CSV senza statistiche (Banca X, Under 0.5 HT, Segno 1 / Favorito HT).
+      var fn=String(fileName||'').toLowerCase().replace(/\.csv$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ');
+      var fileType='';
+      if (/banca( la)? x|lay x/.test(fn)) fileType='layx';
+      else if (/under ?0 ?5|under 05/.test(fn)) fileType='under05ht';
+      else if (/segno 1|favorit/.test(fn)) fileType='favht';
+      else if (/over ?1 ?5|o1 ?5|25 ?70/.test(fn)) fileType='o15';
+      else if (/over ?0 ?5|o0 ?5/.test(fn)) fileType='o05';
+      var kind=isO15?'o15':(fileType||(isO05?'o05':'o05'));
+      var KINDS={
+        o15:{strategy:'Over 1.5 FT',quota:'1.70',stats:true},
+        o05:{strategy:IMPORT_STRATEGY,quota:IMPORT_QUOTA,stats:true},
+        layx:{strategy:'Banca X HT',quota:'2.10',stats:false},
+        under05ht:{strategy:'Under 0.5 HT',quota:'2.95',stats:false},
+        favht:{strategy:'Favorito HT',quota:'1.85',stats:false}
+      };
+      var rowStrategy=KINDS[kind].strategy, rowQuota=KINDS[kind].quota;
+      if (kind==='o15') isO15=true;
       if (iLeague<0 || iDate<0 || iHome<0 || iAway<0) return [];
       var out=[];
       for (var r=1;r<rows.length;r++){
@@ -872,13 +1073,20 @@
         var original={};
         headers.forEach(function(h,j){
           var nh=normalizeHeader(h);
-          // Le colonne quota/O1.5 FT non vengono importate né conservate: per EasyBet l'ingresso è sempre 1.55.
+          // Le colonne quota/O1.5 FT non vengono importate né conservate: per EasyBet l'ingresso minimo è sempre 1.60 (regola O0.5 HT PRE+LIVE).
           if (nh.indexOf('o1 5 sopra')!==-1 || nh.indexOf('quota')!==-1 || nh.indexOf('odds')!==-1) return;
           original[h]=vals[j] == null ? '' : String(vals[j]).trim();
         });
         // Schema definitivo OVER 0.5 HT: salviamo anche una forma normalizzata delle percentuali
         // così le card non dipendono dagli spazi o dalla punteggiatura dei titoli CSV.
-        original._easybet={
+        original._easybet=!KINDS[kind].stats?{type:'plain'}:isO15?{
+          type:'o15_2570',
+          home2570Pct:iH2570>=0?parsePct(vals[iH2570]):null,
+          away2570Pct:iA2570>=0?parsePct(vals[iA2570]):null,
+          home00at70Pct:iH00>=0?parsePct(vals[iH00]):null,
+          away00at70Pct:iA00>=0?parsePct(vals[iA00]):null
+        }:{
+          type:'o05ht',
           over05HomePct:iOverHome>=0?parsePct(vals[iOverHome]):null,
           over05AwayPct:iOverAway>=0?parsePct(vals[iOverAway]):null,
           home1545Pct:iHome1545>=0?parsePct(vals[iHome1545]):null,
@@ -888,8 +1096,8 @@
           data:dt.data, ora:dt.ora,
           campionato:String(vals[iLeague]||'').trim(),
           casa:casa, trasferta:trasferta,
-          tipoGiocata:IMPORT_STRATEGY,
-          quotaIngresso:IMPORT_QUOTA,
+          tipoGiocata:rowStrategy,
+          quotaIngresso:rowQuota,
           importSource:fileName || 'CSV',
           importMatchId:iId>=0 ? String(vals[iId]||'').trim() : '',
           importData:original
@@ -909,18 +1117,23 @@
     function closeImportModal(){ importBackdrop.classList.remove('open'); }
 
     function renderImportPreview(){
-      if (!importPending.length){ importPreview.innerHTML = ''; return; }
-      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b><span>Strategia: OVER 0.5 HT</span><span>Quota ingresso: 1.55</span></div>';
+      var ruleBox=document.getElementById('importRule');
+      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
+      var byStrat={};importPending.forEach(function(x){var k=String(x.tipoGiocata||'').toUpperCase()+' · '+(x.quotaIngresso||'');byStrat[k]=(byStrat[k]||0)+1});var stratKeys=Object.keys(byStrat);var first=importPending[0], isO15=String(first.tipoGiocata||'').toLowerCase().indexOf('1.5')!==-1;
+      if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+({'over 1.5 ft':'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.','banca x ht':'File EXCH LAY X HT: all’intervallo sullo 0-0 o 1-1 banca X solo a quota ≤ 2,10 e tieni fino al 90’.','under 0.5 ht':'File EXCH UNDER 0.5 HT: pre-match solo a quota ≥ 2,95 in exchange (≥ 2,85 bookmaker).','favorito ht':'File EXCH FAVORITO HT: all’intervallo in parità punta 1 ≥ 1,85, favorito sotto banca 2 ≤ 2,10.'}[String(first.tipoGiocata||'').toLowerCase()]||'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
+      function isDup(m){var st=toStartAt(m.data,m.ora);return matches.some(function(x){return Number(x.startAt)===Number(st)&&String(x.tipoGiocata||'').trim().toLowerCase()===String(m.tipoGiocata||'').trim().toLowerCase()&&String(x.casa||'').trim().toLowerCase()===String(m.casa||'').trim().toLowerCase()&&String(x.trasferta||'').trim().toLowerCase()===String(m.trasferta||'').trim().toLowerCase();});}
+      var dupCount=importPending.filter(isDup).length;
+      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b>'+(stratKeys.length>1?'<span>Strategie: '+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</span>':'<span>Strategia: '+esc(String(importPending[0].tipoGiocata||'').toUpperCase())+'</span><span>Quota ingresso: '+esc(importPending[0].quotaIngresso||'')+'</span>')+(dupCount?'<span>'+dupCount+' già presenti: verranno saltate</span>':'')+'</div>';
       html += importPending.map(function(m, idx){
         return '<div class="preview-row">'+
-          '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+'</span>'+
+          '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+(isDup(m)?'<br><b style="color:#b5452f">GIÀ PRESENTE · verrà saltata</b>':'')+'</span>'+
           '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
           '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
-          (function(){var t=importTrend(m);return t?'<div class="preview-trend"><span>Casa O0.5 <b>'+pctLabel(t.home)+'</b></span><span>Trasf. O0.5 <b>'+pctLabel(t.away)+'</b></span><span>Media <b>'+pctLabel(t.avg)+'</b></span><span>Gol 15–45 C <b>'+pctLabel(t.h1545)+'</b></span><span>Gol 15–45 T <b>'+pctLabel(t.a1545)+'</b></span></div>':'';})()+
-          '<div class="preview-fields fixed"><span>OVER 0.5 HT</span><b>1.55</b></div>'+
+          (function(){var t=ebTrendFromImport(m.importData);if(!t)return '';return '<div class="preview-trend">'+t.main.concat(t.sub||[]).map(function(x){return '<span>'+esc(x[0])+' <b>'+pctLabel(x[1])+'</b></span>'}).join('')+'</div>';})()+
+          '<div class="preview-fields fixed"><span>'+esc(String(m.tipoGiocata||'').toUpperCase())+'</span><b>'+esc(m.quotaIngresso||'')+'</b></div>'+
         '</div>';
       }).join('');
-      html += '<div class="modal-actions" style="margin-top:10px;"><div style="flex:1"></div><button class="btn btn-primary" id="importConfirmBtn">Importa '+importPending.length+' partite</button></div>';
+      html += '<div class="modal-actions" style="margin-top:10px;"><div style="flex:1"></div><button class="btn btn-primary" id="importConfirmBtn">Importa '+(importPending.length-dupCount)+' partite</button></div>';
       importPreview.innerHTML = html;
       Array.prototype.forEach.call(importPreview.querySelectorAll('.pv-del'), function(btn){
         btn.addEventListener('click', function(){ importPending.splice(+btn.getAttribute('data-idx'),1); renderImportPreview(); });
@@ -945,7 +1158,7 @@
         var startAt = toStartAt(m.data, m.ora);
         if (startAt == null) return;
         var duplicate = matches.some(function(x){
-          return Number(x.startAt)===Number(startAt) && sameText(x.casa,m.casa) && sameText(x.trasferta,m.trasferta);
+          return Number(x.startAt)===Number(startAt) && sameText(x.casa,m.casa) && sameText(x.trasferta,m.trasferta) && sameText(x.tipoGiocata,m.tipoGiocata);
         });
         if (duplicate){ skipped++; return; }
         chain = chain.then(function(){
@@ -955,7 +1168,7 @@
             body: JSON.stringify({
               campionato:m.campionato || '', casa:m.casa, trasferta:m.trasferta,
               data:m.data, ora:m.ora, startAt:startAt,
-              tipoGiocata:IMPORT_STRATEGY, quotaIngresso:IMPORT_QUOTA,
+              tipoGiocata:m.tipoGiocata||IMPORT_STRATEGY, quotaIngresso:m.quotaIngresso||IMPORT_QUOTA,
               esitoManuale:'', botEnabled:true,
               importSource:m.importSource || 'CSV', importMatchId:m.importMatchId || '', importData:m.importData || null
             })
@@ -977,29 +1190,32 @@
     document.getElementById('importCancelBtn').addEventListener('click', closeImportModal);
     importBackdrop.addEventListener('click', function(e){ if (e.target === importBackdrop) closeImportModal(); });
     importCsvFile.addEventListener('change', function(){
-      var file=importCsvFile.files && importCsvFile.files[0];
-      if (!file) return;
+      var files=Array.prototype.slice.call(importCsvFile.files||[]);
+      if (!files.length) return;
       importErr.textContent='';
       importPreview.innerHTML='';
-      importFileName.textContent=file.name;
-      var reader=new FileReader();
-      reader.onload=function(){
-        var parsed=parseImportCsv(reader.result,file.name);
-        if (!parsed.length){
-          importPending=[];
-          importErr.textContent='CSV non riconosciuto. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
-          importBackdrop.classList.add('open');
-          return;
-        }
-        importPending=parsed;
+      importFileName.textContent=files.map(function(f){return f.name}).join(', ');
+      Promise.all(files.map(function(file){
+        return new Promise(function(resolve){
+          var reader=new FileReader();
+          reader.onload=function(){ resolve({name:file.name, rows:parseImportCsv(reader.result,file.name)}); };
+          reader.onerror=function(){ resolve({name:file.name, rows:[], error:true}); };
+          reader.readAsText(file,'UTF-8');
+        });
+      })).then(function(results){
+        var all=[], bad=[];
+        results.forEach(function(r){ if(!r.rows.length) bad.push(r.name); all=all.concat(r.rows); });
+        // stessa partita + stessa strategia presente in due file: tienila una volta sola
+        var seen={};
+        all=all.filter(function(m){var k=[m.data,m.ora,String(m.casa).toLowerCase(),String(m.trasferta).toLowerCase(),String(m.tipoGiocata).toLowerCase()].join('|');if(seen[k])return false;seen[k]=1;return true;});
+        importPending=all;
         importBackdrop.classList.add('open');
+        if (bad.length) importErr.textContent='File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
         renderImportPreview();
-      };
-      reader.onerror=function(){ importErr.textContent='Impossibile leggere il file CSV.'; importBackdrop.classList.add('open'); };
-      reader.readAsText(file,'UTF-8');
+      });
     });
 
     loadMatches();
-    setInterval(loadMatches, 30000);
+    setInterval(function(){ loadMatches(true); }, 30000);
   }
 })();

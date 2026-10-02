@@ -9,7 +9,10 @@ const liveStrategie = require('./strategie-live');
 const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
-app.use(express.json({ limit: '1mb' }));
+const jsonSmall = express.json({ limit: '1mb' });
+const jsonCrest = express.json({ limit: '12mb' }); // stemmi caricati a mano (immagini in base64)
+app.use((req, res, next) => (req.path === '/api/team-crest' || req.path === '/api/team-crests/bulk') ? jsonCrest(req, res, next) : jsonSmall(req, res, next));
+let sharpLib = null; try { sharpLib = require('sharp'); } catch (_) { sharpLib = null; }
 
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -187,6 +190,7 @@ app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
       pool.query('SELECT * FROM team_crests ORDER BY name_norm ASC'),
       pool.query('SELECT * FROM exchange_periods ORDER BY start_date ASC, uid ASC')
     ]);
+    const crestImgRes = await pool.query('SELECT id, mime, encode(data, \'base64\') AS data_base64, updated_at FROM crest_images ORDER BY id ASC').catch(() => ({ rows: [] }));
 
     const payload = {
       format: 'easybet-backup',
@@ -197,14 +201,16 @@ app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
         matches: matchesRes.rows.length,
         signalSnapshots: snapshotsRes.rows.length,
         teamCrests: crestsRes.rows.length,
-        exchangePeriods: exchangeRes.rows.length
+        exchangePeriods: exchangeRes.rows.length,
+        crestImages: crestImgRes.rows.length
       },
       data: {
         matches: matchesRes.rows,
         signalSnapshots: snapshotsRes.rows,
         alertSettings: alertRes.rows[0] || null,
         teamCrests: crestsRes.rows,
-        exchangePeriods: exchangeRes.rows
+        exchangePeriods: exchangeRes.rows,
+        crestImages: crestImgRes.rows
       }
     };
 
@@ -326,6 +332,12 @@ function matchOut(row) {
     importSource: row.import_source || '',
     importMatchId: row.import_match_id || '',
     importData: row.import_data || null,
+    diarioProfit: row.diario_profit == null ? null : Number(row.diario_profit),
+    diarioLinkedAt: row.diario_linked_at == null ? null : Number(row.diario_linked_at),
+    liveExcludedAt: row.live_excluded_at == null ? null : Number(row.live_excluded_at),
+    liveExcludedReason: row.live_excluded_reason || '',
+    esitoAuto: row.esito_auto === true,
+    diarioEntry: (()=>{ try { return row.diario_entry ? JSON.parse(row.diario_entry) : null; } catch (_) { return null; } })(),
     liveStartedAt: row.live_started_at === null || row.live_started_at === undefined ? null : Number(row.live_started_at),
     signalFirstAt: row.signal_first_at === null || row.signal_first_at === undefined ? null : Number(row.signal_first_at),
     signalFirstLevel: row.signal_first_level || '',
@@ -372,6 +384,8 @@ function perfStrategyLabel(v) {
   if (/OVER\s*1\.?5/.test(s)) return 'OVER 1.5 FT';
   if (/OVER\s*0\.?5\s*(HT|1T)/.test(s)) return 'OVER 0.5 HT';
   if (/BANCA\s*(LA\s*)?X|LAY\s*X/.test(s)) return 'BANCA LA X';
+  if (/UNDER\s*0\.?5/.test(s)) return 'UNDER 0.5 HT';
+  if (/FAVORITO/.test(s)) return 'FAVORITO HT';
   if (/SEGNA\s*(LA\s*)?FAVORITA|FAVORITA/.test(s)) return 'SEGNA LA FAVORITA';
   if (/SEGNO\s*1|\b1\b/.test(s)) return 'SEGNO 1';
   return raw || 'Senza strategia';
@@ -841,6 +855,57 @@ app.get('/api/exchange/export.csv', requireSameSiteAdmin, async (req, res) => {
   }
 });
 
+// ---------- Collegamento partita → Diario Exchange (esito registrato dall'admin) ----------
+const DIARIO_MARKETS = {
+  'EXCH O1.5 GOL 25-70':'Over/Under 1.5','O0.5 HT PRE+LIVE':'Over/Under 1° tempo 0.5','EXCH LAY X HT':'Match Odds',
+  'EXCH UNDER 0.5 HT':'Over/Under 1° tempo 0.5','EXCH FAVORITO HT · PARITÀ':'Match Odds','EXCH FAVORITO HT · SOTTO':'Match Odds','BET X PRE-MATCH':'Match Odds'
+};
+function romeDayIso(ms){
+  try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Number(ms))); }
+  catch(_){ return new Date(Number(ms)).toISOString().slice(0,10); }
+}
+function isoAddDays(iso,n){ const d=new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
+  try{
+    const b=req.body||{};
+    const id=String(b.matchId||'').trim();
+    const isOpen=b.open===true||b.open==='1';
+    const profit=isOpen?0:Number(String(b.profit==null?'':b.profit).replace(',','.'));
+    if(!id) return res.status(400).json({error:'Partita mancante.'});
+    if(!Number.isFinite(profit)) return res.status(400).json({error:'Scrivi il profitto netto (es. 1,90 oppure -2).'});
+    const mq=await pool.query('SELECT * FROM matches WHERE id=$1',[id]);
+    const m=mq.rows[0]; if(!m) return res.status(404).json({error:'Partita non trovata.'});
+    const day=romeDayIso(m.start_at);
+    const pq=await pool.query('SELECT uid, state FROM exchange_periods ORDER BY start_date DESC, created_at DESC');
+    const row=pq.rows.find(r=>{const st=r.state||{};const start=String(st.start||'');const len=Math.max(1,Number(st.length)||31);return start&&day>=start&&day<=isoAddDays(start,len-1);});
+    if(!row) return res.status(404).json({error:'Nel Diario Exchange non c’è un periodo che contiene il '+day.split('-').reverse().join('/')+'. Crealo e riprova.'});
+    const st=row.state||{}; st.ops=Array.isArray(st.ops)?st.ops:[]; st.days=st.days&&typeof st.days==='object'?st.days:{};
+    const ref='match:'+id, event=(m.casa||'')+' - '+(m.trasferta||''), strategy=String(b.strategy||'').trim()||String(m.tipo_giocata||'');
+    const num=v=>{const x=Number(String(v==null?'':v).replace(',','.'));return Number.isFinite(x)?x:0;};
+    const getDay=d=>{const x=st.days[d]||{};return {sessions:Array.isArray(x.sessions)?x.sessions.slice(0,10):[],deposit:Number(x.deposit)||0,note:String(x.note||'')};};
+    const setDay=(d,x)=>{const s=x.sessions.slice(0,10);while(s.length&&s[s.length-1]==null)s.pop();if(!s.some(v=>v!=null)&&!x.deposit&&!x.note.trim())delete st.days[d];else st.days[d]={sessions:s,deposit:x.deposit,note:x.note};};
+    let op=st.ops.find(o=>o.ref===ref), slot;
+    if(op){ slot=Number(op.slot)||0; }
+    else{
+      const same=st.ops.find(o=>o.day===day&&String(o.event||'').trim().toLowerCase()===event.trim().toLowerCase());
+      if(same) slot=Number(same.slot)||0;
+      else{ const dd=getDay(day),used={}; dd.sessions.forEach((v,i)=>{if(v!=null)used[i]=1}); st.ops.forEach(o=>{if(o.day===day)used[Number(o.slot)||0]=1}); slot=null; for(let i=0;i<10;i++){ if(!used[i]){slot=i;break;} } if(slot==null) slot=9; }
+      op={uid:'op_'+crypto.randomBytes(5).toString('hex'),ref}; st.ops.push(op);
+    }
+    Object.assign(op,{day,slot,event,league:m.campionato||'',market:DIARIO_MARKETS[strategy]||String(b.market||m.tipo_giocata||''),strategy,side:['Punta','Banca','Trading'].includes(b.side)?b.side:'Punta',
+      oddsIn:num(b.oddsIn)||Number(op.oddsIn)||0,oddsOut:num(b.oddsOut)||Number(op.oddsOut)||0,stake:Math.abs(num(b.stake))||Number(op.stake)||0,minute:String(b.minute||op.minute||''),profit:Math.round((isOpen?(Number(op.profit)||0):profit)*100)/100,note:(isOpen&&!(Number(op.profit)))?'APERTA · ingresso dal Live Analyzer':'da partita EasyBet · '+(m.esito_manuale||'')});
+    const dd=getDay(day); while(dd.sessions.length<=slot) dd.sessions.push(null);
+    const tot=st.ops.filter(o=>o.day===day&&Number(o.slot)===slot).reduce((a,o)=>a+(Number(o.profit)||0),0);
+    dd.sessions[slot]=Math.round(tot*100)/100; setDay(day,dd);
+    const now=Date.now();
+    await pool.query('UPDATE exchange_periods SET state=$2::jsonb, updated_at=$3 WHERE uid=$1',[row.uid,JSON.stringify(st),now]);
+    const entry={strategy,side:op.side,oddsIn:op.oddsIn,stake:op.stake,minute:op.minute,at:now};
+    if(isOpen) await pool.query('UPDATE matches SET diario_entry=$2 WHERE id=$1',[id,JSON.stringify(entry)]);
+    else await pool.query('UPDATE matches SET diario_profit=$2, diario_linked_at=$3, diario_entry=COALESCE(diario_entry,$4) WHERE id=$1',[id,Math.round(profit*100)/100,now,JSON.stringify(entry)]);
+    res.json({ok:true,period:st.name||row.uid,day,slot:slot+1});
+  }catch(err){ console.error('link-match:',err); res.status(500).json({error:'Impossibile registrare nel Diario.'}); }
+});
+
 // ---------- Masaniello Studio (privato, integrato in EasyBet) ----------
 function masanielloNormalizeState(body) {
   const b = body && typeof body === 'object' ? body : {};
@@ -927,6 +992,45 @@ function gdPick(obj, keys) {
   }
   return null;
 }
+// --- Contatore richieste GoalDir (piano mensile) + piccola cache per non sprecare chiamate ---
+const GOALDIR_DAILY_LIMIT = Math.max(1, Number(process.env.GOALDIR_DAILY_LIMIT || 7500)); // piano Free: 7.500 richieste/giorno
+const GOALDIR_RESERVE = Math.max(0, Number(process.env.GOALDIR_RESERVE || 300)); // richieste lasciate al Live Analyzer manuale
+const gdCache = new Map();
+function gdMonthKey(t) { return new Date(t || Date.now()).toISOString().slice(0, 10); } // chiave giornaliera (UTC)
+function gdParseRate(rate, policy) {
+  const out = { remaining: null, limit: null };
+  const r = String(rate || ''), p = String(policy || '');
+  const rm = r.match(/remaining\s*=\s*(\d+)/i) || r.match(/r\s*=\s*(\d+)/i); if (rm) out.remaining = Number(rm[1]);
+  const lm = r.match(/limit\s*=\s*(\d+)/i) || p.match(/^\s*(\d+)/); if (lm) out.limit = Number(lm[1]);
+  return out;
+}
+async function gdTrackCall(rate, policy) {
+  try {
+    const pr = gdParseRate(rate, policy), now = Date.now();
+    await pool.query(`INSERT INTO api_usage (provider, month, calls, remaining, limit_hdr, updated_at) VALUES ('goaldir',$1,1,$2,$3,$4)
+      ON CONFLICT (provider, month) DO UPDATE SET calls = api_usage.calls + 1, remaining = COALESCE($2, api_usage.remaining), limit_hdr = COALESCE($3, api_usage.limit_hdr), updated_at = $4`,
+      [gdMonthKey(now), pr.remaining, pr.limit, now]);
+  } catch (e) { console.warn('api_usage:', e.message); }
+}
+async function gdUsage() {
+  const month = gdMonthKey();
+  let row = null;
+  try { row = (await pool.query("SELECT * FROM api_usage WHERE provider='goaldir' AND month=$1", [month])).rows[0] || null; } catch (_) {}
+  const used = row ? Number(row.calls) || 0 : 0;
+  const limit = row && row.limit_hdr ? Number(row.limit_hdr) : GOALDIR_DAILY_LIMIT;
+  const remainingReal = row && row.remaining != null ? Number(row.remaining) : null;
+  const remaining = remainingReal != null ? remainingReal : Math.max(0, limit - used);
+  const resetAt = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1);
+  return { period: 'day', day: month, resetAt, month, used, limit, remaining, remainingFromApi: remainingReal != null, reserve: GOALDIR_RESERVE, updatedAt: row ? Number(row.updated_at) || null : null };
+}
+async function gdFetchCached(pathname, ttlMs) {
+  const hit = gdCache.get(pathname), now = Date.now();
+  if (hit && now - hit.at < ttlMs) return hit.value;
+  const value = await gdFetch(pathname);
+  gdCache.set(pathname, { at: now, value });
+  if (gdCache.size > 200) { for (const k of gdCache.keys()) { gdCache.delete(k); if (gdCache.size < 120) break; } }
+  return value;
+}
 async function gdFetch(pathname, timeoutMs = 9000) {
   if (!GOALDIR_API_KEY) {
     const e = new Error('GOALDIR_API_KEY non configurata.'); e.code = 'NO_GOALDIR_KEY'; throw e;
@@ -942,10 +1046,14 @@ async function gdFetch(pathname, timeoutMs = 9000) {
     let data = null;
     try { data = bodyText ? JSON.parse(bodyText) : null; } catch (_) { data = { raw: bodyText }; }
     if (!r.ok) {
+      if (r.status !== 401 && r.status !== 403) gdTrackCall(r.headers.get('ratelimit') || '', r.headers.get('ratelimit-policy') || '');
       const e = new Error((data && (data.detail || data.error || data.message)) || ('GoalDir HTTP ' + r.status));
       e.status = r.status; e.payload = data; throw e;
     }
-    return { data, rate: r.headers.get('ratelimit') || '', policy: r.headers.get('ratelimit-policy') || '' };
+    const rate = r.headers.get('ratelimit') || r.headers.get('x-ratelimit-remaining') && ('remaining=' + r.headers.get('x-ratelimit-remaining')) || '';
+    const policy = r.headers.get('ratelimit-policy') || r.headers.get('x-ratelimit-limit') || '';
+    gdTrackCall(rate, policy);
+    return { data, rate, policy };
   } finally { clearTimeout(timer); }
 }
 function gdNormalizeStats(statsData) {
@@ -1059,8 +1167,13 @@ function gdFirstGoalMinute(incidentsData, statsData) {
 }
 
 
+app.get('/api/goaldir/usage', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const u = await gdUsage();
+  res.json(Object.assign({ configured: !!GOALDIR_API_KEY }, u, { autoscan: { enabled: LIVE_SCAN_ENABLED && !!GOALDIR_API_KEY, everySeconds: Math.round(LIVE_SCAN_MS / 1000), paused: liveScanLast.paused || '', last: liveScanLast } }));
+});
 app.get('/api/goaldir/status', async (req, res) => {
-  res.json({ configured: !!GOALDIR_API_KEY, provider: 'GoalDir / BSD', mode: 'REST', pollSeconds: 60 });
+  res.json({ configured: !!GOALDIR_API_KEY, provider: 'GoalDir / BSD', mode: 'REST', pollSeconds: 60, dailyLimit: GOALDIR_DAILY_LIMIT });
 });
 
 app.get('/api/goaldir/live-stats', async (req, res) => {
@@ -1069,7 +1182,7 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
   if (!home || !away) return res.status(400).json({ error: 'Squadre mancanti.' });
   if (!GOALDIR_API_KEY) return res.status(503).json({ code: 'NO_GOALDIR_KEY', error: 'GOALDIR_API_KEY non configurata sul server.' });
   try {
-    const liveResp = await gdFetch('/events/live/');
+    const liveResp = await gdFetchCached('/events/live/', 45000);
     const payload = liveResp.data;
     const events = Array.isArray(payload) ? payload : (Array.isArray(payload && payload.results) ? payload.results : (Array.isArray(payload && payload.events) ? payload.events : []));
     let best = null, bestScore = 0;
@@ -1090,9 +1203,10 @@ app.get('/api/goaldir/live-stats', async (req, res) => {
     }
     const eventId = gdEventId(best);
     if (!eventId) return res.status(502).json({ error: 'Evento GoalDir senza ID.' });
-    const statsResp = await gdFetch('/events/' + encodeURIComponent(eventId) + '/stats/');
+    const statsResp = await gdFetchCached('/events/' + encodeURIComponent(eventId) + '/stats/', 55000);
     let incidentsData = null;
-    try {
+    const needIncidents = !/^0\s*-\s*0$/.test(gdLiveScore(best)) && gdFirstGoalMinute(null, statsResp.data || {}) === null;
+    if (needIncidents) try {
       const incidentsResp = await gdFetch('/events/' + encodeURIComponent(eventId) + '/incidents/');
       incidentsData = incidentsResp.data || null;
     } catch (incErr) {
@@ -1222,6 +1336,7 @@ app.patch('/api/matches/:id', requireSameSiteAdmin, async (req, res) => {
       sets.push('esito_manuale = $' + (i++)); vals.push(isValidOutcome ? v : null);
       sets.push('outcome_set_at = $' + (i++)); vals.push(isValidOutcome ? Date.now() : null);
     }
+    if (Object.prototype.hasOwnProperty.call(fields, 'esitoManuale')) { sets.push('esito_auto = false'); sets.push("settle_state = '{\"manual\":true}'"); }
     if (Object.prototype.hasOwnProperty.call(fields, 'botEnabled')) {
       sets.push('bot_enabled = $' + (i++)); vals.push(!!fields.botEnabled);
     }
@@ -1300,6 +1415,7 @@ app.post('/api/matches/bulk', requireSameSiteAdmin, async (req, res) => {
       sets.push('esito_manuale = $' + (i++)); vals.push(ok ? v : null);
       sets.push('outcome_set_at = $' + (i++)); vals.push(ok ? Date.now() : null);
     }
+    if (Object.prototype.hasOwnProperty.call(fields, 'esitoManuale')) { sets.push('esito_auto = false'); sets.push("settle_state = '{\"manual\":true}'"); }
 
     if (!sets.length) return res.status(400).json({ error: 'Nessun campo da aggiornare.' });
     vals.push(ids);
@@ -1337,6 +1453,8 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
     if (event === 'signal') {
       const score = Number((req.body || {}).score);
       const level = String((req.body || {}).level || 'verde').trim().toLowerCase();
+      const prevQ = await pool.query('SELECT signal_first_at, live_alert_sent, bot_enabled FROM matches WHERE id = $1', [id]);
+      const prev = prevQ.rows[0] || {};
       const { rows } = await pool.query(
         `UPDATE matches SET
           live_started_at = COALESCE(live_started_at, $1),
@@ -1350,8 +1468,37 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
       if ((level || 'verde') === 'verde') {
         const resultForSnapshot = { level: 'verde', score100: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null, summary: String((req.body || {}).summary || '') };
         await saveSignalSnapshot(rows[0], resultForSnapshot, (req.body || {}).snapshot || {}, String((req.body || {}).source || 'analyzer'), now);
+        // Notifica Telegram: una sola volta per partita (stesso flag dei segnali live automatici).
+        let tgStatus = prev.live_alert_sent ? 'already' : prev.bot_enabled === false ? 'bot_off' : !telegram.isConfigured ? 'not_configured' : 'pending';
+        res.locals.tgStatus = tgStatus;
+        if (tgStatus === 'pending') {
+          try {
+            const b = req.body || {}, m = rows[0], snap = b.snapshot || {};
+            const minute = String(b.minute != null && b.minute !== '' ? b.minute : (snap.minute != null ? snap.minute : '')).trim();
+            const sc = String(b.scoreText || (snap.scoreHome != null && snap.scoreAway != null ? snap.scoreHome + '-' + snap.scoreAway : '') || 'N/D');
+            const name = String(b.signalName || m.tipo_giocata || 'Segnale');
+            const text = '🟢 <b>SEGNALE LIVE — ' + escapeHtmlLite(name) + '</b>' + (m.campionato ? ' (' + escapeHtmlLite(m.campionato) + ')' : '') + '\n' +
+              '<b>' + escapeHtmlLite(m.casa) + ' - ' + escapeHtmlLite(m.trasferta) + '</b>\n' +
+              '⏱ ' + (minute ? escapeHtmlLite(minute) + (/^ht$/i.test(minute) ? '' : "'") : 'N/D') + ' • 📍 ' + escapeHtmlLite(sc) + '\n' +
+              (b.summary ? '📊 ' + escapeHtmlLite(String(b.summary).slice(0, 180)) + '\n' : '') +
+              (m.quota_ingresso ? '💶 Quota pre-match ' + escapeHtmlLite(m.quota_ingresso) + '\n' : '') +
+              '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
+              (Number.isFinite(score) ? '\n🎯 <b>' + Math.round(score) + '/100</b>' : '');
+            const sentTo = await telegram.broadcast(text);
+            await pool.query('UPDATE matches SET live_alert_sent = true, live_last_notified_at = $2 WHERE id = $1', [id, now]);
+            rows[0].live_alert_sent = true;
+            res.locals.tgStatus = sentTo > 0 ? 'sent' : 'no_subscribers';
+          } catch (e) { console.error('telegram signal:', e.message); res.locals.tgStatus = 'error'; }
+        }
       }
-      return res.json(matchOut(rows[0]));
+      return res.json(Object.assign(matchOut(rows[0]), { telegramStatus: res.locals.tgStatus || null }));
+    }
+    if (event === 'excluded') {
+      const b = req.body || {};
+      const ex = await markMatchExcluded(id, String(b.reason || 'Partita esclusa'), { signalName: b.signalName, minute: b.minute, score: b.scoreText });
+      const { rows } = await pool.query('SELECT * FROM matches WHERE id = $1', [id]);
+      if (!rows[0]) return res.status(404).json({ error: 'Partita non trovata.' });
+      return res.json(Object.assign(matchOut(rows[0]), { excludedNow: !!ex }));
     }
     return res.status(400).json({ error: 'Evento lifecycle non valido.' });
   } catch (err) {
@@ -1541,6 +1688,7 @@ app.post('/api/live-stats', async (req, res) => {
     let postGoalJustStarted = false;
     if (
       match.live_strategy === 'over15ft' &&
+      liveStrategie.RULES.over15ft.allowPostGoal !== false &&
       !match.signal_first_at &&
       !match.live_alert_sent &&
       totalsNow.goals === 1 &&
@@ -1577,6 +1725,7 @@ app.post('/api/live-stats', async (req, res) => {
     // il gol non può trasformare immediatamente ATTENDI -> VERDE.
     if (
       match.live_strategy === 'over15ft' &&
+      liveStrategie.RULES.over15ft.allowPostGoal !== false &&
       !match.signal_first_at &&
       !match.live_alert_sent &&
       totalsNow.goals === 1 &&
@@ -1893,8 +2042,33 @@ const COUNTRY_ALIASES = {
 function countryHintFromCampionato(campionato) {
   const s = String(campionato || '').trim();
   if (!s) return '';
+  // Formati: "Italia: Serie A" oppure CGMBet "USA - MLS" / "Wales - Premier League".
+  const m = s.split(/\s*:\s*|\s+-\s+/);
+  return (m[0] || s).trim();
+}
+// Vecchio calcolo (solo ':'), usato per ritrovare gli stemmi manuali già salvati.
+function legacyCountryHintFromCampionato(campionato) {
+  const s = String(campionato || '').trim();
+  if (!s) return '';
   const idx = s.indexOf(':');
   return (idx === -1 ? s : s.slice(0, idx)).trim();
+}
+const COUNTRY_DEMONYMS = {
+  'wales':['welsh'],'england':['english'],'scotland':['scottish'],'ireland':['irish'],'northern ireland':['northern irish'],
+  'germany':['german'],'norway':['norwegian'],'brazil':['brazil'],'serbia':['serbian'],'united states':['american','united states'],
+  'italy':['italian'],'spain':['spanish'],'france':['french'],'netherlands':['dutch'],'chile':['chilean'],'argentina':['argentin'],
+  'mexico':['mexican'],'japan':['japanese'],'south korea':['south korean','korean'],'china':['chinese'],'sweden':['swedish'],
+  'denmark':['danish'],'finland':['finnish'],'croatia':['croatian'],'slovenia':['sloven'],'slovakia':['slovak'],'czechia':['czech'],
+  'poland':['polish'],'romania':['romanian'],'bulgaria':['bulgarian'],'hungary':['hungarian'],'austria':['austrian'],'belgium':['belgian'],
+  'switzerland':['swiss'],'portugal':['portuguese'],'greece':['greek'],'turkey':['turkish'],'russia':['russian'],'ukraine':['ukrainian'],
+  'australia':['australian'],'lithuania':['lithuanian'],'iceland':['icelandic'],'estonia':['estonian'],'latvia':['latvian'],
+  'colombia':['colombian'],'uruguay':['uruguayan'],'paraguay':['paraguayan'],'peru':['peruvian'],'ecuador':['ecuadorian']
+};
+function descMatchesCountry(descNorm, countryHint){
+  if(!countryHint) return false;
+  const c=normCountry(countryHint);
+  if(descNorm.includes(c)) return true;
+  return (COUNTRY_DEMONYMS[c]||[]).some(d=>descNorm.includes(d));
 }
 function normCountry(s){
   const n=normCrestName(s);
@@ -2007,7 +2181,7 @@ async function lookupCrestWikidata(name,countryHint){
           if(label.includes(req)||req.includes(label)) score+=55;
           const toks=meaningfulCrestTokens(clean);
           score+=toks.filter(t=>label.includes(t)).length*25;
-          if(countryHint && descNorm.includes(normCountry(countryHint))) score+=25;
+          if(descMatchesCountry(descNorm,countryHint)) score+=25;
           if(score>bestScore){bestScore=score;best=item;}
         }
       }catch(err){ console.error('Lookup Wikidata stemma "'+q+'":',err.message); }
@@ -2070,6 +2244,57 @@ async function lookupCrestWikipedia(name,countryHint){
   return {url:null,matched:null};
 }
 
+// Ricerca diretta tra le entità Wikidata "club calcistico" (P31=Q476028): evita città, persone e omonimi.
+async function lookupCrestWikidataClub(name,countryHint){
+  const clean=String(name||'').trim();
+  if(!clean) return {url:null,matched:null};
+  const req=normCrestName(clean), toks=meaningfulCrestTokens(clean);
+  const youth=/\b(women|ladies|femenino|feminino|frauen|reserves?|ii|b|u\d{2}|under \d{2}|academy|youth|juniors?)\b/;
+  const ids=[];
+  const qs=[...new Set([clean].concat(crestQueries(clean).slice(0,3)))];
+  for(const q of qs){
+    try{
+      const url='https://www.wikidata.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q+' haswbstatement:P31=Q476028')+'&srlimit=8&format=json&origin=*';
+      const r=await fetch(url,{headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}});
+      if(!r.ok) continue;
+      const d=await r.json();
+      ((d&&d.query&&d.query.search)||[]).forEach(x=>{ if(x&&x.title&&!ids.includes(x.title)) ids.push(x.title); });
+    }catch(err){ console.error('Wikidata club search "'+q+'":',err.message); }
+    if(ids.length>=8) break;
+  }
+  if(!ids.length) return {url:null,matched:null};
+  try{
+    const url='https://www.wikidata.org/w/api.php?action=wbgetentities&ids='+encodeURIComponent(ids.slice(0,12).join('|'))+'&props=labels|aliases|descriptions|claims&languages=en|it|de|es|pt|fr&format=json&origin=*';
+    const r=await fetch(url,{headers:{'User-Agent':'EasyBet/1.0 (team crest resolver)'}});
+    if(!r.ok) return {url:null,matched:null};
+    const d=await r.json();
+    let best=null,bestScore=-Infinity;
+    for(const id of ids){
+      const ent=d&&d.entities&&d.entities[id];
+      if(!ent) continue;
+      const filename=chooseBestWikidataLogoClaim(ent.claims||{});
+      if(!filename) continue;
+      const names=[];
+      Object.values(ent.labels||{}).forEach(l=>names.push(normCrestName(l.value)));
+      Object.values(ent.aliases||{}).forEach(arr=>(arr||[]).forEach(a=>names.push(normCrestName(a.value))));
+      const desc=normCrestName(Object.values(ent.descriptions||{}).map(x=>x.value).join(' '));
+      let score=0;
+      if(names.includes(req)) score+=120;
+      else if(names.some(n=>n.includes(req)||req.includes(n))) score+=60;
+      const label=names[0]||'';
+      score+=toks.filter(t=>names.some(n=>n.split(' ').includes(t))).length*25;
+      if(descMatchesCountry(desc,countryHint)) score+=40;
+      if(youth.test(label)&&!youth.test(req)) score-=90;
+      if(score>bestScore){bestScore=score;best={id,filename,label:(ent.labels&&ent.labels.en&&ent.labels.en.value)||label};}
+    }
+    if(!best||bestScore<60) return {url:null,matched:null};
+    return {url:'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(best.filename)+'?width=320',matched:best.label,source:'wikidata-club'};
+  }catch(err){
+    console.error('Wikidata club entities "'+clean+'":',err.message);
+    return {url:null,matched:null};
+  }
+}
+
 async function lookupCrest(name,countryHint){
   const key=normCrestName(name);
 
@@ -2079,6 +2304,10 @@ async function lookupCrest(name,countryHint){
     const fixed=await lookupCrestWikidataById(fixedId,name);
     if(fixed&&fixed.url) return fixed;
   }
+
+  // 1b) Ricerca mirata tra i club di calcio di Wikidata.
+  const club=await lookupCrestWikidataClub(name,countryHint);
+  if(club && club.url) return club;
 
   // 2) Wikidata prima dei motori fuzzy: cerchiamo un'entità descritta come club/team di calcio
   // e chiediamo esplicitamente logo/stemma. Questo evita città, leghe e club omonimi.
@@ -2115,6 +2344,14 @@ async function lookupCrest(name,countryHint){
   return await lookupCrestWikipedia(name,countryHint);
 }
 
+// Massimo 3 ricerche stemma contemporanee: troppe richieste insieme fanno bloccare Wikimedia (429) e i loghi restano vuoti.
+let crestActive=0; const crestWaiting=[];
+function withCrestSlot(fn){
+  return new Promise((resolve,reject)=>{
+    const run=()=>{crestActive++;Promise.resolve().then(fn).then(resolve,reject).finally(()=>{crestActive--;const nx=crestWaiting.shift();if(nx)nx();});};
+    if(crestActive<3) run(); else crestWaiting.push(run);
+  });
+}
 app.get('/api/team-crest', async (req, res) => {
   try {
     const name = String(req.query.name || '').trim();
@@ -2125,7 +2362,10 @@ app.get('/api/team-crest', async (req, res) => {
     const now=Date.now();
 
     // Preserva gli override manuali già inseriti dall'admin.
-    const manualQ = await pool.query('SELECT * FROM team_crests WHERE name_norm = $1 AND manual=true', [baseKey]);
+    const legacyHint = legacyCountryHintFromCampionato(req.query.country || '');
+    const legacyKey = normCrestName(name) + (legacyHint ? '|' + normCountry(legacyHint) : '');
+    const nameOnlyKey = normCrestName(name);
+    const manualQ = await pool.query('SELECT * FROM team_crests WHERE name_norm = ANY($1::text[]) AND manual=true ORDER BY (name_norm = $2) DESC, (name_norm = $3) DESC', [[baseKey, legacyKey, nameOnlyKey], baseKey, legacyKey]);
     const manualCached = manualQ.rows[0];
     if(manualCached) return res.json({url:manualCached.url||null,manual:true,source:'manual'});
 
@@ -2138,7 +2378,7 @@ app.get('/api/team-crest', async (req, res) => {
       if(fresh) return res.json({url:cached.url||null,manual:false,source:'cache'});
     }
 
-    const found=await lookupCrest(name,countryHint);
+    const found=await withCrestSlot(()=>lookupCrest(name,countryHint));
     await pool.query(
       `INSERT INTO team_crests (name_norm,nome_originale,url,fetched_at,manual) VALUES ($1,$2,$3,$4,false)
        ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=false`,
@@ -2151,6 +2391,59 @@ app.get('/api/team-crest', async (req, res) => {
   }
 });
 
+// ---------- stemmi caricati a mano (salvati nel database, stessa misura per tutti) ----------
+async function normalizeCrestImage(dataUrl){
+  const m=String(dataUrl||'').match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
+  if(!m) throw Object.assign(new Error('Immagine non valida.'),{status:400});
+  let buf=Buffer.from(m[2],'base64'), mime=m[1].toLowerCase();
+  if(buf.length>10*1024*1024) throw Object.assign(new Error('Immagine troppo grande (max 10 MB).'),{status:400});
+  if(sharpLib){
+    const box={width:256,height:256,fit:'contain',background:{r:0,g:0,b:0,alpha:0}};
+    try{ buf=await sharpLib(buf).trim({threshold:12}).resize(box).png().toBuffer(); }
+    catch(_){ buf=await sharpLib(buf).resize(box).png().toBuffer(); }
+    mime='image/png';
+  }
+  return {buf,mime};
+}
+async function saveManualCrestImage(key, name, dataUrl){
+  const img=await normalizeCrestImage(dataUrl);
+  const id=crypto.createHash('sha1').update(key).digest('hex').slice(0,20);
+  const now=Date.now();
+  await pool.query(`INSERT INTO crest_images (id,mime,data,updated_at) VALUES ($1,$2,$3,$4)
+    ON CONFLICT (id) DO UPDATE SET mime=EXCLUDED.mime,data=EXCLUDED.data,updated_at=EXCLUDED.updated_at`,[id,img.mime,img.buf,now]);
+  const url='/api/crest-image/'+id+'?v='+now;
+  await pool.query(`INSERT INTO team_crests (name_norm,nome_originale,url,fetched_at,manual) VALUES ($1,$2,$3,$4,true)
+    ON CONFLICT (name_norm) DO UPDATE SET nome_originale=EXCLUDED.nome_originale,url=EXCLUDED.url,fetched_at=EXCLUDED.fetched_at,manual=true`,[key,name,url,now]);
+  return url;
+}
+app.get('/api/crest-image/:id', async (req,res)=>{
+  try{
+    const { rows } = await pool.query('SELECT mime,data FROM crest_images WHERE id=$1',[String(req.params.id||'').slice(0,40)]);
+    if(!rows[0]) return res.status(404).end();
+    res.setHeader('Content-Type', rows[0].mime||'image/png');
+    res.setHeader('Cache-Control','public, max-age=31536000, immutable');
+    res.send(rows[0].data);
+  }catch(err){ console.error(err); res.status(500).end(); }
+});
+// Caricamento multiplo: il nome del file è il nome della squadra (es. "Westfalia.png").
+app.post('/api/team-crests/bulk', requireSameSiteAdmin, async (req,res)=>{
+  try{
+    const items=Array.isArray((req.body||{}).items)?req.body.items.slice(0,200):[];
+    const saved=[], failed=[];
+    for(const it of items){
+      const name=String(it&&it.name||'').trim();
+      if(!name||!it.imageData){ failed.push(name||'(senza nome)'); continue; }
+      try{
+        const key=normCrestName(name);
+        await saveManualCrestImage(key,name,it.imageData);
+        await pool.query("DELETE FROM team_crests WHERE name_norm LIKE $1 AND manual=false",['auto:'+CREST_CACHE_VERSION+'|'+key+'%']);
+        saved.push(name);
+      }catch(e){ failed.push(name); }
+    }
+    res.json({ok:true,saved,failed});
+  }catch(err){ console.error(err); res.status(500).json({error:'Errore nel caricamento degli stemmi.'}); }
+});
+
 // Override manuale dall'admin. URL vuoto o "AUTO" = torna alla ricerca automatica.
 app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
   try{
@@ -2161,9 +2454,17 @@ app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
     const countryHint=countryHintFromCampionato(campionato);
     const key=normCrestName(name)+(countryHint?'|'+normCountry(countryHint):'');
     const autoKey='auto:'+CREST_CACHE_VERSION+'|'+key;
-    if(!rawUrl || rawUrl.toUpperCase()==='AUTO'){
-      await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[key,autoKey]]);
+    const legacyHint=legacyCountryHintFromCampionato(campionato);
+    const legacyKey=normCrestName(name)+(legacyHint?'|'+normCountry(legacyHint):'');
+    if(!(req.body||{}).imageData && (!rawUrl || rawUrl.toUpperCase()==='AUTO')){
+      await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[key,autoKey,legacyKey]]);
       return res.json({ok:true,url:null,manual:false,reset:true});
+    }
+    const imageData=String((req.body||{}).imageData||'');
+    if(imageData){
+      const url=await saveManualCrestImage(key,name,imageData);
+      await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[autoKey].concat(legacyKey!==key?[legacyKey]:[])]);
+      return res.json({ok:true,url,manual:true});
     }
     if(!/^https?:\/\//i.test(rawUrl)) return res.status(400).json({error:'Inserisci un URL http/https valido.'});
     await pool.query(
@@ -2172,9 +2473,9 @@ app.put('/api/team-crest', requireSameSiteAdmin, async (req,res)=>{
       [key,name,rawUrl,Date.now()]
     );
     // Se imposto manualmente, elimino l'eventuale cache automatica della stessa squadra.
-    await pool.query('DELETE FROM team_crests WHERE name_norm=$1',[autoKey]);
+    await pool.query('DELETE FROM team_crests WHERE name_norm = ANY($1::text[])',[[autoKey].concat(legacyKey!==key?[legacyKey]:[])]);
     res.json({ok:true,url:rawUrl,manual:true});
-  }catch(err){ console.error(err); res.status(500).json({error:'Errore nel salvataggio dello stemma.'}); }
+  }catch(err){ console.error(err); res.status(err.status||500).json({error:err.status?err.message:'Errore nel salvataggio dello stemma.'}); }
 });
 
 app.put('/api/alert-settings', requireSameSiteAdmin, async (req, res) => {
@@ -2206,6 +2507,226 @@ app.post('/api/cron/telegram', async (req, res) => {
 });
 
 
+
+// ---------- Partita esclusa (⛔): una sola volta, solo se non c'è stato un segnale ----------
+async function markMatchExcluded(matchId, reason, info) {
+  info = info || {};
+  const now = Date.now();
+  const { rows } = await pool.query(
+    `UPDATE matches SET live_excluded_at = $2, live_excluded_reason = $3
+     WHERE id = $1 AND live_excluded_at IS NULL AND signal_first_at IS NULL AND (esito_manuale IS NULL OR esito_manuale = '') RETURNING *`,
+    [matchId, now, String(reason || 'Partita esclusa').slice(0, 240)]);
+  const m = rows[0];
+  if (!m) return null;
+  if (m.bot_enabled !== false && telegram.isConfigured) {
+    const minute = info.minute == null || info.minute === '' ? '' : String(info.minute);
+    const text = '⛔ <b>PARTITA ESCLUSA — ' + escapeHtmlLite(info.signalName || m.tipo_giocata || '') + '</b>' + (m.campionato ? ' (' + escapeHtmlLite(m.campionato) + ')' : '') + '\n' +
+      '<b>' + escapeHtmlLite(m.casa) + ' - ' + escapeHtmlLite(m.trasferta) + '</b>\n' +
+      (minute || info.score ? '⏱ ' + escapeHtmlLite(minute || 'N/D') + (minute && !/^ht$/i.test(minute) ? "'" : '') + ' • 📍 ' + escapeHtmlLite(info.score || 'N/D') + '\n' : '') +
+      '❌ ' + escapeHtmlLite(reason) + '\nNessun ingresso: a fine partita viene segnata come <i>Non entrata</i>.';
+    try { await telegram.broadcast(text); } catch (e) { console.error('telegram excluded:', e.message); }
+  }
+  return m;
+}
+async function autoCloseExcluded() {
+  const now = Date.now();
+  try {
+    await pool.query(`UPDATE matches SET esito_manuale = 'non_entrata', outcome_set_at = COALESCE(outcome_set_at, $1)
+      WHERE live_excluded_at IS NOT NULL AND (esito_manuale IS NULL OR esito_manuale = '') AND start_at < $2`, [now, now - 125 * 60 * 1000]);
+  } catch (e) { console.warn('autoCloseExcluded:', e.message); }
+}
+
+// ---------- Scanner LIVE automatico lato server (GoalDir) ----------
+// Ogni 60s controlla tutte le partite iniziate e ancora senza esito, legge le statistiche GoalDir,
+// calcola il segnale con lo stesso motore del Live Analyzer e, al primo VERDE, accende la campanella
+// (signal_first_at) e invia un solo messaggio Telegram per partita.
+const LIVE_SCAN_ENABLED = String(process.env.LIVE_AUTOSCAN || '1') !== '0';
+const LIVE_SCAN_MS = Math.max(30000, Number(process.env.LIVE_AUTOSCAN_SECONDS || 60) * 1000);
+let liveScanBusy = false, liveScanTimer = null, liveScanLast = { at: 0, checked: 0, found: 0, alerts: 0, error: '' };
+function scanSignalName(tipo) {
+  const t = String(tipo || '').toLowerCase().replace(',', '.');
+  if (/under/.test(t)) return null; // pre-match: nessun segnale live
+  if (/favorit/.test(t) && /ht/.test(t)) return 'Favorito HT';
+  if (/banca|lay\s*x/.test(t)) return 'Banca X';
+  if (/1\.?5/.test(t)) return 'Over 1.5 FT';
+  if (/0\.?5/.test(t)) return 'Over 0.5 HT';
+  return null;
+}
+// Finestre in minuti trascorsi dal calcio d'inizio: fuori da queste lo scanner NON chiama GoalDir.
+function scanWindow(name) {
+  if (name === 'Over 0.5 HT') return [15, 33];
+  if (name === 'Over 1.5 FT') return [19, 31];
+  if (name === 'Banca X' || name === 'Favorito HT') return [46, 63]; // intervallo (45' + recupero + pausa)
+  return null;
+}
+function scanLevel(state) {
+  if (state === 'VERDE') return 'verde';
+  if (state === 'INGIOCABILE') return 'ingiocabile';
+  if (state === 'CHIUSA') return 'chiusa';
+  if (/^ATTENDI|ATTESA|VALUTA|RIVALUTA/.test(state)) return 'giallo';
+  return 'rosso';
+}
+async function liveAutoScanOnce() {
+  if (liveScanBusy || !GOALDIR_API_KEY) return;
+  liveScanBusy = true;
+  const now = Date.now();
+  let checked = 0, found = 0, alerts = 0;
+  try {
+    await autoCloseExcluded();
+    const { rows } = await pool.query(
+      `SELECT * FROM matches WHERE start_at <= $1 AND start_at >= $2 AND (esito_manuale IS NULL OR esito_manuale = '')`,
+      [now, now - 170 * 60 * 1000]);
+    const settleTargets = rows.filter(m => m.signal_first_at && !m.esito_auto && !/"manual"/.test(m.settle_state || '') && scanSignalName(m.tipo_giocata));
+    const targets = rows.filter(m => {
+      const name = scanSignalName(m.tipo_giocata), w = scanWindow(name);
+      if (!name || !w || m.signal_first_at || m.live_alert_sent || m.live_excluded_at) return false;
+      const el = (now - Number(m.start_at)) / 60000;
+      return el >= w[0] && el <= w[1] + 8; // +8': controllo finale per capire se la finestra si è chiusa senza ingresso
+    });
+    if (!targets.length && !settleTargets.length) { liveScanLast = { at: now, checked: 0, found: 0, alerts: 0, error: '', paused: '', idle: 'Nessuna partita nella finestra di controllo' }; return; }
+    const usage = await gdUsage();
+    if (usage.remaining <= usage.reserve) { liveScanLast = { at: now, checked: 0, found: 0, alerts: 0, error: '', paused: 'Limite giornaliero GoalDir quasi raggiunto: restano ' + usage.remaining + ' richieste oggi (riserva ' + usage.reserve + ' per il Live Analyzer).' }; return; }
+    const liveResp = await gdFetchCached('/events/live/', 45000);
+    const payload = liveResp.data;
+    const events = Array.isArray(payload) ? payload : (Array.isArray(payload && payload.results) ? payload.results : (Array.isArray(payload && payload.events) ? payload.events : []));
+    for (const m of targets) {
+      checked++;
+      let best = null, bestScore = 0;
+      for (const ev of events) {
+        const eh = gdEventTeamName(ev, 'home'), ea = gdEventTeamName(ev, 'away');
+        const sc = (gdNameScore(m.casa, eh) + gdNameScore(m.trasferta, ea)) / 2;
+        if (sc > bestScore) { bestScore = sc; best = ev; }
+      }
+      if (!best || bestScore < 0.5) continue;
+      const eventId = gdEventId(best); if (!eventId) continue;
+      found++;
+      const afterWindow = (now - Number(m.start_at)) / 60000 > scanWindow(scanSignalName(m.tipo_giocata))[1];
+      let statsData = {};
+      if (!afterWindow) try { statsData = (await gdFetchCached('/events/' + encodeURIComponent(eventId) + '/stats/', 55000)).data || {}; } catch (e) { continue; }
+      const stats = gdNormalizeStats(statsData);
+      const minute = gdIsHalftime(best) ? 'HT' : gdLiveMinute(best);
+      const score = gdLiveScore(best);
+      const fg = gdFirstGoalMinute(null, statsData);
+      const fav = m.live_favorita === 'casa' ? 'home' : m.live_favorita === 'trasferta' ? 'away' : (/favorit/i.test(m.tipo_giocata || '') ? 'home' : 'none');
+      const sigs = liveStrategie.analyzeAll(stats, { minute, score, favorite: fav, homeName: m.casa, awayName: m.trasferta, odds: {}, earlyGoalBefore25: fg !== null && fg < 25, firstGoalKnown: fg !== null });
+      const name = scanSignalName(m.tipo_giocata);
+      const sig = sigs.find(x => x.name === name);
+      if (!sig) continue;
+      const excl = liveStrategie.exclusionOf(sig);
+      if (excl) {
+        const ex = await markMatchExcluded(m.id, excl, { signalName: name, minute: minute == null ? '' : (minute === 'HT' ? 'HT' : Math.round(minute)), score });
+        if (ex) alerts++;
+        continue;
+      }
+      if (afterWindow) continue;
+      // Banca X / Favorito HT: senza quota live il motore si ferma a "ATTESA QUOTA" = condizione di ingresso raggiunta.
+      const htReady = (name === 'Banca X' || name === 'Favorito HT') && sig.state === 'ATTESA QUOTA';
+      const isGreen = sig.state === 'VERDE' || htReady;
+      const level = isGreen ? 'verde' : scanLevel(sig.state);
+      const summary = (sig.reason || '') + (sig.missing && sig.missing.length && !isGreen ? ' · Manca: ' + sig.missing.slice(0, 2).join(' · ') : '');
+      await pool.query('UPDATE matches SET live_last_level=$2, live_last_summary=$3, live_last_updated=$4, live_last_score=$5, live_started_at=COALESCE(live_started_at,$4) WHERE id=$1',
+        [m.id, level, summary.slice(0, 300), now, sig.score100 == null ? null : sig.score100]);
+      if (!isGreen || m.signal_first_at || m.live_alert_sent) continue;
+      const sp = scorePairFromAny(score);
+      const snap = { minute: typeof minute === 'number' ? minute : 45, scoreHome: sp[0], scoreAway: sp[1], xg: stats.xg, sot: stats.sot, shots: stats.shots, chances: stats.big, boxshots: stats.boxshots, touches: stats.touches, source: 'autoscan' };
+      const upd = await pool.query(`UPDATE matches SET signal_first_at=COALESCE(signal_first_at,$2), signal_first_level=COALESCE(signal_first_level,'verde'), signal_first_score=COALESCE(signal_first_score,$3) WHERE id=$1 AND signal_first_at IS NULL RETURNING *`, [m.id, now, sig.score100 == null ? null : sig.score100]);
+      if (!upd.rows[0]) continue;
+      try { await saveSignalSnapshot(upd.rows[0], { level: 'verde', score100: sig.score100, summary: sig.reason || '' }, snap, 'autoscan', now); } catch (_) {}
+      if (m.bot_enabled !== false && telegram.isConfigured) {
+        const minTxt = minute === 'HT' ? 'HT' : (minute == null ? 'N/D' : Math.round(minute) + "'");
+        const tot = p => (p && p[0] != null && p[1] != null) ? Number(p[0]) + Number(p[1]) : null;
+        const xg = tot(stats.xg), sot = tot(stats.sot), sh = tot(stats.shots);
+        const text = '🟢 <b>SEGNALE LIVE — ' + escapeHtmlLite(name) + '</b>' + (m.campionato ? ' (' + escapeHtmlLite(m.campionato) + ')' : '') + '\n' +
+          '<b>' + escapeHtmlLite(m.casa) + ' - ' + escapeHtmlLite(m.trasferta) + '</b>\n' +
+          '⏱ ' + minTxt + ' • 📍 ' + escapeHtmlLite(score || 'N/D') + '\n' +
+          '📊 xG ' + (xg == null ? 'N/D' : xg.toFixed(2)) + ' • Tiri in porta ' + (sot == null ? 'N/D' : sot) + ' • Tiri ' + (sh == null ? 'N/D' : sh) + '\n' +
+          (htReady ? '⚠️ Condizione raggiunta: <b>controlla la quota</b> prima di entrare.\n' : '') +
+          (m.quota_ingresso ? '💶 Quota pre-match ' + escapeHtmlLite(m.quota_ingresso) + '\n' : '') +
+          '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
+          (sig.score100 != null && !htReady ? '\n🎯 <b>' + sig.score100 + '/100</b>' : '');
+        try {
+          await telegram.broadcast(text);
+          await pool.query('UPDATE matches SET live_alert_sent=true, live_last_notified_at=$2 WHERE id=$1', [m.id, now]);
+          alerts++;
+        } catch (e) { console.error('autoscan telegram:', e.message); }
+      }
+    }
+    for (const m of settleTargets) {
+      try { if (await settleMatch(m, events, now)) alerts++; } catch (e) { console.warn('settle:', e.message); }
+    }
+    liveScanLast = { at: now, checked, found, alerts, error: '', paused: '', settling: settleTargets.length };
+  } catch (err) {
+    liveScanLast = { at: now, checked, found, alerts, error: String(err && err.message || err) };
+    console.error('live autoscan:', liveScanLast.error);
+  } finally { liveScanBusy = false; }
+}
+// ---------- Esito automatico (solo Home/statistiche, MAI Diario Exchange) ----------
+// Dopo un segnale VERDE il server segue il risultato e imposta Entrata · Vinta / Persa con esito_auto = true.
+function gdFindEvent(m, events, eventId) {
+  if (eventId) { const ev = events.find(e => String(gdEventId(e)) === String(eventId)); if (ev) return ev; }
+  let best = null, bestScore = 0;
+  for (const ev of events) {
+    const sc = (gdNameScore(m.casa, gdEventTeamName(ev, 'home')) + gdNameScore(m.trasferta, gdEventTeamName(ev, 'away'))) / 2;
+    if (sc > bestScore) { bestScore = sc; best = ev; }
+  }
+  return best && bestScore >= 0.5 ? best : null;
+}
+function gdIsFinished(ev) { const s = gdStatusText(ev).toLowerCase(); return /finished|ended|full\s*time|^ft$|terminat|after|aet|pen/.test(s); }
+async function settleMatch(m, events, now) {
+  const name = scanSignalName(m.tipo_giocata);
+  let st = {}; try { st = m.settle_state ? JSON.parse(m.settle_state) : {}; } catch (_) { st = {}; }
+  const ev = gdFindEvent(m, events, st.eventId);
+  const elapsed = (now - Number(m.start_at)) / 60000;
+  let finished = false, score = st.lastScore || '', minute = st.lastMinute;
+  if (ev) {
+    st.eventId = gdEventId(ev) || st.eventId;
+    score = gdLiveScore(ev) || score;
+    minute = gdIsHalftime(ev) ? 45 : (gdLiveMinute(ev) != null ? gdLiveMinute(ev) : minute);
+    if (gdIsHalftime(ev) || (minute != null && minute <= 45)) st.htScore = score; // ultimo punteggio visto nel 1° tempo
+    finished = gdIsFinished(ev);
+  } else if (st.eventId && elapsed > 95) {
+    // Uscita dal feed live = partita finita: provo a leggere il risultato finale, altrimenti uso l'ultimo visto.
+    try { const r = await gdFetchCached('/events/' + encodeURIComponent(st.eventId) + '/', 300000); const fe = r.data || {}; score = gdLiveScore(fe) || score; } catch (_) {}
+    finished = true;
+  } else if (!st.eventId && elapsed > 165) {
+    return false; // mai trovata su GoalDir: lascio l'esito a te
+  }
+  st.lastScore = score; st.lastMinute = minute;
+  const sp = scorePairFromAny(score), goals = sp[0] == null ? null : sp[0] + sp[1];
+  const htp = scorePairFromAny(st.htScore || ''), htGoals = htp[0] == null ? null : htp[0] + htp[1];
+  let outcome = null, why = '';
+  if (name === 'Over 0.5 HT') {
+    if (goals != null && goals > 0 && minute != null && minute <= 45) { outcome = 'entrata_vinta'; why = 'gol nel 1° tempo'; }
+    else if (minute != null && minute > 45 && htGoals === 0) { outcome = 'entrata_persa'; why = '0-0 all’intervallo'; }
+    else if (minute != null && minute > 45 && htGoals != null && htGoals > 0) { outcome = 'entrata_vinta'; why = 'gol nel 1° tempo'; }
+  } else if (name === 'Over 1.5 FT') {
+    if (goals != null && goals > 0 && (minute == null || minute < 71)) { outcome = 'entrata_vinta'; why = 'primo gol prima del 71’'; }
+    else if (minute != null && minute >= 71 && goals === 0) { outcome = 'entrata_persa'; why = 'nessun gol entro il 71’'; }
+    else if (finished && goals === 0) { outcome = 'entrata_persa'; why = 'nessun gol'; }
+  } else if (finished && sp[0] != null) {
+    if (name === 'Banca X') { outcome = sp[0] !== sp[1] ? 'entrata_vinta' : 'entrata_persa'; why = 'finale ' + score; }
+    else if (name === 'Favorito HT') {
+      const trailing = htp[0] != null && htp[0] < htp[1];
+      if (trailing) { outcome = sp[0] >= sp[1] ? 'entrata_vinta' : 'entrata_persa'; why = 'banca 2 · finale ' + score; }
+      else { outcome = sp[0] > sp[1] ? 'entrata_vinta' : 'entrata_persa'; why = 'punta 1 · finale ' + score; }
+    }
+  }
+  if (!outcome) { await pool.query('UPDATE matches SET settle_state=$2 WHERE id=$1', [m.id, JSON.stringify(st)]); return false; }
+  st.decided = why;
+  const { rowCount } = await pool.query(`UPDATE matches SET esito_manuale=$2, esito_auto=true, outcome_set_at=COALESCE(outcome_set_at,$3), settle_state=$4
+    WHERE id=$1 AND (esito_manuale IS NULL OR esito_manuale='')`, [m.id, outcome, now, JSON.stringify(st)]);
+  return rowCount > 0;
+}
+function startLiveAutoScan() {
+  if (!LIVE_SCAN_ENABLED || !GOALDIR_API_KEY || liveScanTimer) return;
+  liveScanTimer = setInterval(() => { liveAutoScanOnce(); }, LIVE_SCAN_MS);
+  setTimeout(() => { liveAutoScanOnce(); }, 15000);
+  console.log('Scanner live automatico attivo ogni ' + Math.round(LIVE_SCAN_MS / 1000) + 's');
+}
+app.get('/api/live-autoscan/status', (req, res) => {
+  res.json({ enabled: LIVE_SCAN_ENABLED && !!GOALDIR_API_KEY, everySeconds: Math.round(LIVE_SCAN_MS / 1000), last: liveScanLast });
+});
+
 // Motore condiviso delle strategie LIVE: stesso file usato dal backend e dal browser.
 app.get('/strategie-live.js', function(req, res){
   res.type('application/javascript');
@@ -2227,6 +2748,7 @@ let httpServer = null;
 
 async function shutdown(signal) {
   console.log(signal + ' ricevuto: arresto pulito in corso...');
+  if (liveScanTimer) { clearInterval(liveScanTimer); liveScanTimer = null; }
   try { await telegram.stopPolling(); } catch (err) { console.error('Errore stop Telegram:', err.message); }
   if (httpServer) {
     httpServer.close(function(){ process.exit(0); });
@@ -2246,6 +2768,7 @@ migrate()
     });
     telegram.startPolling();
     scheduler.start();
+    startLiveAutoScan();
   })
   .catch(function(err){
     console.error('Errore durante la migrazione del database:', err);
