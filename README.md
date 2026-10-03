@@ -91,3 +91,11 @@ STEP66
 - Rimossa la forzatura "Punta comunque 2,00 €".
 - Aggiunto campo "Importo puntata €" scelto manualmente dall'utente (minimo 2,00 €).
 - Il Kelly resta un riferimento teorico; VINTA/PERSA/NULLA usano l'importo reale inserito.
+
+## STEP67 — Kelly multi-giocata + multiple
+- Ogni cassa Kelly può contenere più giocate aperte contemporaneamente della stessa strategia.
+- Ogni singola ha descrizione, quota, importo manuale, Kelly teorico e registrazione esito indipendente.
+- È possibile selezionare 2 o più singole e trasformarle in una multipla.
+- La multipla mostra quota totale, stima combinata (ipotesi di indipendenza), Kelly teorico e importo scelto manualmente.
+- Le singole trasformate in multipla vengono rimosse dalla lista singole per evitare doppia registrazione involontaria.
+- Storico unico per cassa con distinzione Singola/Multipla.
