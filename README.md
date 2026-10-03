@@ -72,3 +72,22 @@
 - Le casse create in STEP61 vengono migrate automaticamente con valore iniziale 55% solo se non avevano già una percentuale salvata.
 - Il Kelly usa quota + percentuale della cassa per calcolare edge, Kelly pieno, 1/2 Kelly e stake consigliato.
 - La percentuale usata viene salvata nello storico di ogni giocata.
+
+
+## STEP64 — Kelly stake minimo operativo 2 €
+- Lo stake minimo operativo del Kelly è 2,00 €.
+- Se il Kelly teorico è positivo ma inferiore a 2 €, viene proposto 2,00 €.
+- Se 2 € supererebbero il tetto massimo % impostato (o la cassa è sotto 2 €), viene mostrato NO BET invece di violare il limite di rischio.
+- Kelly zero/negativo resta NO BET: non viene forzata una puntata minima.
+
+## STEP65 — Kelly con puntata minima manuale 2 €
+- Il Kelly continua a mostrare il proprio calcolo teorico e l'eventuale NO BET.
+- Quando il Kelly non propone una giocata (edge <= 0) o il minimo 2 € è bloccato dal tetto, compare `PUNTA COMUNQUE 2,00 €`.
+- L'utente può quindi forzare manualmente una puntata da 2 € a prescindere dal suggerimento Kelly, purché la cassa abbia almeno 2 €.
+- La puntata manuale viene registrata normalmente nello storico e aggiorna la cassa; dopo l'esito l'override viene disattivato.
+
+
+STEP66
+- Rimossa la forzatura "Punta comunque 2,00 €".
+- Aggiunto campo "Importo puntata €" scelto manualmente dall'utente (minimo 2,00 €).
+- Il Kelly resta un riferimento teorico; VINTA/PERSA/NULLA usano l'importo reale inserito.
