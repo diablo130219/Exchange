@@ -185,7 +185,7 @@
       toolbar.style.display='none';
     }else if(currentView==='kelly'){
       title.textContent='KELLY 1/2';
-      sub.textContent='MONEY MANAGEMENT A MEZZO KELLY CON CASSA, QUOTA E PROBABILITÀ STIMATA';
+      sub.textContent='MONEY MANAGEMENT A MEZZO KELLY CON CASSA, QUOTA E CALCOLO AUTOMATICO';
       toolbar.style.display='none';
     }else{
       title.textContent='PARTITE TERMINATE';

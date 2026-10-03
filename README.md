@@ -57,3 +57,11 @@
 - Ogni cassa conserva separatamente bankroll iniziale/attuale, quota, probabilità, stake massimo e storico.
 - Possibilità di creare, selezionare, rinominare, reimpostare ed eliminare casse.
 - Migrazione automatica dalla vecchia cassa singola STEP59 alla prima cassa multi-cassa.
+
+
+## STEP61 — Kelly automatico senza probabilità manuale
+- Rimossa dall'interfaccia la voce `Probabilità stimata %`.
+- Il Kelly 1/2 usa automaticamente lo storico VINTA/PERSA della cassa selezionata.
+- Per l'avvio viene usato un prior prudente equivalente al 55%, progressivamente sostituito dai risultati reali.
+- Storico semplificato: non mostra più la colonna probabilità.
+- L'utente inserisce solo cassa, quota, tetto stake e risultato.
