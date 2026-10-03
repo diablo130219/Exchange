@@ -24,3 +24,9 @@
 - Favorito sotto all’HT: BANCA 2 solo a quota ≤ 2,10.
 - Titolo e descrizione della strategia ora dicono la stessa cosa.
 - Nessuna modifica a grafica o altre strategie.
+
+## STEP56 — Favorito HT: soglie live più realistiche
+- Modificata solo la soglia live della strategia Favorito HT.
+- Se il favorito è in parità all’HT: PUNTA 1 da quota 1,75.
+- Se il favorito è sotto all’HT: BANCA 2 fino a quota 3,00.
+- Nessuna modifica alla grafica, alle altre strategie o alla quota pre-match importata.
