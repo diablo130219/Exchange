@@ -1016,12 +1016,17 @@ async function gdUsage() {
   const month = gdMonthKey();
   let row = null;
   try { row = (await pool.query("SELECT * FROM api_usage WHERE provider='goaldir' AND month=$1", [month])).rows[0] || null; } catch (_) {}
-  const used = row ? Number(row.calls) || 0 : 0;
+  const usedLocal = row ? Number(row.calls) || 0 : 0;
   const limit = row && row.limit_hdr ? Number(row.limit_hdr) : GOALDIR_DAILY_LIMIT;
   const remainingReal = row && row.remaining != null ? Number(row.remaining) : null;
-  const remaining = remainingReal != null ? remainingReal : Math.max(0, limit - used);
+  const remainingLocal = Math.max(0, limit - usedLocal);
+  // Alcuni header GoalDir restano fermi (es. 7499) anche dopo più chiamate.
+  // Per non mostrare un residuo impossibile, usiamo sempre il valore più prudente
+  // tra il residuo comunicato dall'API e quello calcolato dalle chiamate tracciate da EasyBet.
+  const remaining = remainingReal != null ? Math.max(0, Math.min(remainingReal, remainingLocal)) : remainingLocal;
+  const used = Math.max(usedLocal, Math.max(0, limit - remaining));
   const resetAt = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1);
-  return { period: 'day', day: month, resetAt, month, used, limit, remaining, remainingFromApi: remainingReal != null, reserve: GOALDIR_RESERVE, updatedAt: row ? Number(row.updated_at) || null : null };
+  return { period: 'day', day: month, resetAt, month, used, usedLocal, limit, remaining, remainingFromApi: remainingReal != null, remainingApi: remainingReal, reserve: GOALDIR_RESERVE, updatedAt: row ? Number(row.updated_at) || null : null };
 }
 async function gdFetchCached(pathname, ttlMs) {
   const hit = gdCache.get(pathname), now = Date.now();

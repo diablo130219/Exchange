@@ -2205,3 +2205,69 @@ html:not([data-theme="light"]) body .lb-status.excl{background:#3a1d18;color:#ff
     max-width:none!important;
   }
 }
+
+/* STEP51 — Solo riquadro API GoalDir: più spazio e margini, nessun'altra modifica */
+@media(min-width:1181px){
+  .la-panel:first-child .la-actions{
+    grid-template-columns:max-content max-content max-content minmax(0,1fr) 330px!important;
+    column-gap:8px!important;
+    padding-right:8px!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage{
+    width:330px!important;
+    min-width:330px!important;
+    max-width:330px!important;
+    margin-left:4px!important;
+    margin-right:0!important;
+    overflow:visible!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage .gd-usage{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    padding:8px 14px!important;
+    overflow:visible!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage .gd-top{
+    gap:12px!important;
+    white-space:nowrap!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage .gd-top strong{
+    white-space:nowrap!important;
+    flex:0 0 auto!important;
+  }
+}
+
+/* STEP52 — Solo box API GoalDir: etichetta e contatore sempre completamente leggibili */
+@media(min-width:1181px){
+  .la-panel:first-child .la-actions{
+    grid-template-columns:max-content max-content max-content minmax(0,1fr) 380px!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage{
+    width:380px!important;
+    min-width:380px!important;
+    max-width:380px!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage .gd-usage{
+    padding:8px 14px!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage .gd-top{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) max-content!important;
+    align-items:center!important;
+    gap:14px!important;
+    width:100%!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage .gd-top b{
+    min-width:0!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    font-size:.58rem!important;
+    letter-spacing:.09em!important;
+  }
+  .la-panel:first-child .la-actions #laGdUsage .gd-top strong{
+    white-space:nowrap!important;
+    justify-self:end!important;
+  }
+}
