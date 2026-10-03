@@ -2271,3 +2271,10 @@ html:not([data-theme="light"]) body .lb-status.excl{background:#3a1d18;color:#ff
     justify-self:end!important;
   }
 }
+
+/* STEP58 — soglie Favorito HT modificabili dal menu Live Analyzer */
+.la-favht-threshold input{font-weight:800;text-align:center}
+.la-favht-threshold label{white-space:nowrap}
+@media(min-width:981px){.la-meta{grid-template-columns:1fr 1fr 82px 92px 105px minmax(160px,1.2fr) minmax(150px,1fr) minmax(150px,1fr)!important}.la-meta .la-favorite{grid-column:auto!important}}
+@media(max-width:980px){.la-favht-threshold{grid-column:span 1}}
+@media(max-width:620px){.la-favht-threshold{grid-column:span 1}.la-favht-threshold label{white-space:normal}}

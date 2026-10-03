@@ -296,7 +296,12 @@
       else fav = sig(bf.label, 'NO BET', name + ' non sta mostrando sufficiente superiorità.', 'Punteggio adattivo ' + Math.round(fd.score * 100) + '%.', fd.checks, fd.score);
     }
     var fht;
-    var fhRule = 'Regola ' + fh.system + ' (favorito in casa, quota 1 pre-match ≤ ' + fh.preMatchMax.toFixed(2) + '): all’intervallo, se il favorito è in parità PUNTA 1 a quota ≥ ' + fh.drawBackMin.toFixed(2) + '; se il favorito è sotto BANCA 2 a quota ≤ ' + fh.trailLayMax.toFixed(2) + '. Una sola giocata, tenere fino al 90’.';
+    var customFh = context.favHtThresholds || {};
+    var customDraw = Number(String(customFh.drawBackMin == null ? '' : customFh.drawBackMin).replace(',', '.'));
+    var customLay = Number(String(customFh.trailLayMax == null ? '' : customFh.trailLayMax).replace(',', '.'));
+    var fhDrawBackMin = Number.isFinite(customDraw) && customDraw > 1 ? customDraw : fh.drawBackMin;
+    var fhTrailLayMax = Number.isFinite(customLay) && customLay > 1 ? customLay : fh.trailLayMax;
+    var fhRule = 'Regola ' + fh.system + ' (favorito in casa, quota 1 pre-match ≤ ' + fh.preMatchMax.toFixed(2) + '): all’intervallo, se il favorito è in parità PUNTA 1 a quota ≥ ' + fhDrawBackMin.toFixed(2) + '; se il favorito è sotto BANCA 2 a quota ≤ ' + fhTrailLayMax.toFixed(2) + '. Una sola giocata, tenere fino al 90’.';
     var fhHome = sm ? Number(sm[1]) : null, fhAway = sm ? Number(sm[2]) : null;
     // STEP54: GoalDir può saltare direttamente dall'ultimo minuto del 1° tempo al 46'-48' senza esporre uno stato HT.
     // Solo per Favorito HT usiamo una breve finestra di tolleranza come valutazione dell'intervallo, evitando l'esclusione prematura.
@@ -311,12 +316,12 @@
     else if (fhHome > fhAway) fht = sig(fh.label, 'NON ATTIVA', 'Il favorito è già in vantaggio.', fhRule);
     else if (fhHome === fhAway) {
       if (favOdds == null) fht = sig(fh.label, 'ATTESA QUOTA', 'Favorito in parità: inserisci la quota live dell’1.', fhRule);
-      else if (favOdds + 0.0001 >= fh.drawBackMin) fht = sig(fh.label, 'VERDE', 'PUNTA 1 • favorito in parità, quota ' + favOdds.toFixed(2) + ' ≥ ' + fh.drawBackMin.toFixed(2) + '.', fhRule);
-      else fht = sig(fh.label, 'NO BET', 'Quota 1 ' + favOdds.toFixed(2) + ' sotto ' + fh.drawBackMin.toFixed(2) + ': non entrare.', fhRule);
+      else if (favOdds + 0.0001 >= fhDrawBackMin) fht = sig(fh.label, 'VERDE', 'PUNTA 1 • favorito in parità, quota ' + favOdds.toFixed(2) + ' ≥ ' + fhDrawBackMin.toFixed(2) + '.', fhRule);
+      else fht = sig(fh.label, 'NO BET', 'Quota 1 ' + favOdds.toFixed(2) + ' sotto ' + fhDrawBackMin.toFixed(2) + ': non entrare.', fhRule);
     } else {
-      if (awayLayOdds != null && awayLayOdds <= fh.trailLayMax + 0.0001) fht = sig(fh.label, 'VERDE', 'BANCA 2 • favorito sotto, quota ospite ' + awayLayOdds.toFixed(2) + ' ≤ ' + fh.trailLayMax.toFixed(2) + '.', fhRule);
+      if (awayLayOdds != null && awayLayOdds <= fhTrailLayMax + 0.0001) fht = sig(fh.label, 'VERDE', 'BANCA 2 • favorito sotto, quota ospite ' + awayLayOdds.toFixed(2) + ' ≤ ' + fhTrailLayMax.toFixed(2) + '.', fhRule);
       else if (awayLayOdds == null) fht = sig(fh.label, 'ATTESA QUOTA', 'Favorito sotto: inserisci la quota BANCA 2.', fhRule);
-      else fht = sig(fh.label, 'NO BET', 'Quota BANCA 2 ' + awayLayOdds.toFixed(2) + ' sopra ' + fh.trailLayMax.toFixed(2) + ': non entrare.', fhRule);
+      else fht = sig(fh.label, 'NO BET', 'Quota BANCA 2 ' + awayLayOdds.toFixed(2) + ' sopra ' + fhTrailLayMax.toFixed(2) + ': non entrare.', fhRule);
     }
     var u = RULES.under05ht, und;
     var uRule = 'Regola ' + u.system + ': ingresso pre-match a quota ≥ ' + u.quotaMin.toFixed(2) + ', si tiene fino all’intervallo.';

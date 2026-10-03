@@ -36,3 +36,9 @@
 - Se il favorito è in parità all’HT: PUNTA 1 da quota 1,75 (invariato).
 - Se il favorito è sotto all’HT: BANCA 2 solo fino a quota 2,50.
 - Allineati anche testi informativi, Diario Exchange e messaggi Telegram alla nuova soglia.
+
+
+## STEP58 — Favorito HT: quote modificabili dal menu
+- Aggiunti accanto a “Favorita pre-match” i campi “Favorita pareggio quota =” e “Favorita sotto BANCA =”.
+- Default: PUNTA in parità da 1,75; BANCA 2 se sotto fino a 2,50.
+- I valori sono modificabili per ogni partita, vengono memorizzati nel Live Analyzer e usati realmente dalla logica VERDE / NO BET.
