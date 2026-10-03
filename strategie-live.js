@@ -135,7 +135,7 @@
       system: 'EXCH FAVORITO HT', // favorito in casa (quota 1 pre-match <= 1.60), ingresso solo all'intervallo
       preMatchMax: 1.60,
       drawBackMin: 1.75,   // in parita': punta 1 solo a quota >= 1.75
-      trailLayMax: 3.00    // favorito sotto: banca 2 solo a quota <= 3.00
+      trailLayMax: 2.50    // favorito sotto: banca 2 solo a quota <= 2.50
     }
   };
   var STRATEGIE = {

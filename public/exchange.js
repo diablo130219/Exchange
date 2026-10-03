@@ -14,8 +14,8 @@ const SYSTEMS=[
   {name:'EXCH LAY X HT',target:57.0,sample:'7.465 partite',status:'in verifica',side:'Banca',min:0,max:2.10,rule:"Banca la X all'intervallo solo sullo 0-0 o 1-1 a quota ≤ 2,10 · tenere fino al 90'"},
   {name:'EXCH UNDER 0.5 HT',target:36.8,sample:'15.677 partite',status:'in verifica',side:'Punta',min:2.95,max:0,rule:"Pre-match: exchange ≥ 2,95 (bookmaker ≥ 2,85) · trading: se 0-0 al 25'-30' banca e chiudi in verde"},
   {name:'O0.5 HT PRE+LIVE',target:66.0,sample:'1.554 partite',status:'confermato',side:'Punta',min:1.60,max:0,rule:"Live sullo 0-0 al 15' a quota ≥ 1,60 (pre-match ≥ 1,33)"},
-  {name:'EXCH FAVORITO HT · PARITÀ',target:57.3,sample:'3.993 partite',status:'in osservazione',side:'Punta',min:1.85,max:0,rule:"Favorito in casa (1 ≤ 1,60 pre-match) in parità all'intervallo: punta 1 solo a quota ≥ 1,85 · tenere fino al 90'"},
-  {name:'EXCH FAVORITO HT · SOTTO',target:55.9,sample:'1.434 partite',status:'in osservazione',side:'Banca',min:0,max:2.10,rule:"Favorito in casa sotto all'intervallo: banca 2 solo a quota ≤ 2,10 (vinci con 1 o X) · tenere fino al 90'"},
+  {name:'EXCH FAVORITO HT · PARITÀ',target:57.3,sample:'3.993 partite',status:'in osservazione',side:'Punta',min:1.75,max:0,rule:"Favorito in casa (1 ≤ 1,60 pre-match) in parità all'intervallo: punta 1 solo a quota ≥ 1,75 · tenere fino al 90'"},
+  {name:'EXCH FAVORITO HT · SOTTO',target:55.9,sample:'1.434 partite',status:'in osservazione',side:'Banca',min:0,max:2.50,rule:"Favorito in casa sotto all'intervallo: banca 2 solo a quota ≤ 2,50 (vinci con 1 o X) · tenere fino al 90'"},
   {name:'BET X PRE-MATCH',target:30.3,sample:'1.464 partite',status:'in osservazione',side:'Punta',min:3.55,max:0,rule:"Filtro V10 O2.5 + X ≤ 4,00: punta X pre-match in exchange solo a quota ≥ 3,55 · puntate minime"}
 ];
 const SYSTEM_VERIFY=150;

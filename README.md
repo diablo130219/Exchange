@@ -30,3 +30,9 @@
 - Se il favorito è in parità all’HT: PUNTA 1 da quota 1,75.
 - Se il favorito è sotto all’HT: BANCA 2 fino a quota 3,00.
 - Nessuna modifica alla grafica, alle altre strategie o alla quota pre-match importata.
+
+## STEP57 — Favorito HT: BANCA 2 massimo 2,50
+- Modificata solo la soglia della giocata quando il favorito è sotto all’intervallo.
+- Se il favorito è in parità all’HT: PUNTA 1 da quota 1,75 (invariato).
+- Se il favorito è sotto all’HT: BANCA 2 solo fino a quota 2,50.
+- Allineati anche testi informativi, Diario Exchange e messaggi Telegram alla nuova soglia.
