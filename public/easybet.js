@@ -152,6 +152,7 @@
     var title=document.getElementById('sectionTitle'),sub=document.getElementById('sectionSubtitle'),toolbar=document.getElementById('toolbar'),liveSearchBar=document.getElementById('liveSearchBar');
     document.body.classList.toggle('exchange-fullscreen',currentView==='exchange');
     document.body.classList.toggle('masaniello-fullscreen',currentView==='masaniello');
+    document.body.classList.toggle('kelly-fullscreen',currentView==='kelly');
     if(liveSearchBar) liveSearchBar.style.display=currentView==='live'?'flex':'none';
     document.querySelectorAll('[data-view]').forEach(function(a){a.classList.toggle('active',a.getAttribute('data-view')===currentView)});
     if(currentView==='pronostici'){
@@ -181,6 +182,10 @@
     }else if(currentView==='masaniello'){
       title.textContent='MASANIELLO';
       sub.textContent='GESTIONE CASSA, STAKE, CICLI, PIANO, SIMULAZIONI E STATISTICHE';
+      toolbar.style.display='none';
+    }else if(currentView==='kelly'){
+      title.textContent='KELLY 1/2';
+      sub.textContent='MONEY MANAGEMENT A MEZZO KELLY CON CASSA, QUOTA E PROBABILITÀ STIMATA';
       toolbar.style.display='none';
     }else{
       title.textContent='PARTITE TERMINATE';
@@ -618,9 +623,10 @@
   function render(){
     updateViewUI();try{gdPaintUsage()}catch(e){}
     renderLivePriorityDashboard();
-    var grid=document.getElementById('grid'),dash=document.getElementById('statsDashboard'),board=document.getElementById('strategiesBoard'),advice=document.getElementById('adviceBoard'),exchangeBoard=document.getElementById('exchangeBoard'),masanielloBoard=document.getElementById('masanielloBoard');
+    var grid=document.getElementById('grid'),dash=document.getElementById('statsDashboard'),board=document.getElementById('strategiesBoard'),advice=document.getElementById('adviceBoard'),exchangeBoard=document.getElementById('exchangeBoard'),masanielloBoard=document.getElementById('masanielloBoard'),kellyBoard=document.getElementById('kellyBoard');
     if(exchangeBoard&&currentView!=='exchange')exchangeBoard.classList.remove('show');
     if(masanielloBoard&&currentView!=='masaniello')masanielloBoard.classList.remove('show');
+    if(kellyBoard&&currentView!=='kelly')kellyBoard.classList.remove('show');
     board.classList.remove('show');board.innerHTML='';advice.classList.remove('show');advice.innerHTML='';
     if(currentView==='statistiche'){renderStats();return}
     if(currentView==='strategie'){renderStrategies();return}
@@ -643,8 +649,17 @@
       if(window.EasyBetMasaniello&&window.EasyBetMasaniello.render)window.EasyBetMasaniello.render();
       return;
     }
+    if(currentView==='kelly'){
+      dash.classList.remove('show');dash.innerHTML='';
+      grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');
+      grid.classList.add('view-hidden');grid.style.display='none';
+      var kb=document.getElementById('kellyBoard');if(kb){kb.classList.add('show');}
+      if(window.EasyBetKelly&&window.EasyBetKelly.render)window.EasyBetKelly.render();
+      return;
+    }
     var exb=document.getElementById('exchangeBoard');if(exb)exb.classList.remove('show');
     var mb2=document.getElementById('masanielloBoard');if(mb2)mb2.classList.remove('show');
+    var kb2=document.getElementById('kellyBoard');if(kb2)kb2.classList.remove('show');
     dash.classList.remove('show');dash.innerHTML='';grid.classList.remove('view-hidden','home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');grid.style.display='grid';
     renderStrategyPills();gdPaintUsage();
     var list=matches.filter(matchesView).filter(function(m){return currentView==='home'?matchesOutcomeFilter(m):true});
@@ -1132,5 +1147,5 @@
   }
   initLiveAnalyzerUI();
 
-  var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli','exchange','masaniello'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
+  var initial=(location.hash||'#home').replace('#','');if(['home','pronostici','live','statistiche','strategie','consigli','exchange','masaniello','kelly'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
 })();

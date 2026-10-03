@@ -42,3 +42,18 @@
 - Aggiunti accanto a “Favorita pre-match” i campi “Favorita pareggio quota =” e “Favorita sotto BANCA =”.
 - Default: PUNTA in parità da 1,75; BANCA 2 se sotto fino a 2,50.
 - I valori sono modificabili per ogni partita, vengono memorizzati nel Live Analyzer e usati realmente dalla logica VERDE / NO BET.
+
+## STEP59 — Money Management Kelly 1/2
+- Aggiunta voce di menu `Kelly 1/2` accanto a Masaniello (desktop e mobile).
+- Calcolatore operativo Half Kelly: cassa attuale, quota, probabilità stimata e tetto massimo stake %.
+- Formula Kelly pieno: `(p * quota - 1) / (quota - 1)`; stake operativo = 50% del Kelly pieno.
+- Se l'edge è <= 0 viene indicato NO BET e lo stake è 0.
+- Registrazione esito VINTA / PERSA / NULLA con aggiornamento automatico della cassa.
+- Storico locale persistente nel browser con quota, probabilità, stake, P/L e cassa aggiornata.
+- Pulsante `Nuova cassa` per iniziare una gestione separata.
+
+## STEP60 — Kelly 1/2 multi-cassa
+- Kelly 1/2 supporta più casse indipendenti, come il Masaniello.
+- Ogni cassa conserva separatamente bankroll iniziale/attuale, quota, probabilità, stake massimo e storico.
+- Possibilità di creare, selezionare, rinominare, reimpostare ed eliminare casse.
+- Migrazione automatica dalla vecchia cassa singola STEP59 alla prima cassa multi-cassa.
