@@ -9,3 +9,10 @@
 - Corretto il caso in cui l'header GoalDir `remaining` resta fermo (es. 7499) mentre EasyBet ha già tracciato più chiamate.
 - Il residuo mostrato ora usa il valore più prudente tra il residuo API e `limite - chiamate tracciate`.
 - Nessuna modifica grafica o ad altre funzioni.
+
+
+## STEP54 — Favorito HT: tolleranza feed all’intervallo
+- Modifica solo la logica della strategia Favorito HT.
+- Se GoalDir salta lo stato HT e passa direttamente al 46’-48’, EasyBet tratta quella breve finestra come valutazione dell’intervallo invece di escludere subito la partita.
+- Dal 49’ in poi, se non è stato registrato alcun ingresso, resta valida la chiusura ‘Secondo tempo iniziato’.
+- Nessuna modifica grafica o alle altre strategie.

@@ -299,12 +299,15 @@
     var fht;
     var fhRule = 'Regola ' + fh.system + ' (favorito in casa, quota 1 pre-match ≤ ' + fh.preMatchMax.toFixed(2) + '): all’intervallo in parità punta 1 a quota ≥ ' + fh.drawBackMin.toFixed(2) + '; favorito sotto banca 2 a quota ≤ ' + fh.trailLayMax.toFixed(2) + ' (oppure punta 1 a quota ≥ ' + fh.trailBackMin.toFixed(2) + '). Una sola giocata, tenere fino al 90’.';
     var fhHome = sm ? Number(sm[1]) : null, fhAway = sm ? Number(sm[2]) : null;
+    // STEP54: GoalDir può saltare direttamente dall'ultimo minuto del 1° tempo al 46'-48' senza esporre uno stato HT.
+    // Solo per Favorito HT usiamo una breve finestra di tolleranza come valutazione dell'intervallo, evitando l'esclusione prematura.
+    var fhEvalHT = isHT || (minuteN != null && minuteN > 45 && minuteN <= 48);
     if (favSel === 'away') fht = sig(fh.label, 'NON ATTIVA', 'Sistema testato solo con il favorito in casa.', fhRule);
     else if (favSel !== 'home') fht = sig(fh.label, 'DATI', 'Indica la favorita: Casa.', fhRule);
-    else if (!isHT && minuteN != null && minuteN < 45) fht = sig(fh.label, 'VALUTA A HT', 'Strategia da valutare all’intervallo.', fhRule);
-    else if (!isHT && minuteN === 45) fht = sig(fh.label, 'ATTENDI HT', 'Attendo la fine effettiva del primo tempo.', 'Quando è davvero intervallo scrivi HT nel campo Minuto. ' + fhRule);
-    else if (!isHT && minuteN != null && minuteN > 45) fht = sig(fh.label, 'NO BET', 'Secondo tempo iniziato: nessun nuovo ingresso.', fhRule);
-    else if (!isHT) fht = sig(fh.label, 'DATI', 'Inserisci il minuto o HT.', fhRule);
+    else if (!fhEvalHT && minuteN != null && minuteN < 45) fht = sig(fh.label, 'VALUTA A HT', 'Strategia da valutare all’intervallo.', fhRule);
+    else if (!fhEvalHT && minuteN === 45) fht = sig(fh.label, 'ATTENDI HT', 'Attendo la fine effettiva del primo tempo.', 'Quando è davvero intervallo scrivi HT nel campo Minuto. ' + fhRule);
+    else if (!fhEvalHT && minuteN != null && minuteN > 48) fht = sig(fh.label, 'NO BET', 'Secondo tempo iniziato: nessun nuovo ingresso.', fhRule);
+    else if (!fhEvalHT) fht = sig(fh.label, 'DATI', 'Inserisci il minuto o HT.', fhRule);
     else if (fhHome == null) fht = sig(fh.label, 'DATI', 'Inserisci il risultato all’intervallo.', fhRule);
     else if (fhHome > fhAway) fht = sig(fh.label, 'NON ATTIVA', 'Il favorito è già in vantaggio.', fhRule);
     else if (fhHome === fhAway) {
