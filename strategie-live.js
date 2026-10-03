@@ -135,8 +135,7 @@
       system: 'EXCH FAVORITO HT', // favorito in casa (quota 1 pre-match <= 1.60), ingresso solo all'intervallo
       preMatchMax: 1.60,
       drawBackMin: 1.85,   // in parita': punta 1 solo a quota >= 1.85 (backtest: vince 57,3%)
-      trailLayMax: 2.10,   // favorito sotto: banca 2 solo a quota <= 2.10 (backtest: 1 o X 55,9%)
-      trailBackMin: 3.90   // favorito sotto, alternativa: punta 1 solo a quota >= 3.90 (backtest: 27,9%)
+      trailLayMax: 2.10    // favorito sotto: banca 2 solo a quota <= 2.10 (backtest: 1 o X 55,9%)
     }
   };
   var STRATEGIE = {
@@ -297,7 +296,7 @@
       else fav = sig(bf.label, 'NO BET', name + ' non sta mostrando sufficiente superiorità.', 'Punteggio adattivo ' + Math.round(fd.score * 100) + '%.', fd.checks, fd.score);
     }
     var fht;
-    var fhRule = 'Regola ' + fh.system + ' (favorito in casa, quota 1 pre-match ≤ ' + fh.preMatchMax.toFixed(2) + '): all’intervallo in parità punta 1 a quota ≥ ' + fh.drawBackMin.toFixed(2) + '; favorito sotto banca 2 a quota ≤ ' + fh.trailLayMax.toFixed(2) + ' (oppure punta 1 a quota ≥ ' + fh.trailBackMin.toFixed(2) + '). Una sola giocata, tenere fino al 90’.';
+    var fhRule = 'Regola ' + fh.system + ' (favorito in casa, quota 1 pre-match ≤ ' + fh.preMatchMax.toFixed(2) + '): all’intervallo, se il favorito è in parità PUNTA 1 a quota ≥ ' + fh.drawBackMin.toFixed(2) + '; se il favorito è sotto BANCA 2 a quota ≤ ' + fh.trailLayMax.toFixed(2) + '. Una sola giocata, tenere fino al 90’.';
     var fhHome = sm ? Number(sm[1]) : null, fhAway = sm ? Number(sm[2]) : null;
     // STEP54: GoalDir può saltare direttamente dall'ultimo minuto del 1° tempo al 46'-48' senza esporre uno stato HT.
     // Solo per Favorito HT usiamo una breve finestra di tolleranza come valutazione dell'intervallo, evitando l'esclusione prematura.
@@ -316,9 +315,8 @@
       else fht = sig(fh.label, 'NO BET', 'Quota 1 ' + favOdds.toFixed(2) + ' sotto ' + fh.drawBackMin.toFixed(2) + ': non entrare.', fhRule);
     } else {
       if (awayLayOdds != null && awayLayOdds <= fh.trailLayMax + 0.0001) fht = sig(fh.label, 'VERDE', 'BANCA 2 • favorito sotto, quota ospite ' + awayLayOdds.toFixed(2) + ' ≤ ' + fh.trailLayMax.toFixed(2) + '.', fhRule);
-      else if (favOdds != null && favOdds + 0.0001 >= fh.trailBackMin) fht = sig(fh.label, 'VERDE', 'PUNTA 1 • favorito sotto, quota ' + favOdds.toFixed(2) + ' ≥ ' + fh.trailBackMin.toFixed(2) + '.', fhRule);
-      else if (awayLayOdds == null && favOdds == null) fht = sig(fh.label, 'ATTESA QUOTA', 'Favorito sotto: inserisci la quota del 2 (banca) o dell’1.', fhRule);
-      else fht = sig(fh.label, 'NO BET', 'Quote fuori regola: 2 sopra ' + fh.trailLayMax.toFixed(2) + ' e 1 sotto ' + fh.trailBackMin.toFixed(2) + '.', fhRule);
+      else if (awayLayOdds == null) fht = sig(fh.label, 'ATTESA QUOTA', 'Favorito sotto: inserisci la quota BANCA 2.', fhRule);
+      else fht = sig(fh.label, 'NO BET', 'Quota BANCA 2 ' + awayLayOdds.toFixed(2) + ' sopra ' + fh.trailLayMax.toFixed(2) + ': non entrare.', fhRule);
     }
     var u = RULES.under05ht, und;
     var uRule = 'Regola ' + u.system + ': ingresso pre-match a quota ≥ ' + u.quotaMin.toFixed(2) + ', si tiene fino all’intervallo.';
@@ -391,7 +389,7 @@
       var fhOk = favorite === 'home' && fhh !== null && fha !== null && fhAtHt && fhh <= fha;
       var fhSummary = !fhOk ? 'Favorito HT: condizioni non attive (serve favorito in casa, intervallo, favorito non in vantaggio)'
         : (fhh === fha ? 'Intervallo in parità • PUNTA 1 solo se quota ≥ ' + fhr.drawBackMin.toFixed(2)
-          : 'Favorito sotto all’intervallo • BANCA 2 solo se quota ≤ ' + fhr.trailLayMax.toFixed(2) + ' (oppure punta 1 ≥ ' + fhr.trailBackMin.toFixed(2) + ')');
+          : 'Favorito sotto all’intervallo • BANCA 2 solo se quota ≤ ' + fhr.trailLayMax.toFixed(2));
       return { level: fhOk ? 'verde' : 'rosso', summary: fhSummary + ' • controlla la quota live', gateOk: fhOk, score: null, score100: null, passed: 0, available: 0, core: fhOk, label: wanted };
     } else {
       rule = RULES.backfav;

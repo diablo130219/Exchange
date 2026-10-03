@@ -498,7 +498,7 @@
       over05:{bet:'PUNTA Over 0.5 HT',entry:'Sullo 0-0 tra il '+((o05.window||{}).from||15)+'’ e il '+((o05.window||{}).to||32)+'’, quota '+f((o05.base||{}).quotaMin,'1,60')+'–'+f((o05.base||{}).quotaMax,'2,10')+'.',exit:'Vinta al primo gol del primo tempo, persa all’intervallo sullo 0-0.',sys:'O0.5 HT PRE+LIVE'},
       banca:{bet:'BANCA la X',entry:'Solo all’intervallo sullo 0-0 o 1-1, quota Lay X ≤ '+f(lx.quotaMax,'2,10')+'.',exit:'Tieni fino al 90’.',sys:'EXCH LAY X HT'},
       under05:{bet:'PUNTA Under 0.5 HT',entry:'Pre-match a quota ≥ '+f(u.quotaMin,'2,95')+'.',exit:'Tieni fino all’intervallo: vinta se il primo tempo finisce 0-0.',sys:'EXCH UNDER 0.5 HT'},
-      favht:{bet:'Favorito HT · PUNTA 1 oppure BANCA 2',entry:'All’intervallo: in parità punta 1 a quota ≥ '+f(fh.drawBackMin,'1,85')+'; favorito sotto banca 2 a quota ≤ '+f(fh.trailLayMax,'2,10')+' (o punta 1 ≥ '+f(fh.trailBackMin,'3,90')+').',exit:'Una sola giocata, tieni fino al 90’.',sys:'EXCH FAVORITO HT'},
+      favht:{bet:'Favorito HT · PUNTA 1 se pari / BANCA 2 se sotto',entry:'All’intervallo: se il favorito è in parità PUNTA 1 a quota ≥ '+f(fh.drawBackMin,'1,85')+'; se il favorito è sotto BANCA 2 a quota ≤ '+f(fh.trailLayMax,'2,10')+'.',exit:'Una sola giocata, tieni fino al 90’.',sys:'EXCH FAVORITO HT'},
       favorita:{bet:'PUNTA la favorita',entry:'Quando la favorita domina i dati live.',exit:'Gestisci in base al risultato.',sys:'Segna la favorita'}
     };
     return plans[k]||{bet:String(m.tipoGiocata||'Giocata'),entry:'Vedi la regola della strategia.',exit:'—',sys:String(m.tipoGiocata||'')};
