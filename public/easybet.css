@@ -2523,3 +2523,31 @@ html[data-theme="dark"] .ebbp-crest{background:rgba(255,255,255,.04);border-colo
   .ebbp-marketbox{width:100%;align-items:flex-start;padding:12px 14px}
   .ebbp-marketbox b{text-align:left;font-size:1.02rem}
 }
+
+
+/* STEP91 · Picker minimal + stemmi reali */
+.ebbp-modal{width:min(920px,100%)}
+.ebbp-row{grid-template-columns:74px minmax(0,1fr) 150px!important;gap:14px!important;padding:13px 15px!important;border-radius:16px!important;background:linear-gradient(180deg,#fffaf1,#faf4e7)!important;box-shadow:none!important}
+.ebbp-row:hover{transform:none!important;background:#fff9ed!important}
+.ebbp-time{font-size:1.28rem!important}
+.ebbp-maincol{gap:5px!important}
+.ebbp-teamrow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;min-width:0}
+.ebbp-team{display:flex;align-items:center;gap:8px;min-width:0}
+.ebbp-team.away{justify-content:flex-end}
+.ebbp-team strong{font-size:1rem;line-height:1.12;color:#2f2615;font-weight:850;min-width:0;overflow-wrap:anywhere}
+.ebbp-team.away strong{text-align:right}
+.ebbp-vs{font-size:.75rem!important;color:#a28a57!important;letter-spacing:.08em!important}
+.ebbp-league{font-size:.74rem;color:#9a8762;font-weight:700;padding-left:42px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ebbp-crest{width:34px!important;height:34px!important;flex:0 0 34px!important;border-radius:10px!important;background:#fff!important}
+.ebbp-crest img{width:88%!important;height:88%!important;object-fit:contain!important}
+.ebbp-crest>span{font-size:.68rem!important}
+.ebbp-marketbox{min-width:128px!important;padding:9px 11px!important;border-radius:13px!important;gap:2px!important;box-shadow:none!important;background:linear-gradient(180deg,#ecd36f,#d8b23d)!important}
+.ebbp-marketbox span{font-size:.58rem!important;letter-spacing:.12em!important}
+.ebbp-marketbox b{font-size:.92rem!important;line-height:1.1!important}
+.ebbp-marketbox small{font-size:.72rem!important}
+html[data-theme="dark"] .ebbp-row{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.02))!important}
+html[data-theme="dark"] .ebbp-team strong{color:#f2ebdc}
+html[data-theme="dark"] .ebbp-league{color:#b9aa89}
+html[data-theme="dark"] .ebbp-crest{background:rgba(255,255,255,.05)!important}
+@media(max-width:760px){.ebbp-row{grid-template-columns:64px minmax(0,1fr)!important}.ebbp-sidecol{grid-column:2!important}.ebbp-marketbox{width:auto!important;display:inline-flex!important;align-items:flex-start!important}.ebbp-league{padding-left:0}.ebbp-teamrow{grid-template-columns:1fr}.ebbp-vs{display:none}.ebbp-team.away{justify-content:flex-start}.ebbp-team.away strong{text-align:left}.ebbp-team.away .ebbp-crest{order:-1}}
+@media(max-width:520px){.ebbp-row{grid-template-columns:1fr!important}.ebbp-timecol{justify-content:flex-start}.ebbp-sidecol{grid-column:1!important}.ebbp-marketbox{width:100%!important}.ebbp-teamrow{gap:7px}}
