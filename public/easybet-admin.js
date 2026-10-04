@@ -327,9 +327,9 @@
             '<div class="kickoff">'+ICON_CLOCK+'<span>'+esc(fmtWhen(m))+'</span></div>'+
           '</div>'+
           '<div class="matchup">'+
-            '<div class="side">'+crestImg(m.casa,m.campionato,'lg')+'<div class="side-name">'+esc(m.casa)+'</div></div>'+
+            '<div class="side">'+crestImg(m.casa,m.campionato,'lg')+'<div class="side-name">'+esc(m.casa)+'</div><button type="button" class="crest-edit-btn" data-role="crest" data-team="'+esc(m.casa)+'" data-league="'+esc(m.campionato||'')+'">Stemma</button></div>'+
             '<div class="vs-mid">VS</div>'+
-            '<div class="side">'+crestImg(m.trasferta,m.campionato,'lg')+'<div class="side-name">'+esc(m.trasferta)+'</div></div>'+
+            '<div class="side">'+crestImg(m.trasferta,m.campionato,'lg')+'<div class="side-name">'+esc(m.trasferta)+'</div><button type="button" class="crest-edit-btn" data-role="crest" data-team="'+esc(m.trasferta)+'" data-league="'+esc(m.campionato||'')+'">Stemma</button></div>'+
           '</div>'+
           '<div class="stats-row">'+
             '<div class="stat">'+ICON_TARGET+'<div class="stat-text"><span class="stat-label">Giocata</span><span class="stat-value">'+esc(m.tipoGiocata||'—')+'</span></div></div>'+
