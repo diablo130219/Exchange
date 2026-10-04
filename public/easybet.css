@@ -2579,3 +2579,16 @@ html[data-theme="light"] .mm-pending-actions button.red{background:#fff0f0;borde
 .mm-fields select{display:block;width:100%;margin-top:6px;border:1px solid rgba(213,169,50,.22);border-radius:11px;padding:11px 12px;background:rgba(0,0,0,.15);color:inherit;font:inherit;font-size:.82rem}
 html[data-theme="light"] .mm-fields select{background:#fff;color:#3b3324}
 .mm-fields select option{color:#3b3324;background:#fff}
+/* Riepilogo cassa: da dove arriva il saldo */
+.mm-ledger{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin:-4px 0 14px;padding:10px 14px;border-radius:14px;border:1px dashed rgba(205,175,110,.45);background:rgba(255,250,240,.6);font-size:.8rem;color:#7a6a4c}
+.mm-ledger b{color:#3a3122;margin-left:4px}.mm-ledger b.pos{color:#4f7d55}.mm-ledger b.neg{color:#a3604b}
+.mm-ledger .tot{margin-left:auto;font-weight:700}
+html:not([data-theme="light"]) body .mm-ledger{background:rgba(255,255,255,.03);color:#b8a98f}
+html:not([data-theme="light"]) body .mm-ledger b{color:#f1eadf}
+#kellyBoard .mm-ledger{margin:10px 0 14px}
+
+.mm-bank-field{display:flex;gap:8px;align-items:stretch}
+.mm-bank-field input{flex:1;min-width:0;background:rgba(205,175,110,.08)!important;cursor:default}
+.mm-bank-field button{margin-top:6px;white-space:nowrap;border:1px solid rgba(205,175,110,.45);background:#fffaf0;color:#6b5320;border-radius:11px;padding:0 12px;font:inherit;font-size:.74rem;font-weight:800;cursor:pointer}
+#kellyBoard .mm-bank-field button{margin-top:0}
+html:not([data-theme="light"]) body .mm-bank-field button{background:#211d15;color:#e8cf8a}
