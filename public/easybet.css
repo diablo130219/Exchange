@@ -2576,3 +2576,6 @@ html[data-theme="light"] .mm-pending-actions button{background:#fff;border-color
 html[data-theme="light"] .mm-pending-actions button.green{background:#eef8f1;border-color:#b7dec7}
 html[data-theme="light"] .mm-pending-actions button.red{background:#fff0f0;border-color:#edc2c2}
 @media(max-width:640px){.ky-match-line{font-size:.94rem}.ky-crest-wrap{width:30px;height:30px;flex-basis:30px}.mm-pending-actions button{flex:1}}
+.mm-fields select{display:block;width:100%;margin-top:6px;border:1px solid rgba(213,169,50,.22);border-radius:11px;padding:11px 12px;background:rgba(0,0,0,.15);color:inherit;font:inherit;font-size:.82rem}
+html[data-theme="light"] .mm-fields select{background:#fff;color:#3b3324}
+.mm-fields select option{color:#3b3324;background:#fff}

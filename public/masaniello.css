@@ -155,7 +155,7 @@ html[data-theme="dark"] .masaniello-board .ms-item.active{background:linear-grad
 html[data-theme="dark"] .masaniello-board .ms-main-empty{background:linear-gradient(180deg,#231e16,#1a1611)!important}
 
 /* STEP71 — Masaniello allineato graficamente a Roserpina / Kelly / Martingala */
-.masaniello-board.show{max-width:1500px;margin:0 auto 16px;padding:0;font-family:Inter,system-ui,sans-serif}
+.masaniello-board.show{max-width:1500px;margin:0 auto 16px;padding:0;font-family:inherit}
 .masaniello-board .ms-shell{display:block;min-height:auto;border:0;border-radius:0;background:transparent;box-shadow:none}
 .masaniello-board .ms-content{padding:0;background:transparent}
 
@@ -274,8 +274,8 @@ html[data-theme="dark"] .masaniello-board .ms-cash-manager-head .ms-btn{backgrou
 
 /* STEP73 — Masaniello nella stessa colonna centrale degli altri Money Management */
 .masaniello-board.show{
-  width:min(1120px,100%)!important;
-  max-width:1120px!important;
+  width:100%!important;
+  max-width:100%!important;
   margin:0 auto 16px!important;
   padding:0!important;
 }
