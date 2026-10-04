@@ -176,3 +176,9 @@ Viene ricavato automaticamente dal nome del file, senza estensione. Esempi:
 Colonne obbligatorie del CSV classico: **Data, Ora, Squadra Casa, Squadra Ospite**.
 Colonne facoltative: **Campionato, Quota, ID**.
 Importando più CSV insieme, ogni file assegna il proprio nome come tipo giocata alle relative partite.
+
+
+## STEP78 — CSV Betting classico: Data/Ora combinata
+L'import Betting classico ora accetta sia colonne separate **Data** + **Ora**, sia una colonna unica **Data/Ora**.
+È supportato direttamente il formato CGMBet, ad esempio `26/27 04/10/2026 1400`, interpretato come **04/10/2026 14:00**.
+Il tipo di giocata continua a essere ricavato dal nome del file CSV (es. `OVER 2.5.csv` → `OVER 2.5`).

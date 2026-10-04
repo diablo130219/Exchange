@@ -1091,6 +1091,15 @@
       return String(h).padStart(2,'0')+':'+String(min).padStart(2,'0');
     }
 
+    function parseClassicDateTime(raw){
+      raw=String(raw||'').trim();
+      // Formati supportati, tra cui CGMBet: "26/27 04/10/2026 1400"
+      var m=raw.match(/(?:^|\s)(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4})\s+(\d{1,2}:\d{2}|\d{1,2}\.\d{2}|\d{4})(?:\s|$)/);
+      if(!m) return null;
+      var d=parseClassicDate(m[1]), t=parseClassicTime(m[2]);
+      return d&&t ? {date:d,time:t} : null;
+    }
+
     function classicTypeFromFileName(fileName){
       var name=String(fileName||'').trim().replace(/\.csv$/i,'');
       // Il nome del file è il tipo di giocata. Rendo solo i separatori tecnici più leggibili.
@@ -1106,17 +1115,27 @@
       function idx(){for(var a=0;a<arguments.length;a++){var f=norm.indexOf(arguments[a]);if(f>=0)return f;}return -1;}
       var iDate=idx('data','date');
       var iTime=idx('ora','orario','time');
+      var iDateTime=idx('data/ora','data ora','dataorario','data e ora','datetime','date/time','date time');
       var iHome=idx('squadra casa','casa','home','team home');
       var iAway=idx('squadra ospite','squadra trasferta','ospite','trasferta','away','team away');
       var iLeague=idx('campionato','lega','league','competizione');
       var iOdds=idx('quota','quota ingresso','odds');
       var iId=idx('matchid','match id','id');
       var tipo=classicTypeFromFileName(fileName);
-      if(iDate<0||iTime<0||iHome<0||iAway<0||!tipo) return [];
+      var hasSeparateDateTime=iDate>=0&&iTime>=0;
+      var hasCombinedDateTime=iDateTime>=0;
+      if((!hasSeparateDateTime&&!hasCombinedDateTime)||iHome<0||iAway<0||!tipo) return [];
       var out=[];
       for(var r=1;r<rows.length;r++){
         var vals=rows[r];
-        var d=parseClassicDate(vals[iDate]), t=parseClassicTime(vals[iTime]);
+        var d=null, t=null;
+        if(hasSeparateDateTime){
+          d=parseClassicDate(vals[iDate]);
+          t=parseClassicTime(vals[iTime]);
+        } else {
+          var dt=parseClassicDateTime(vals[iDateTime]);
+          if(dt){ d=dt.date; t=dt.time; }
+        }
         var casa=String(vals[iHome]||'').trim(), trasferta=String(vals[iAway]||'').trim();
         if(!d||!t||!casa||!trasferta) continue;
         var quota=iOdds>=0?String(vals[iOdds]||'').trim().replace(',','.') :'';
@@ -1232,10 +1251,10 @@
 
     function renderImportPreview(){
       var ruleBox=document.getElementById('importRule');
-      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML=currentAdminArea==='classic'?'<span>CSV classico</span><b>—</b><small>Colonne obbligatorie: Data, Ora, Squadra Casa, Squadra Ospite. Il Tipo Giocata viene preso dal nome del file CSV. Facoltative: Campionato, Quota.</small>':'<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
+      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML=currentAdminArea==='classic'?'<span>CSV classico</span><b>—</b><small>Colonne richieste: Data/Ora (oppure Data + Ora), Squadra Casa, Squadra Ospite. Il Tipo Giocata viene preso dal nome del file CSV. Facoltative: Campionato, Quota.</small>':'<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
       var byStrat={};importPending.forEach(function(x){var k=String(x.tipoGiocata||'').toUpperCase()+(x.quotaIngresso?' · '+x.quotaIngresso:'');byStrat[k]=(byStrat[k]||0)+1});var stratKeys=Object.keys(byStrat);var first=importPending[0], isO15=String(first.tipoGiocata||'').toLowerCase().indexOf('1.5')!==-1;
       if(currentAdminArea==='classic'){
-        if(ruleBox) ruleBox.innerHTML='<span>BETTING CLASSICO</span><b>'+importPending.length+' partite</b><span>Tipo giocata</span><b>' + esc(String(first.tipoGiocata||'').toUpperCase()) + '</b><span>Campi</span><b>Data · Ora · Casa · Ospite</b><small>Il tipo di giocata viene assegnato dal nome del CSV; se presente, ogni riga mantiene la propria quota.</small>';
+        if(ruleBox) ruleBox.innerHTML='<span>BETTING CLASSICO</span><b>'+importPending.length+' partite</b><span>Tipo giocata</span><b>' + esc(String(first.tipoGiocata||'').toUpperCase()) + '</b><span>Campi</span><b>Data/Ora · Casa · Ospite</b><small>Il tipo di giocata viene assegnato dal nome del CSV; se presente, ogni riga mantiene la propria quota.</small>';
       } else if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+({'over 1.5 ft':'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.','banca x ht':'File EXCH LAY X HT: all’intervallo sullo 0-0 o 1-1 banca X solo a quota ≤ 2,10 e tieni fino al 90’.','under 0.5 ht':'File EXCH UNDER 0.5 HT: pre-match solo a quota ≥ 2,95 in exchange (≥ 2,85 bookmaker).','favorito ht':'File EXCH FAVORITO HT: all’intervallo in parità punta 1 ≥ 1,75, favorito sotto banca 2 ≤ 2,50.'}[String(first.tipoGiocata||'').toLowerCase()]||'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
       function isDup(m){var st=toStartAt(m.data,m.ora);return matches.some(function(x){return Number(x.startAt)===Number(st)&&String(x.tipoGiocata||'').trim().toLowerCase()===String(m.tipoGiocata||'').trim().toLowerCase()&&String(x.casa||'').trim().toLowerCase()===String(m.casa||'').trim().toLowerCase()&&String(x.trasferta||'').trim().toLowerCase()===String(m.trasferta||'').trim().toLowerCase();});}
       var dupCount=importPending.filter(isDup).length;
@@ -1261,7 +1280,7 @@
       var mt=document.getElementById('importModalTitle'), ih=document.getElementById('importHint'), rb=document.getElementById('importRule');
       if(currentAdminArea==='classic'){
         if(mt) mt.textContent='Importa CSV · Betting classico';
-        if(ih) ih.innerHTML='Il <b>Tipo Giocata</b> viene preso automaticamente dal <b>nome del file CSV</b> (es. <b>OVER 2.5.csv</b> → OVER 2.5). Colonne obbligatorie: <b>Data</b>, <b>Ora</b>, <b>Squadra Casa</b>, <b>Squadra Ospite</b>. Facoltative: <b>Campionato</b> e <b>Quota</b>.';
+        if(ih) ih.innerHTML='Il <b>Tipo Giocata</b> viene preso automaticamente dal <b>nome del file CSV</b> (es. <b>OVER 2.5.csv</b> → OVER 2.5). Colonne obbligatorie: <b>Data/Ora</b> (oppure <b>Data</b> + <b>Ora</b>), <b>Squadra Casa</b>, <b>Squadra Ospite</b>. Facoltative: <b>Campionato</b> e <b>Quota</b>.';
         if(rb) rb.innerHTML='<span>CSV classico</span><b>pronto</b><small>Il nome del file diventa il Tipo Giocata per tutte le righe di quel CSV.</small>';
       }else{
         if(mt) mt.textContent='Importa CSV · Exchange Live';
@@ -1336,7 +1355,7 @@
         all=all.filter(function(m){var k=[m.data,m.ora,String(m.casa).toLowerCase(),String(m.trasferta).toLowerCase(),String(m.tipoGiocata).toLowerCase()].join('|');if(seen[k])return false;seen[k]=1;return true;});
         importPending=all;
         importBackdrop.classList.add('open');
-        if (bad.length) importErr.textContent=currentAdminArea==='classic'?'File non riconosciuti: '+bad.join(', ')+'. Nel Betting classico servono Data, Ora, Squadra Casa e Squadra Ospite; il Tipo Giocata viene preso dal nome del CSV.':'File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
+        if (bad.length) importErr.textContent=currentAdminArea==='classic'?'File non riconosciuti: '+bad.join(', ')+'. Nel Betting classico servono Data/Ora (oppure Data + Ora), Squadra Casa e Squadra Ospite; il Tipo Giocata viene preso dal nome del CSV.':'File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
         renderImportPreview();
       });
     });
