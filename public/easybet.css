@@ -2334,3 +2334,107 @@ html[data-theme="dark"] body #grid.home-history .month-folder-copy span{color:#a
 .ebbp-overlay{position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.66);display:grid;place-items:center;padding:18px;font-family:Inter,system-ui,sans-serif}.ebbp-modal{width:min(820px,100%);max-height:min(82vh,760px);display:flex;flex-direction:column;border:1px solid rgba(213,169,50,.35);border-radius:22px;background:#171714;color:#f5f0e4;box-shadow:0 28px 90px rgba(0,0,0,.48);overflow:hidden}.ebbp-head{display:flex;justify-content:space-between;align-items:center;padding:20px 22px;border-bottom:1px solid rgba(213,169,50,.16)}.ebbp-head small{display:block;color:#d8aa32;font-weight:900;letter-spacing:.16em;font-size:10px}.ebbp-head h3{margin:4px 0 0;font-size:24px}.ebbp-head button{width:38px;height:38px;border-radius:12px;border:1px solid rgba(213,169,50,.25);background:rgba(255,255,255,.05);color:inherit;font-size:24px;cursor:pointer}.ebbp-search{padding:14px 20px}.ebbp-search input{width:100%;border:1px solid rgba(213,169,50,.22);border-radius:13px;padding:12px 14px;background:rgba(0,0,0,.18);color:inherit}.ebbp-list{overflow:auto;padding:0 20px 20px}.ebbp-day h4{margin:15px 0 8px;color:#d8aa32;font-size:12px;letter-spacing:.08em}.ebbp-row{width:100%;display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;padding:12px 13px;margin:7px 0;border:1px solid rgba(213,169,50,.16);border-radius:14px;background:rgba(255,255,255,.035);color:inherit;text-align:left;cursor:pointer}.ebbp-row:hover{border-color:rgba(213,169,50,.48);background:rgba(213,169,50,.09)}.ebbp-time{font-weight:900;color:#d8aa32}.ebbp-match b,.ebbp-match small{display:block}.ebbp-match b{font-size:14px}.ebbp-match b i{font-style:normal;opacity:.45;margin:0 5px}.ebbp-match small{margin-top:4px;font-size:10px;opacity:.64}.ebbp-odd{font-weight:900}.ebbp-empty{padding:34px;text-align:center;opacity:.62}.ms-card-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.ms-card-title h3{margin:0}
 html[data-theme="light"] .ebbp-modal{background:#fff;color:#3b3324}.ebbp-overlay html[data-theme="light"] .ebbp-row,html[data-theme="light"] .ebbp-row{background:#fff8e9}.ebbp-overlay html[data-theme="light"] .ebbp-search input,html[data-theme="light"] .ebbp-search input{background:#fff;color:#3b3324}
 @media(max-width:600px){.ebbp-row{grid-template-columns:52px 1fr}.ebbp-odd{grid-column:2}.ebbp-head h3{font-size:20px}}
+
+
+/* ===== STEP 83 — Responsive smartphone + tablet ===== */
+@media (max-width: 1024px){
+  .page-shell{width:min(100vw - 18px,100%);margin:10px auto 24px}
+  .topbar{position:sticky;top:0;z-index:60;grid-template-columns:minmax(0,1fr) auto auto;padding:12px 16px;height:auto;gap:10px}
+  .brand{min-width:0}
+  .brand-copy strong{font-size:1.42rem}
+  .brand-copy small{font-size:.6rem}
+  .nav{display:none}
+  .mobile-menu-btn{display:flex}
+  .nav-actions{gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .hero img{height:280px;object-fit:cover}
+  .section{padding:14px 16px 30px}
+  .section-head{align-items:flex-start;gap:10px}
+  .section-head .refresh,.section-head #gdUsage{width:100%}
+  .toolbar{width:100%}
+  .pills{width:100%;gap:8px;flex-wrap:wrap}
+  .grid,.date-group-grid,.grid.live-mode{grid-template-columns:1fr 1fr;max-width:none;justify-content:stretch}
+  .card{min-height:auto;width:100%;max-width:none}
+  .live-priority-dashboard,.strategies-board.show,.advice-board.show,.stats-dashboard.show{grid-template-columns:1fr!important}
+  #grid.home-history details.history-month>.archive-tiles{padding:12px!important}
+}
+
+@media (max-width: 760px){
+  .page-shell{width:100%;margin:0;border-radius:0}
+  .topbar{padding:12px}
+  .brand-copy strong{font-size:1.28rem}
+  .brand-copy small{display:none}
+  .nav-actions .nav-btn:first-child{display:none}
+  .nav-actions .nav-btn{padding:10px 12px}
+  .mobile-nav.open{grid-template-columns:1fr 1fr}
+  .hero img{height:220px}
+  .section{padding:12px 12px 26px}
+  .section-head{flex-direction:column}
+  .title-wrap{align-items:flex-start}
+  .title-wrap h2{font-size:1.22rem}
+  .title-wrap p{font-size:.76rem}
+  .pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .pill{width:100%;text-align:center;min-height:38px}
+  .live-searchbar{margin-bottom:12px}
+  .live-searchbox{width:100%}
+  .grid,.date-group-grid,.grid.live-mode{grid-template-columns:1fr!important}
+  .date-group{padding:14px}
+  .date-group.archive summary{padding:13px 14px;gap:10px;align-items:flex-start}
+  .archive-label{gap:10px}
+  .archive-count{margin-top:4px}
+  .card{padding:14px;border-radius:18px;gap:12px}
+  .card-head{flex-direction:column;align-items:flex-start}
+  .time{min-width:0;text-align:left;width:100%;display:flex;align-items:center;justify-content:space-between}
+  .time small{margin:0}
+  .date{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .matchup{padding:12px 10px;gap:8px}
+  .crest-wrap{width:72px;height:72px}
+  .crest{width:56px;height:56px}
+  .team-name{font-size:.88rem;line-height:1.18;overflow-wrap:anywhere}
+  .vs{width:40px;height:40px;font-size:.82rem}
+  .info-grid{grid-template-columns:1fr!important;gap:8px}
+  .status{min-height:54px;padding:10px 12px}
+  .status-copy strong{font-size:.92rem}
+  .finished-action-row{flex-direction:column;align-items:stretch}
+  .finished-snapshot-btn,.live-analyze-btn{width:100%;justify-content:center}
+  #grid.home-history details.history-month>summary{grid-template-columns:auto minmax(0,1fr) 34px;gap:10px;padding:14px}
+  .month-folder-copy strong{font-size:1.45rem;line-height:1}
+  .month-folder-copy span{display:block;margin-top:4px;font-size:.74rem}
+  .month-folder-stats{grid-column:2/4;justify-content:flex-start!important;flex-wrap:wrap}
+  #grid.home-history .archive-tiles details.history-archive>summary{grid-template-columns:48px minmax(0,1fr) 28px!important;gap:10px!important}
+  #grid.home-history .archive-tiles .archive-meta{grid-column:2/4!important;justify-content:flex-start!important;border-left:0!important;padding:0!important}
+  #grid.home-history .archive-tiles .archive-story{display:none!important}
+  #grid.home-history .archive-tiles .day-summary{flex-wrap:wrap}
+}
+
+@media (max-width: 560px){
+  body{background:#070707}
+  .topbar{grid-template-columns:minmax(0,1fr) auto auto}
+  .mobile-menu-btn{width:42px;height:42px}
+  .nav-actions{display:none}
+  .mobile-nav.open{grid-template-columns:1fr}
+  .pills{grid-template-columns:1fr}
+  .date{font-size:.66rem}
+  .matchup{grid-template-columns:1fr;gap:12px}
+  .team{text-align:center}
+  .role{margin-bottom:6px}
+  .vs{margin:0 auto}
+  .status{gap:10px}
+  .status-icon{font-size:1.35rem}
+  .status-copy small{font-size:.52rem}
+  .status-copy strong{font-size:.86rem}
+  .month-folder-copy strong{font-size:1.25rem}
+  .month-folder-stats b{font-size:.62rem}
+  #grid.home-history .archive-tiles details.history-archive>summary{padding:12px!important}
+  .arch-cal{transform:scale(.95);transform-origin:left center}
+}
+
+@media (max-width: 420px){
+  .brand-mark{width:40px;height:40px;font-size:.9rem}
+  .brand-copy strong{font-size:1.15rem}
+  .title-wrap h2{font-size:1.06rem}
+  .title-wrap p{font-size:.72rem}
+  .card{border-radius:16px}
+  .crest-wrap{width:66px;height:66px}
+  .crest{width:50px;height:50px}
+  .team-name{font-size:.82rem}
+}

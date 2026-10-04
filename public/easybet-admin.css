@@ -413,3 +413,110 @@ html[data-theme="light"] body details.month-section{background:linear-gradient(1
   width:15px;
   height:15px;
 }
+
+
+/* ===== STEP 83 — Responsive smartphone + tablet ===== */
+@media (max-width: 1024px){
+  .navbar{padding:14px 16px;align-items:flex-start}
+  .brand{font-size:1.28rem}
+  .navlinks,.nav-right{width:100%}
+  .navlinks{gap:14px;font-size:.78rem}
+  .nav-right{justify-content:flex-start;flex-wrap:wrap}
+  .theme-toggle,.lock-btn{min-height:40px}
+  .hero{padding:32px 16px 22px}
+  .hero h1{font-size:1.8rem;line-height:1.08}
+  .hero p{font-size:.88rem}
+  .wrap{max-width:none;padding:0 14px 54px}
+  .section-head{margin:22px 0 14px}
+  .head-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .head-actions .add-btn{width:100%;display:flex;align-items:center;justify-content:center}
+  .pills{gap:6px}
+  .pill,.date-pill{min-height:38px;padding:8px 12px}
+  .date-filter-row{margin-top:-2px}
+  .bulk-bar{padding:12px}
+  .date-groups{grid-template-columns:1fr!important;gap:14px!important}
+  details.month-section>summary,
+  details.date-section>summary{padding:14px 52px 14px 14px}
+  details.month-section>.date-groups,
+  details.date-section>.date-grid{padding:12px}
+  .date-head{align-items:flex-start}
+  .date-tools{min-width:0;width:100%;justify-content:flex-start;flex-wrap:wrap}
+  .date-search-wrap{width:100%}
+  .date-search{height:42px;font-size:.78rem}
+  .grid.date-grid{grid-template-columns:1fr!important;gap:12px!important}
+  .card{padding:16px;border-radius:16px}
+  .card-top2{align-items:flex-start;gap:8px}
+  .league-badge{font-size:.68rem}
+  .matchup{gap:10px;margin-bottom:14px}
+  .crest.crest-lg{width:52px;height:52px}
+  .side-name{max-width:none;white-space:normal;overflow:visible;line-height:1.12;overflow-wrap:anywhere}
+  .stats-row{grid-template-columns:1fr 1fr;gap:8px}
+  .stat{padding:8px 9px}
+  .card-foot{flex-wrap:wrap;align-items:center}
+  .bot-toggle{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:8px 10px;justify-content:space-between;min-width:min(100%,240px)}
+  .card-actions{margin-left:auto}
+  .modal{max-width:680px}
+}
+
+@media (max-width: 680px){
+  .navbar{gap:12px}
+  .brand{font-size:1.16rem}
+  .navlinks{display:none}
+  .nav-right{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .theme-toggle,.lock-btn,.area-switch-btn{width:100%;display:flex;align-items:center;justify-content:center;padding:10px 12px}
+  .area-switch-btn{font-size:.72rem}
+  .hero{padding:26px 14px 18px}
+  .hero h1{font-size:1.48rem}
+  .hero p{font-size:.82rem}
+  .wrap{padding:0 12px 42px}
+  .section-head h2{font-size:.98rem}
+  .section-head h2 small{font-size:.7rem;line-height:1.4}
+  .head-actions{grid-template-columns:1fr}
+  .pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .pill{width:100%;text-align:center}
+  .date-filter-row{display:flex;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .date-filter-row::-webkit-scrollbar{display:none}
+  .date-filter-label{display:none}
+  .date-pill{white-space:nowrap}
+  details.month-section>summary,
+  details.date-section>summary{padding:13px 46px 13px 12px}
+  .date-title{font-size:.92rem;line-height:1.18}
+  .date-sub{display:none}
+  .date-count{padding:6px 10px;font-size:.7rem}
+  .card{padding:14px}
+  .card-top2{flex-direction:column;align-items:flex-start;margin-bottom:12px}
+  .kickoff{font-size:.68rem}
+  .matchup{grid-template-columns:1fr;gap:12px}
+  .vs-mid{padding-top:0;font-size:.8rem}
+  .side{gap:6px}
+  .side-name{font-size:.92rem}
+  .crest.crest-lg{width:56px;height:56px}
+  .stats-row{grid-template-columns:1fr;gap:8px}
+  .esito-banner{padding:10px 10px}
+  .card-foot{flex-direction:column;align-items:stretch;gap:10px}
+  .bot-toggle{width:100%}
+  .card-actions{width:100%;justify-content:space-between;margin-left:0}
+  .icon-btn{width:36px;height:36px;border-radius:10px}
+  .modal-backdrop{padding:10px}
+  .modal{padding:16px;border-radius:16px;max-height:94vh}
+  .modal h3{font-size:1rem}
+  .modal-actions{flex-wrap:wrap}
+  .modal-actions .btn{flex:1 1 calc(50% - 6px)}
+  .modal-actions .btn-danger{order:3;flex-basis:100%}
+  .csv-import-head{flex-direction:column;align-items:stretch}
+  .csv-fixed-rule{grid-template-columns:1fr}
+  .csv-fixed-rule b{display:none}
+  .preview-row{grid-template-columns:1fr;align-items:flex-start}
+  .preview-row .pv-when{white-space:normal}
+  .preview-fields{grid-template-columns:1fr!important}
+}
+
+@media (max-width: 420px){
+  .pills{grid-template-columns:1fr}
+  .nav-right{grid-template-columns:1fr}
+  .card{border-radius:14px}
+  .league-badge{font-size:.64rem}
+  .kickoff{font-size:.64rem}
+  .esito-select-inline{font-size:.74rem}
+  .bot-toggle{font-size:.7rem}
+}
