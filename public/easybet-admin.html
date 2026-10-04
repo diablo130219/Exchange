@@ -57,8 +57,8 @@
 <h2>Partite<small>Aggiungi, modifica ed elimina liberamente — tutto resta privato qui.</small></h2>
 <div class="head-actions">
 <button class="add-btn ghost-btn" id="backupBtn" type="button">💾 Backup JSON</button>
-<button class="add-btn ghost-btn" id="exportCsvBtn" type="button">↧ CSV partite</button>
-<button class="add-btn ghost-btn" id="importBtn" data-live-only="1">📋 Importa elenco</button><button class="add-btn ghost-btn" id="crestBulkBtn" title="Seleziona più immagini: il nome del file deve essere il nome della squadra (es. Westfalia.png)">🛡 Carica stemmi</button><input id="crestBulkFile" type="file" accept="image/*" multiple hidden/>
+<button class="add-btn ghost-btn" id="exportCsvBtn" type="button">↧ Esporta CSV</button>
+<button class="add-btn ghost-btn" id="importBtn" type="button">📥 Importa CSV</button><button class="add-btn ghost-btn" id="crestBulkBtn" title="Seleziona più immagini: il nome del file deve essere il nome della squadra (es. Westfalia.png)">🛡 Carica stemmi</button><input id="crestBulkFile" type="file" accept="image/*" multiple hidden/>
 <button class="add-btn" id="addBtn">+ Aggiungi partita</button>
 </div>
 </div>
@@ -162,11 +162,11 @@
 <input id="importCsvFile" type="file" accept=".csv,text/csv" hidden multiple/>
 <div class="modal-backdrop" id="importBackdrop">
 <div class="modal wide">
-<h3>Importa elenco da CSV</h3>
+<h3 id="importModalTitle">Importa CSV</h3>
 <div class="csv-import-head">
   <div>
     <strong id="importFileName">Nessun file selezionato</strong>
-    <div class="import-hint">Formati riconosciuti in automatico: <b>Over 0.5 HT</b> (OVER 0.5 CASA/TRASF., GOL 15-45) e <b>Over 1.5 25-70</b> (HOME/OSP GOL 25-70, 0-0 al 70). Vengono importati campionato, data/ora e squadre; tutte le colonne originali vengono conservate.</div>
+    <div class="import-hint" id="importHint">Seleziona un CSV da importare.</div>
   </div>
   <button class="btn btn-ghost" id="importChooseBtn" type="button">Scegli altro CSV</button>
 </div>

@@ -158,3 +158,10 @@ Il pulsante **+ Nuova cassa** nell'area Money Management permette di scegliere p
 - Storico pubblico raggruppato prima per mese/anno e poi per giorno.
 - Admin raggruppato prima per mese/anno e poi per giorno.
 - Conteggi V/P/NE e percentuali conservati a livello giorno e riepilogati a livello mese.
+
+
+## STEP76 — CSV Betting classico
+- Import CSV disponibile anche nell'area Betting classico.
+- Colonne obbligatorie: Data, Ora, Squadra Casa, Squadra Ospite, Tipo Giocata.
+- Colonne facoltative: Campionato, Quota, ID.
+- Import Exchange Live invariato e separato.

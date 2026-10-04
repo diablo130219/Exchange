@@ -33,6 +33,8 @@
     if(ht) ht.innerHTML=currentAdminArea==='classic'?'Betting classico, <span class="gold">gestito a mano</span>.':'Exchange Live, <span class="gold">gestito a mano</span>.';
     if(hs) hs.textContent=currentAdminArea==='classic'?'Inserisci e gestisci solo le partite pre-match del betting classico. Restano separate dalle strategie Exchange Live.':'Gestisci le partite destinate alle strategie live, al Live Analyzer e all’Exchange.';
     document.querySelectorAll('[data-live-only="1"]').forEach(function(el){ el.style.display=currentAdminArea==='live'?'':'none'; });
+    var importBtnArea=document.getElementById('importBtn');
+    if(importBtnArea) importBtnArea.textContent=currentAdminArea==='classic'?'📥 Importa CSV classico':'📋 Importa CSV Exchange';
     try { history.replaceState(null,'',location.pathname+'?area='+currentAdminArea); } catch(e){}
     if(appInited && typeof refreshAdminAreaView === 'function'){ refreshAdminAreaView(); }
   }
@@ -972,10 +974,13 @@
     var IMPORT_QUOTA = '1.60';
 
     function toStartAt(dataStr, oraStr){
-      var dm = (dataStr||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      var tm = (oraStr||'').match(/^(\d{1,2}):(\d{2})$/);
-      if (!dm || !tm) return null;
-      var d = new Date(parseInt(dm[3],10), parseInt(dm[2],10)-1, parseInt(dm[1],10), parseInt(tm[1],10), parseInt(tm[2],10), 0, 0);
+      var raw=String(dataStr||'').trim();
+      var dm = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      var tm = String(oraStr||'').match(/^(\d{1,2}):(\d{2})$/);
+      if ((!dm && !iso) || !tm) return null;
+      var y=dm?parseInt(dm[3],10):parseInt(iso[1],10), mo=dm?parseInt(dm[2],10):parseInt(iso[2],10), da=dm?parseInt(dm[1],10):parseInt(iso[3],10);
+      var d = new Date(y, mo-1, da, parseInt(tm[1],10), parseInt(tm[2],10), 0, 0);
       return d.getTime();
     }
 
@@ -1066,7 +1071,62 @@
       return {data:m[1], ora:String(m[2]).padStart(2,'0')+':'+m[3]};
     }
 
+    function parseClassicDate(raw){
+      raw=String(raw||'').trim();
+      var m=raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if(m) return {iso:m[1]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[3]).padStart(2,'0'), display:String(m[3]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+m[1]};
+      m=raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+      if(m) return {iso:m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0'), display:String(m[1]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+m[3]};
+      return null;
+    }
+
+    function parseClassicTime(raw){
+      raw=String(raw||'').trim();
+      var m=raw.match(/^(\d{1,2}):(\d{2})$/);
+      if(!m) m=raw.match(/^(\d{1,2})[\.](\d{2})$/);
+      if(!m) m=raw.match(/^(\d{2})(\d{2})$/);
+      if(!m) return null;
+      var h=parseInt(m[1],10), min=parseInt(m[2],10);
+      if(h<0||h>23||min<0||min>59) return null;
+      return String(h).padStart(2,'0')+':'+String(min).padStart(2,'0');
+    }
+
+    function parseClassicCsv(text, fileName){
+      var rows=csvRows(text);
+      if(rows.length<2) return [];
+      var headers=rows[0].map(function(h){return String(h||'').replace(/^\uFEFF/,'').trim();});
+      var norm=headers.map(normalizeHeader);
+      function idx(){for(var a=0;a<arguments.length;a++){var f=norm.indexOf(arguments[a]);if(f>=0)return f;}return -1;}
+      var iDate=idx('data','date');
+      var iTime=idx('ora','orario','time');
+      var iHome=idx('squadra casa','casa','home','team home');
+      var iAway=idx('squadra ospite','squadra trasferta','ospite','trasferta','away','team away');
+      var iType=idx('tipo giocata','tipo di giocata','giocata','pronostico','mercato','strategia','bet');
+      var iLeague=idx('campionato','lega','league','competizione');
+      var iOdds=idx('quota','quota ingresso','odds');
+      var iId=idx('matchid','match id','id');
+      if(iDate<0||iTime<0||iHome<0||iAway<0||iType<0) return [];
+      var out=[];
+      for(var r=1;r<rows.length;r++){
+        var vals=rows[r];
+        var d=parseClassicDate(vals[iDate]), t=parseClassicTime(vals[iTime]);
+        var casa=String(vals[iHome]||'').trim(), trasferta=String(vals[iAway]||'').trim(), tipo=String(vals[iType]||'').trim();
+        if(!d||!t||!casa||!trasferta||!tipo) continue;
+        var quota=iOdds>=0?String(vals[iOdds]||'').trim().replace(',','.'):'';
+        var original={}; headers.forEach(function(h,j){original[h]=vals[j]==null?'':String(vals[j]).trim();});
+        original._easybet={type:'classic'};
+        out.push({
+          data:d.display, dataIso:d.iso, ora:t,
+          campionato:iLeague>=0?String(vals[iLeague]||'').trim():'',
+          casa:casa, trasferta:trasferta, tipoGiocata:tipo, quotaIngresso:quota,
+          importSource:fileName||'CSV classico', importMatchId:iId>=0?String(vals[iId]||'').trim():'', importData:original
+        });
+      }
+      return out;
+    }
+
     function parseImportCsv(text, fileName){
+      if(currentAdminArea==='classic') return parseClassicCsv(text,fileName);
       var rows=csvRows(text);
       if (rows.length < 2) return [];
       var headers=rows[0].map(function(h){ return String(h||'').replace(/^\uFEFF/,'').trim(); });
@@ -1165,19 +1225,21 @@
 
     function renderImportPreview(){
       var ruleBox=document.getElementById('importRule');
-      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
-      var byStrat={};importPending.forEach(function(x){var k=String(x.tipoGiocata||'').toUpperCase()+' · '+(x.quotaIngresso||'');byStrat[k]=(byStrat[k]||0)+1});var stratKeys=Object.keys(byStrat);var first=importPending[0], isO15=String(first.tipoGiocata||'').toLowerCase().indexOf('1.5')!==-1;
-      if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+({'over 1.5 ft':'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.','banca x ht':'File EXCH LAY X HT: all’intervallo sullo 0-0 o 1-1 banca X solo a quota ≤ 2,10 e tieni fino al 90’.','under 0.5 ht':'File EXCH UNDER 0.5 HT: pre-match solo a quota ≥ 2,95 in exchange (≥ 2,85 bookmaker).','favorito ht':'File EXCH FAVORITO HT: all’intervallo in parità punta 1 ≥ 1,75, favorito sotto banca 2 ≤ 2,50.'}[String(first.tipoGiocata||'').toLowerCase()]||'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
+      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML=currentAdminArea==='classic'?'<span>CSV classico</span><b>—</b><small>Colonne obbligatorie: Data, Ora, Squadra Casa, Squadra Ospite, Tipo Giocata. Facoltative: Campionato, Quota.</small>':'<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
+      var byStrat={};importPending.forEach(function(x){var k=String(x.tipoGiocata||'').toUpperCase()+(x.quotaIngresso?' · '+x.quotaIngresso:'');byStrat[k]=(byStrat[k]||0)+1});var stratKeys=Object.keys(byStrat);var first=importPending[0], isO15=String(first.tipoGiocata||'').toLowerCase().indexOf('1.5')!==-1;
+      if(currentAdminArea==='classic'){
+        if(ruleBox) ruleBox.innerHTML='<span>BETTING CLASSICO</span><b>'+importPending.length+' partite</b><span>Campi</span><b>Data · Ora · Casa · Ospite · Giocata</b><small>Ogni riga mantiene il proprio tipo di giocata e, se presente, la propria quota.</small>';
+      } else if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+({'over 1.5 ft':'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.','banca x ht':'File EXCH LAY X HT: all’intervallo sullo 0-0 o 1-1 banca X solo a quota ≤ 2,10 e tieni fino al 90’.','under 0.5 ht':'File EXCH UNDER 0.5 HT: pre-match solo a quota ≥ 2,95 in exchange (≥ 2,85 bookmaker).','favorito ht':'File EXCH FAVORITO HT: all’intervallo in parità punta 1 ≥ 1,75, favorito sotto banca 2 ≤ 2,50.'}[String(first.tipoGiocata||'').toLowerCase()]||'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
       function isDup(m){var st=toStartAt(m.data,m.ora);return matches.some(function(x){return Number(x.startAt)===Number(st)&&String(x.tipoGiocata||'').trim().toLowerCase()===String(m.tipoGiocata||'').trim().toLowerCase()&&String(x.casa||'').trim().toLowerCase()===String(m.casa||'').trim().toLowerCase()&&String(x.trasferta||'').trim().toLowerCase()===String(m.trasferta||'').trim().toLowerCase();});}
       var dupCount=importPending.filter(isDup).length;
-      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b>'+(stratKeys.length>1?'<span>Strategie: '+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</span>':'<span>Strategia: '+esc(String(importPending[0].tipoGiocata||'').toUpperCase())+'</span><span>Quota ingresso: '+esc(importPending[0].quotaIngresso||'')+'</span>')+(dupCount?'<span>'+dupCount+' già presenti: verranno saltate</span>':'')+'</div>';
+      var html = '<div class="csv-import-summary"><b>'+importPending.length+' partite riconosciute</b>'+(currentAdminArea==='classic'?'<span>Betting classico</span>':(stratKeys.length>1?'<span>Strategie: '+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</span>':'<span>Strategia: '+esc(String(importPending[0].tipoGiocata||'').toUpperCase())+'</span><span>Quota ingresso: '+esc(importPending[0].quotaIngresso||'')+'</span>'))+(dupCount?'<span>'+dupCount+' già presenti: verranno saltate</span>':'')+'</div>';
       html += importPending.map(function(m, idx){
         return '<div class="preview-row">'+
           '<span class="pv-when">'+esc(m.data)+' '+esc(m.ora)+(isDup(m)?'<br><b style="color:#b5452f">GIÀ PRESENTE · verrà saltata</b>':'')+'</span>'+
           '<span><span class="pv-match">'+esc(m.casa)+' - '+esc(m.trasferta)+'</span><br><span class="pv-league">'+esc(m.campionato||'')+'</span></span>'+
           '<button type="button" class="pv-del" data-idx="'+idx+'">✕</button>'+
           (function(){var t=ebTrendFromImport(m.importData);if(!t)return '';return '<div class="preview-trend">'+t.main.concat(t.sub||[]).map(function(x){return '<span>'+esc(x[0])+' <b>'+pctLabel(x[1])+'</b></span>'}).join('')+'</div>';})()+
-          '<div class="preview-fields fixed"><span>'+esc(String(m.tipoGiocata||'').toUpperCase())+'</span><b>'+esc(m.quotaIngresso||'')+'</b></div>'+
+          '<div class="preview-fields fixed"><span>'+esc(String(m.tipoGiocata||'').toUpperCase())+'</span><b>'+(m.quotaIngresso?esc(m.quotaIngresso):'—')+'</b></div>'+
         '</div>';
       }).join('');
       html += '<div class="modal-actions" style="margin-top:10px;"><div style="flex:1"></div><button class="btn btn-primary" id="importConfirmBtn">Importa '+(importPending.length-dupCount)+' partite</button></div>';
@@ -1189,6 +1251,16 @@
     }
 
     function openCsvPicker(){
+      var mt=document.getElementById('importModalTitle'), ih=document.getElementById('importHint'), rb=document.getElementById('importRule');
+      if(currentAdminArea==='classic'){
+        if(mt) mt.textContent='Importa CSV · Betting classico';
+        if(ih) ih.innerHTML='Colonne obbligatorie: <b>Data</b>, <b>Ora</b>, <b>Squadra Casa</b>, <b>Squadra Ospite</b>, <b>Tipo Giocata</b>. Facoltative: <b>Campionato</b> e <b>Quota</b>. Esempio data: 04/10/2026; ora: 18:00.';
+        if(rb) rb.innerHTML='<span>CSV classico</span><b>pronto</b><small>Ogni riga diventa una partita Betting classico e non viene mai inserita nell’Exchange Live.</small>';
+      }else{
+        if(mt) mt.textContent='Importa CSV · Exchange Live';
+        if(ih) ih.innerHTML='Formati Exchange riconosciuti automaticamente: <b>Over 0.5 HT</b>, <b>Over 1.5 25-70</b>, Banca X HT, Under 0.5 HT e Favorito HT.';
+        if(rb) rb.innerHTML='<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>';
+      }
       importCsvFile.value='';
       importCsvFile.click();
     }
@@ -1214,8 +1286,8 @@
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
               campionato:m.campionato || '', casa:m.casa, trasferta:m.trasferta,
-              data:m.data, ora:m.ora, startAt:startAt,
-              tipoGiocata:m.tipoGiocata||IMPORT_STRATEGY, bettingArea: currentAdminArea || 'live', quotaIngresso:m.quotaIngresso||IMPORT_QUOTA,
+              data:(currentAdminArea==='classic' && m.dataIso)?m.dataIso:m.data, ora:m.ora, startAt:startAt,
+              tipoGiocata:m.tipoGiocata||(currentAdminArea==='classic'?'':IMPORT_STRATEGY), bettingArea: currentAdminArea || 'live', quotaIngresso:m.quotaIngresso||(currentAdminArea==='classic'?'':IMPORT_QUOTA),
               esitoManuale:'', botEnabled:true,
               importSource:m.importSource || 'CSV', importMatchId:m.importMatchId || '', importData:m.importData || null
             })
@@ -1257,7 +1329,7 @@
         all=all.filter(function(m){var k=[m.data,m.ora,String(m.casa).toLowerCase(),String(m.trasferta).toLowerCase(),String(m.tipoGiocata).toLowerCase()].join('|');if(seen[k])return false;seen[k]=1;return true;});
         importPending=all;
         importBackdrop.classList.add('open');
-        if (bad.length) importErr.textContent='File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
+        if (bad.length) importErr.textContent=currentAdminArea==='classic'?'File non riconosciuti: '+bad.join(', ')+'. Nel Betting classico servono le colonne Data, Ora, Squadra Casa, Squadra Ospite e Tipo Giocata.':'File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
         renderImportPreview();
       });
     });
