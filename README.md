@@ -202,3 +202,10 @@ Il tipo di giocata continua a essere ricavato dal nome del file CSV (es. `OVER 2
 - Aggiunto pulsante “Scegli da Betting classico” a Masaniello, Roserpina, Kelly, Martingala e Bolletta multipla.
 - Il selettore carica le partite classiche presenti in admin, mostra data/ora, squadre, campionato, strategia e quota se presente.
 - Selezionando una partita vengono compilati automaticamente descrizione e tipo giocata; la quota viene riportata quando disponibile.
+
+
+## STEP82 - Footer Betting classico + Telegram
+- Rimossa dalle card la scritta "Archivio automatico dal giorno successivo".
+- Ripristinato il toggle `su Telegram` nelle card del Betting classico.
+- Il toggle decide se la partita entra nel riepilogo Telegram unico delle 07:30.
+- L'archiviazione automatica continua a funzionare in background senza testo nella card.

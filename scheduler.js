@@ -37,7 +37,9 @@ async function checkClassicDaily(now) {
   const already = await pool.query('SELECT 1 FROM classic_daily_notifications WHERE date_key=$1 LIMIT 1',[rp.key]);
   if (already.rows.length) return;
   const { rows } = await pool.query(`SELECT * FROM matches WHERE COALESCE(betting_area,'live')='classic' ORDER BY start_at ASC`);
-  const todays = rows.filter(m => romeParts(Number(m.start_at)).key === rp.key);
+  // Nel Betting classico il toggle "su Telegram" decide quali partite
+  // includere nel riepilogo unico delle 07:30.
+  const todays = rows.filter(m => romeParts(Number(m.start_at)).key === rp.key && m.bot_enabled === true);
   if (!todays.length) {
     await pool.query('INSERT INTO classic_daily_notifications(date_key,sent_at) VALUES($1,$2) ON CONFLICT(date_key) DO NOTHING',[rp.key,now]);
     return;

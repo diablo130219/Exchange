@@ -331,7 +331,10 @@
             '<div class="stat">'+ICON_TARGET+'<div class="stat-text"><span class="stat-label">Giocata</span><span class="stat-value">'+esc(m.tipoGiocata||'—')+'</span></div></div>'+
             (m.quotaIngresso?'<div class="stat">'+ICON_CHART+'<div class="stat-text"><span class="stat-label">Quota</span><span class="stat-value">'+esc(m.quotaIngresso)+'</span></div></div>':'')+
           '</div>'+
-          '<div class="card-foot"><span class="classic-note">Archivio automatico dal giorno successivo</span><div class="card-actions"><button class="icon-btn" data-role="edit" data-id="'+esc(m.id)+'" title="Modifica">✎</button></div></div>'+
+          '<div class="card-foot classic-card-foot">'+
+            '<label class="bot-toggle classic-bot-toggle"><input type="checkbox" data-role="bot" data-id="'+esc(m.id)+'"'+(m.botEnabled?' checked':'')+'> su Telegram</label>'+
+            '<div class="card-actions"><button class="icon-btn" data-role="edit" data-id="'+esc(m.id)+'" title="Modifica">✎</button></div>'+
+          '</div>'+
         '</div>';
       }
       return '<div class="'+cls+'" data-id="'+esc(m.id)+'" data-search="'+esc(searchText)+'">'+
