@@ -313,6 +313,7 @@ function matchOut(row) {
     casa: row.casa,
     trasferta: row.trasferta,
     tipoGiocata: row.tipo_giocata || '',
+    bettingArea: row.betting_area === 'classic' ? 'classic' : 'live',
     startAt: Number(row.start_at),
     notifyMinutes: Number(row.notify_minutes),
     notified: !!row.notified,
@@ -1257,9 +1258,9 @@ app.post('/api/matches', requireSameSiteAdmin, async (req, res) => {
     const notifyMinutes = 10;
     const botEnabled = b.botEnabled === false ? false : true;
     const { rows } = await pool.query(
-      `INSERT INTO matches (id, data, ora, campionato, casa, trasferta, tipo_giocata, start_at, notify_minutes, notified, created_at, quota_ingresso, esito_manuale, bot_enabled, import_source, import_match_id, import_data)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
-      [id, b.data || '', b.ora || '', b.campionato || '', b.casa, b.trasferta, b.tipoGiocata || '', Number(b.startAt), notifyMinutes, createdAt, b.quotaIngresso || '', b.esitoManuale || null, botEnabled, b.importSource || null, b.importMatchId || null, b.importData || null]
+      `INSERT INTO matches (id, data, ora, campionato, casa, trasferta, tipo_giocata, betting_area, start_at, notify_minutes, notified, created_at, quota_ingresso, esito_manuale, bot_enabled, import_source, import_match_id, import_data)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,false,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
+      [id, b.data || '', b.ora || '', b.campionato || '', b.casa, b.trasferta, b.tipoGiocata || '', b.bettingArea === 'classic' ? 'classic' : 'live', Number(b.startAt), notifyMinutes, createdAt, b.quotaIngresso || '', b.esitoManuale || null, botEnabled, b.importSource || null, b.importMatchId || null, b.importData || null]
     );
     res.status(201).json(matchOut(rows[0]));
   } catch (err) {
@@ -1277,6 +1278,9 @@ app.patch('/api/matches/:id', requireSameSiteAdmin, async (req, res) => {
     let i = 1;
     if (Object.prototype.hasOwnProperty.call(fields, 'tipoGiocata')) {
       sets.push('tipo_giocata = $' + (i++)); vals.push(String(fields.tipoGiocata || ''));
+    }
+    if (Object.prototype.hasOwnProperty.call(fields, 'bettingArea')) {
+      sets.push('betting_area = $' + (i++)); vals.push(fields.bettingArea === 'classic' ? 'classic' : 'live');
     }
     if (Object.prototype.hasOwnProperty.call(fields, 'notifyMinutes')) {
       sets.push('notify_minutes = $' + (i++)); vals.push(10);

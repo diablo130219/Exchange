@@ -22,20 +22,35 @@
 <button class="pin-reset" id="pinReset">Problemi con il PIN?</button>
 </div>
 </div>
+<div id="areaGate" class="area-gate" aria-hidden="true">
+  <div class="area-gate-card">
+    <div class="area-gate-logo">Easy<span>Bet</span></div>
+    <h1>Dove vuoi entrare?</h1>
+    <p>Scegli l’area di gestione. Le partite del betting classico e quelle dell’Exchange Live restano separate.</p>
+    <div class="area-choice-grid">
+      <button class="area-choice classic" id="areaClassicBtn" type="button">
+        <span class="area-choice-icon">🎯</span><strong>Betting classico</strong><small>Pre-match, singole e multiple classiche</small>
+      </button>
+      <button class="area-choice live" id="areaLiveBtn" type="button">
+        <span class="area-choice-icon">⚡</span><strong>Exchange Live</strong><small>Strategie live, segnali e analisi Exchange</small>
+      </button>
+    </div>
+  </div>
+</div>
 <div id="app">
 <div class="navbar">
-<div class="brand">Easy<span>Bet</span> <small style="font-family:'Sora',sans-serif;font-weight:600;font-size:.6rem;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;vertical-align:middle;">Gestione</small></div>
+<div class="brand">Easy<span>Bet</span> <small id="adminAreaBadge" style="font-family:'Sora',sans-serif;font-weight:600;font-size:.6rem;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;vertical-align:middle;">Gestione</small></div>
 <div class="navlinks">
 <a href="/easybet.html">Vedi sito pubblico ↗</a>
 </div>
-<div class="nav-right">
+<div class="nav-right"><button class="lock-btn area-switch-btn" id="changeAreaBtn" type="button">⇄ Cambia area</button>
 <button aria-label="Cambia tema" class="theme-toggle" id="themeToggleAdmin" type="button">☀️ Chiaro</button>
 <button class="lock-btn" id="lockBtn">🔒 Blocca</button>
 </div>
 </div>
 <div class="hero">
-<h1>Le tue giocate, <span class="gold">gestite a mano</span>.</h1>
-<p>Area privata: inserisci le partite, imposta quota ed esito, decidi tu quali arrivano sul bot Telegram. Le modifiche si vedono subito sul sito pubblico.</p>
+<h1 id="adminHeroTitle">Le tue giocate, <span class="gold">gestite a mano</span>.</h1>
+<p id="adminHeroSub">Area privata: inserisci le partite, imposta quota ed esito, decidi tu quali arrivano sul bot Telegram. Le modifiche si vedono subito sul sito pubblico.</p>
 </div>
 <div class="wrap">
 <div class="section-head">
@@ -43,7 +58,7 @@
 <div class="head-actions">
 <button class="add-btn ghost-btn" id="backupBtn" type="button">💾 Backup JSON</button>
 <button class="add-btn ghost-btn" id="exportCsvBtn" type="button">↧ CSV partite</button>
-<button class="add-btn ghost-btn" id="importBtn">📋 Importa elenco</button><button class="add-btn ghost-btn" id="crestBulkBtn" title="Seleziona più immagini: il nome del file deve essere il nome della squadra (es. Westfalia.png)">🛡 Carica stemmi</button><input id="crestBulkFile" type="file" accept="image/*" multiple hidden/>
+<button class="add-btn ghost-btn" id="importBtn" data-live-only="1">📋 Importa elenco</button><button class="add-btn ghost-btn" id="crestBulkBtn" title="Seleziona più immagini: il nome del file deve essere il nome della squadra (es. Westfalia.png)">🛡 Carica stemmi</button><input id="crestBulkFile" type="file" accept="image/*" multiple hidden/>
 <button class="add-btn" id="addBtn">+ Aggiungi partita</button>
 </div>
 </div>

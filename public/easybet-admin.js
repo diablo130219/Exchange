@@ -19,11 +19,36 @@
   var pinError = document.getElementById('pinError');
   var pinSub = document.getElementById('pinSub');
   var pinReset = document.getElementById('pinReset');
+  var areaGate = document.getElementById('areaGate');
+  var currentAdminArea = '';
+  function normalizeAdminArea(v){ return v === 'classic' ? 'classic' : (v === 'live' ? 'live' : ''); }
+  function areaFromUrl(){ try { return normalizeAdminArea(new URLSearchParams(location.search).get('area')); } catch(e){ return ''; } }
+  function applyAdminArea(area){
+    currentAdminArea = normalizeAdminArea(area) || 'live';
+    if(areaGate){ areaGate.classList.remove('open'); areaGate.setAttribute('aria-hidden','true'); }
+    var badge=document.getElementById('adminAreaBadge');
+    if(badge){ badge.className='admin-area-chip '+currentAdminArea; badge.textContent=currentAdminArea==='classic'?'BETTING CLASSICO':'EXCHANGE LIVE'; }
+    var ht=document.getElementById('adminHeroTitle'), hs=document.getElementById('adminHeroSub');
+    if(ht) ht.innerHTML=currentAdminArea==='classic'?'Betting classico, <span class="gold">gestito a mano</span>.':'Exchange Live, <span class="gold">gestito a mano</span>.';
+    if(hs) hs.textContent=currentAdminArea==='classic'?'Inserisci e gestisci solo le partite pre-match del betting classico. Restano separate dalle strategie Exchange Live.':'Gestisci le partite destinate alle strategie live, al Live Analyzer e all’Exchange.';
+    document.querySelectorAll('[data-live-only="1"]').forEach(function(el){ el.style.display=currentAdminArea==='live'?'':'none'; });
+    try { history.replaceState(null,'',location.pathname+'?area='+currentAdminArea); } catch(e){}
+    if(appInited){ selectedIds.clear(); loadMatches(); }
+  }
+  function chooseAdminArea(){
+    if(areaGate){ areaGate.classList.add('open'); areaGate.setAttribute('aria-hidden','false'); }
+  }
+  var areaClassicBtn=document.getElementById('areaClassicBtn'), areaLiveBtn=document.getElementById('areaLiveBtn'), changeAreaBtn=document.getElementById('changeAreaBtn');
+  if(areaClassicBtn) areaClassicBtn.addEventListener('click',function(){ applyAdminArea('classic'); initAppOnce(); });
+  if(areaLiveBtn) areaLiveBtn.addEventListener('click',function(){ applyAdminArea('live'); initAppOnce(); });
+  if(changeAreaBtn) changeAreaBtn.addEventListener('click',function(){ chooseAdminArea(); });
 
   function showApp(){
     pinGate.style.display = 'none';
     appEl.style.display = 'block';
-    initAppOnce();
+    var fromUrl=areaFromUrl();
+    if(fromUrl){ applyAdminArea(fromUrl); initAppOnce(); }
+    else { chooseAdminArea(); }
   }
 
   function showGate(message){
@@ -266,6 +291,8 @@
     }
 
     function matchesFilter(m){
+      var area=(m.bettingArea==='classic')?'classic':'live';
+      if(area !== (currentAdminArea||'live')) return false;
       if (currentFilter === 'tutte') return true;
       return (m.esitoManuale || '') === currentFilter;
     }
@@ -855,6 +882,7 @@
         ora: fOra.value,
         startAt: startAt,
         tipoGiocata: fTipo.value.trim(),
+        bettingArea: currentAdminArea || 'live',
         quotaIngresso: fQuota.value.trim(),
         esitoManuale: fEsito.value,
         botEnabled: fBot.checked
@@ -1168,7 +1196,7 @@
             body: JSON.stringify({
               campionato:m.campionato || '', casa:m.casa, trasferta:m.trasferta,
               data:m.data, ora:m.ora, startAt:startAt,
-              tipoGiocata:m.tipoGiocata||IMPORT_STRATEGY, quotaIngresso:m.quotaIngresso||IMPORT_QUOTA,
+              tipoGiocata:m.tipoGiocata||IMPORT_STRATEGY, bettingArea: currentAdminArea || 'live', quotaIngresso:m.quotaIngresso||IMPORT_QUOTA,
               esitoManuale:'', botEnabled:true,
               importSource:m.importSource || 'CSV', importMatchId:m.importMatchId || '', importData:m.importData || null
             })

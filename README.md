@@ -112,3 +112,12 @@ Metodi disponibili:
 - **Bolletta multipla classica**: builder separato con più selezioni, quota totale, importo libero e storico.
 
 Il pulsante **+ Nuova cassa** nell'area Money Management permette di scegliere prima il tipo di gestione da creare.
+
+
+## STEP69 — Accesso separato Betting classico / Exchange Live
+- Dopo il PIN, `Accedi` mostra una scelta tra **Betting classico** ed **Exchange Live**.
+- Le nuove partite vengono salvate con `bettingArea=classic|live`.
+- Le partite già esistenti restano automaticamente nell'area **Exchange Live**.
+- L'admin mostra solo le partite dell'area scelta; è disponibile `Cambia area`.
+- L'import CSV delle strategie live è visibile solo in Exchange Live.
+- La pagina pubblica Live esclude le partite Betting classico.

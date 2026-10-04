@@ -130,7 +130,7 @@
   function isLive(m){return !isFinished(m) && Number(m.startAt)<=Date.now()}
   function matchesView(m){
     if(currentView==='pronostici') return isUpcoming(m);
-    if(currentView==='live') return isLive(m);
+    if(currentView==='live') return isLive(m) && ((m.bettingArea||'live')==='live');
     if(currentView==='statistiche'||currentView==='strategie'||currentView==='consigli'||currentView==='exchange'||currentView==='money') return false;
     return isFinished(m);
   }

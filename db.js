@@ -92,6 +92,11 @@ async function migrate() {
   // rimangono nel DB se già create in precedenza ma il codice non le legge più.
 
   // --- Sito EasyBet (gestione manuale: quota ingresso, esito, invio al bot) ---
+  // --- STEP 69: separazione Betting classico / Exchange Live ---
+  // Le partite esistenti restano Exchange Live grazie al default 'live'.
+  await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS betting_area TEXT NOT NULL DEFAULT 'live';`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_betting_area ON matches (betting_area);`);
+
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS quota_ingresso TEXT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS esito_manuale TEXT;`); // null|'entrata_vinta'|'entrata_persa'|'non_entrata'
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS bot_enabled BOOLEAN NOT NULL DEFAULT true;`);
