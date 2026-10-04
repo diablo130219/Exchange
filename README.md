@@ -209,3 +209,7 @@ Il tipo di giocata continua a essere ricavato dal nome del file CSV (es. `OVER 2
 - Ripristinato il toggle `su Telegram` nelle card del Betting classico.
 - Il toggle decide se la partita entra nel riepilogo Telegram unico delle 07:30.
 - L'archiviazione automatica continua a funzionare in background senza testo nella card.
+
+
+## STEP84 — separazione flussi
+Le partite Betting classico sono escluse da Pronostici, Live Exchange e dallo scanner automatico GoalDir. Solo le partite Exchange possono passare Pronostici → Live.

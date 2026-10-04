@@ -1679,6 +1679,7 @@ app.post('/api/live-stats', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT * FROM matches
        WHERE live_strategy IS NOT NULL
+         AND COALESCE(betting_area, 'live') = 'live'
          AND esito_manuale IS NULL
        ORDER BY ABS(start_at - $1) ASC`,
       [Date.now()]
@@ -2583,7 +2584,7 @@ async function liveAutoScanOnce() {
   try {
     await autoCloseExcluded();
     const { rows } = await pool.query(
-      `SELECT * FROM matches WHERE start_at <= $1 AND start_at >= $2 AND (esito_manuale IS NULL OR esito_manuale = '')`,
+      `SELECT * FROM matches WHERE COALESCE(betting_area, 'live') = 'live' AND start_at <= $1 AND start_at >= $2 AND (esito_manuale IS NULL OR esito_manuale = '')`,
       [now, now - 170 * 60 * 1000]);
     const settleTargets = rows.filter(m => m.signal_first_at && !m.esito_auto && !/"manual"/.test(m.settle_state || '') && scanSignalName(m.tipo_giocata));
     const targets = rows.filter(m => {
