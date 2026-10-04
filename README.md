@@ -190,3 +190,15 @@ Il tipo di giocata continua a essere ricavato dal nome del file CSV (es. `OVER 2
 - Nessun alert a 10 minuti per le partite classiche.
 - Ogni mattina dalle 07:30 (Europe/Rome), una sola volta, Telegram invia un riepilogo unico delle eventuali giocate classiche del giorno.
 - Se non ci sono giocate, non viene inviato alcun messaggio.
+
+
+## STEP80 — Date in formato italiano
+- Le date mostrate nelle card vengono visualizzate in formato italiano `gg/mm/aaaa`.
+- L'archivio mantiene le intestazioni estese in italiano.
+- Il riepilogo Telegram giornaliero usa già giorno e mese in italiano.
+
+
+## STEP81 — Selettore Betting classico nel Money Management
+- Aggiunto pulsante “Scegli da Betting classico” a Masaniello, Roserpina, Kelly, Martingala e Bolletta multipla.
+- Il selettore carica le partite classiche presenti in admin, mostra data/ora, squadre, campionato, strategia e quota se presente.
+- Selezionando una partita vengono compilati automaticamente descrizione e tipo giocata; la quota viene riportata quando disponibile.

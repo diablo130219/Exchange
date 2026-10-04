@@ -291,8 +291,8 @@
 
     function fmtWhen(m){
       var d = new Date(Number(m.startAt));
-      var dd = (m.data || d.toLocaleDateString('it-IT'));
-      var oo = (m.ora || d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}));
+      var dd = (!isNaN(d.getTime())) ? d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'}) : (m.data || '—');
+      var oo = (m.ora || (!isNaN(d.getTime()) ? d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}) : ''));
       return dd + ' ' + oo;
     }
 
