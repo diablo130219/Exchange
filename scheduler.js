@@ -1,5 +1,5 @@
 const { pool } = require('./db');
-const { broadcastAlert } = require('./telegram');
+const { broadcastAlert, broadcastClassicDaily } = require('./telegram');
 
 const CHECK_INTERVAL_MS = 30 * 1000;
 const FIXED_NOTIFY_MINUTES = 10;
@@ -20,10 +20,40 @@ function formatAlert(m) {
   );
 }
 
+function romeParts(ts) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone:'Europe/Rome', year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+  }).formatToParts(new Date(ts));
+  const o = {}; parts.forEach(p => { if (p.type !== 'literal') o[p.type] = p.value; });
+  return { key:o.year+'-'+o.month+'-'+o.day, hour:Number(o.hour), minute:Number(o.minute) };
+}
+function romeDateLabel(ts) {
+  return new Intl.DateTimeFormat('it-IT',{timeZone:'Europe/Rome',weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(ts));
+}
+async function checkClassicDaily(now) {
+  const rp = romeParts(now);
+  if (rp.hour < 7 || (rp.hour === 7 && rp.minute < 30)) return;
+  const already = await pool.query('SELECT 1 FROM classic_daily_notifications WHERE date_key=$1 LIMIT 1',[rp.key]);
+  if (already.rows.length) return;
+  const { rows } = await pool.query(`SELECT * FROM matches WHERE COALESCE(betting_area,'live')='classic' ORDER BY start_at ASC`);
+  const todays = rows.filter(m => romeParts(Number(m.start_at)).key === rp.key);
+  if (!todays.length) {
+    await pool.query('INSERT INTO classic_daily_notifications(date_key,sent_at) VALUES($1,$2) ON CONFLICT(date_key) DO NOTHING',[rp.key,now]);
+    return;
+  }
+  const sent = await broadcastClassicDaily(todays, romeDateLabel(now));
+  if (sent > 0) {
+    await pool.query('INSERT INTO classic_daily_notifications(date_key,sent_at) VALUES($1,$2) ON CONFLICT(date_key) DO NOTHING',[rp.key,now]);
+    console.log(`Riepilogo Betting classico ${rp.key} inviato alle 07:30 a ${sent} destinatari.`);
+  }
+}
+
 async function checkOnce() {
   const now = Date.now();
+  await checkClassicDaily(now);
   // notify_minutes varies per match, so fetch all not-yet-notified matches and filter precisely in JS.
-  const { rows: pending } = await pool.query(`SELECT * FROM matches WHERE notified = false AND bot_enabled = true ORDER BY start_at ASC`);
+  const { rows: pending } = await pool.query(`SELECT * FROM matches WHERE notified = false AND bot_enabled = true AND COALESCE(betting_area,'live') <> 'classic' ORDER BY start_at ASC`);
   for (const m of pending) {
     const startAt = Number(m.start_at);
     const dueAt = startAt - (FIXED_NOTIFY_MINUTES * 60000);
@@ -93,4 +123,4 @@ function stop() {
   running = false;
 }
 
-module.exports = { start, stop, checkOnce, formatAlert };
+module.exports = { start, stop, checkOnce, checkClassicDaily, formatAlert };

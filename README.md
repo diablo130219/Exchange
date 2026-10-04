@@ -182,3 +182,11 @@ Importando più CSV insieme, ogni file assegna il proprio nome come tipo giocata
 L'import Betting classico ora accetta sia colonne separate **Data** + **Ora**, sia una colonna unica **Data/Ora**.
 È supportato direttamente il formato CGMBet, ad esempio `26/27 04/10/2026 1400`, interpretato come **04/10/2026 14:00**.
 Il tipo di giocata continua a essere ricavato dal nome del file CSV (es. `OVER 2.5.csv` → `OVER 2.5`).
+
+
+## STEP79 – Betting classico semplificato + Telegram 07:30
+- Il Betting classico non usa più esiti V/P/NE né statistiche Exchange.
+- Le partite classiche restano operative per la giornata e poi passano naturalmente nello storico per data.
+- Nessun alert a 10 minuti per le partite classiche.
+- Ogni mattina dalle 07:30 (Europe/Rome), una sola volta, Telegram invia un riepilogo unico delle eventuali giocate classiche del giorno.
+- Se non ci sono giocate, non viene inviato alcun messaggio.

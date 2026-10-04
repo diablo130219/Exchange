@@ -33,6 +33,9 @@
     if(ht) ht.innerHTML=currentAdminArea==='classic'?'Betting classico, <span class="gold">gestito a mano</span>.':'Exchange Live, <span class="gold">gestito a mano</span>.';
     if(hs) hs.textContent=currentAdminArea==='classic'?'Inserisci e gestisci solo le partite pre-match del betting classico. Restano separate dalle strategie Exchange Live.':'Gestisci le partite destinate alle strategie live, al Live Analyzer e all’Exchange.';
     document.querySelectorAll('[data-live-only="1"]').forEach(function(el){ el.style.display=currentAdminArea==='live'?'':'none'; });
+    var outcomeFilters=document.getElementById('outcomeFilters');
+    if(outcomeFilters) outcomeFilters.style.display=currentAdminArea==='classic'?'none':'';
+    if(currentAdminArea==='classic') currentFilter='tutte';
     var importBtnArea=document.getElementById('importBtn');
     if(importBtnArea) importBtnArea.textContent=currentAdminArea==='classic'?'📥 Importa CSV classico':'📋 Importa CSV Exchange';
     try { history.replaceState(null,'',location.pathname+'?area='+currentAdminArea); } catch(e){}
@@ -296,6 +299,7 @@
     function matchesFilter(m){
       var area=(m.bettingArea==='classic')?'classic':'live';
       if(area !== (currentAdminArea||'live')) return false;
+      if (currentAdminArea === 'classic') return true;
       if (currentFilter === 'tutte') return true;
       return (m.esitoManuale || '') === currentFilter;
     }
@@ -312,6 +316,24 @@
       var bannerCls = esito ? esito : 'attesa';
       var bannerIcon = esito ? ICON_TROPHY : ICON_HOURGLASS;
       var searchText = [m.casa,m.trasferta,m.campionato,m.tipoGiocata,m.quotaIngresso].filter(Boolean).join(' ').toLowerCase();
+      if (currentAdminArea === 'classic') {
+        return '<div class="card classic-card" data-id="'+esc(m.id)+'" data-search="'+esc(searchText)+'">'+
+          '<div class="card-top2">'+
+            '<div class="league-badge">'+ICON_SHIELD+'<span>'+esc(m.campionato||'—')+'</span></div>'+
+            '<div class="kickoff">'+ICON_CLOCK+'<span>'+esc(fmtWhen(m))+'</span></div>'+
+          '</div>'+
+          '<div class="matchup">'+
+            '<div class="side">'+crestImg(m.casa,m.campionato,'lg')+'<div class="side-name">'+esc(m.casa)+'</div></div>'+
+            '<div class="vs-mid">VS</div>'+
+            '<div class="side">'+crestImg(m.trasferta,m.campionato,'lg')+'<div class="side-name">'+esc(m.trasferta)+'</div></div>'+
+          '</div>'+
+          '<div class="stats-row">'+
+            '<div class="stat">'+ICON_TARGET+'<div class="stat-text"><span class="stat-label">Giocata</span><span class="stat-value">'+esc(m.tipoGiocata||'—')+'</span></div></div>'+
+            (m.quotaIngresso?'<div class="stat">'+ICON_CHART+'<div class="stat-text"><span class="stat-label">Quota</span><span class="stat-value">'+esc(m.quotaIngresso)+'</span></div></div>':'')+
+          '</div>'+
+          '<div class="card-foot"><span class="classic-note">Archivio automatico dal giorno successivo</span><div class="card-actions"><button class="icon-btn" data-role="edit" data-id="'+esc(m.id)+'" title="Modifica">✎</button></div></div>'+
+        '</div>';
+      }
       return '<div class="'+cls+'" data-id="'+esc(m.id)+'" data-search="'+esc(searchText)+'">'+
 
         '<div class="card-top2">'+

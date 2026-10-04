@@ -276,6 +276,40 @@ function formatClassicAlert(match, minutesLeft) {
   ].join('\n');
 }
 
+function formatClassicDailySummary(matches, dateLabel) {
+  const rows = Array.isArray(matches) ? matches : [];
+  const lines = [
+    '🎯 <b>EASYBET — BETTING CLASSICO</b>',
+    '📅 ' + escHtml(dateLabel || ''),
+    '',
+    '<b>Giocate di oggi: ' + rows.length + '</b>',
+    ''
+  ];
+  rows.forEach((m, i) => {
+    const d = new Date(Number(m.start_at || 0));
+    const time = String(m.ora || (Number.isFinite(d.getTime()) ? d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}) : '') || '—');
+    lines.push('⚽ <b>' + escHtml(m.casa || '') + ' vs ' + escHtml(m.trasferta || '') + '</b>');
+    lines.push('🕒 ' + escHtml(time));
+    lines.push('🎯 <b>' + escHtml(String(m.tipo_giocata || 'Giocata').toUpperCase()) + '</b>');
+    if (m.campionato) lines.push('🏆 ' + escHtml(m.campionato));
+    if (i < rows.length - 1) lines.push('');
+  });
+  lines.push('', '📌 Le partite verranno archiviate automaticamente dal giorno successivo.');
+  return lines.join('\n');
+}
+
+async function broadcastClassicDaily(matches, dateLabel) {
+  const { rows } = await pool.query('SELECT chat_id FROM subscribers');
+  if (!rows.length || !API_BASE) return 0;
+  const text = formatClassicDailySummary(matches, dateLabel);
+  let sent = 0;
+  for (const row of rows) {
+    const result = await sendMessage(row.chat_id, text, { disable_web_page_preview: true });
+    if (result && result.ok) sent++;
+  }
+  return sent;
+}
+
 async function broadcastAlert(match, minutesLeft) {
   const { rows } = await pool.query('SELECT chat_id FROM subscribers');
   if (!rows.length) {
@@ -370,4 +404,4 @@ function startPolling() {
 }
 async function stopPolling() { running = false; await releaseLeaderLock(); try { await leaderLoopPromise; } catch (_) {} leaderLoopPromise = null; }
 
-module.exports = { strategyRuleLine, sendMessage, broadcast, broadcastAlert, createAlertCard, startPolling, stopPolling, isConfigured: !!API_BASE };
+module.exports = { strategyRuleLine, sendMessage, broadcast, broadcastAlert, broadcastClassicDaily, formatClassicDailySummary, createAlertCard, startPolling, stopPolling, isConfigured: !!API_BASE };

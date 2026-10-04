@@ -64,6 +64,13 @@ async function migrate() {
     VALUES ('main', 10, 0)
     ON CONFLICT (id) DO NOTHING;
   `);
+  // STEP79: invio giornaliero Betting classico alle 07:30 (Europe/Rome), una sola volta per data.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS classic_daily_notifications (
+      date_key TEXT PRIMARY KEY,
+      sent_at BIGINT NOT NULL
+    );
+  `);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_start_at ON matches (start_at);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_esito_manuale ON matches (esito_manuale);`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_tipo_giocata ON matches (tipo_giocata);`);
