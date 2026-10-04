@@ -2597,3 +2597,10 @@ html:not([data-theme="light"]) body .mm-bank-field button{background:#211d15;col
 #moneyBoard .mm-ky-block{margin-top:14px}
 #moneyBoard .ky-history .pos{color:#55cc8c}#moneyBoard .ky-history .neg{color:#ed7a7a}
 html[data-theme="light"] #moneyBoard .ky-history .pos{color:#4f7d55}html[data-theme="light"] #moneyBoard .ky-history .neg{color:#a3604b}
+
+/* STEP98 · Multipla: selezione con tipo giocata, data e ora */
+#moneyBoard .mm-fields.mm-leg-fields{grid-template-columns:repeat(4,1fr)}
+#moneyBoard .mm-leg-fields .wide{grid-column:span 2}
+#moneyBoard .mm-leg-sub{display:block;margin-top:3px;font-size:11px;font-weight:700;opacity:.7}
+@media(max-width:700px){#moneyBoard .mm-fields.mm-leg-fields{grid-template-columns:1fr 1fr}}
+html[data-theme="dark"] #moneyBoard input[type=date],html[data-theme="dark"] #moneyBoard input[type=time]{color-scheme:dark}
