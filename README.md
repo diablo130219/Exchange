@@ -165,3 +165,14 @@ Il pulsante **+ Nuova cassa** nell'area Money Management permette di scegliere p
 - Colonne obbligatorie: Data, Ora, Squadra Casa, Squadra Ospite, Tipo Giocata.
 - Colonne facoltative: Campionato, Quota, ID.
 - Import Exchange Live invariato e separato.
+
+## STEP77 — Tipo giocata dal nome del CSV (Betting classico)
+Nel Betting classico il campo **Tipo Giocata** non è più richiesto come colonna del CSV.
+Viene ricavato automaticamente dal nome del file, senza estensione. Esempi:
+- `OVER 2.5.csv` → Tipo giocata `OVER 2.5`
+- `1X.csv` → Tipo giocata `1X`
+- `GOAL.csv` → Tipo giocata `GOAL`
+
+Colonne obbligatorie del CSV classico: **Data, Ora, Squadra Casa, Squadra Ospite**.
+Colonne facoltative: **Campionato, Quota, ID**.
+Importando più CSV insieme, ogni file assegna il proprio nome come tipo giocata alle relative partite.

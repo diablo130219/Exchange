@@ -1091,6 +1091,13 @@
       return String(h).padStart(2,'0')+':'+String(min).padStart(2,'0');
     }
 
+    function classicTypeFromFileName(fileName){
+      var name=String(fileName||'').trim().replace(/\.csv$/i,'');
+      // Il nome del file è il tipo di giocata. Rendo solo i separatori tecnici più leggibili.
+      name=name.replace(/[_]+/g,' ').replace(/\s+/g,' ').trim();
+      return name;
+    }
+
     function parseClassicCsv(text, fileName){
       var rows=csvRows(text);
       if(rows.length<2) return [];
@@ -1101,20 +1108,20 @@
       var iTime=idx('ora','orario','time');
       var iHome=idx('squadra casa','casa','home','team home');
       var iAway=idx('squadra ospite','squadra trasferta','ospite','trasferta','away','team away');
-      var iType=idx('tipo giocata','tipo di giocata','giocata','pronostico','mercato','strategia','bet');
       var iLeague=idx('campionato','lega','league','competizione');
       var iOdds=idx('quota','quota ingresso','odds');
       var iId=idx('matchid','match id','id');
-      if(iDate<0||iTime<0||iHome<0||iAway<0||iType<0) return [];
+      var tipo=classicTypeFromFileName(fileName);
+      if(iDate<0||iTime<0||iHome<0||iAway<0||!tipo) return [];
       var out=[];
       for(var r=1;r<rows.length;r++){
         var vals=rows[r];
         var d=parseClassicDate(vals[iDate]), t=parseClassicTime(vals[iTime]);
-        var casa=String(vals[iHome]||'').trim(), trasferta=String(vals[iAway]||'').trim(), tipo=String(vals[iType]||'').trim();
-        if(!d||!t||!casa||!trasferta||!tipo) continue;
-        var quota=iOdds>=0?String(vals[iOdds]||'').trim().replace(',','.'):'';
+        var casa=String(vals[iHome]||'').trim(), trasferta=String(vals[iAway]||'').trim();
+        if(!d||!t||!casa||!trasferta) continue;
+        var quota=iOdds>=0?String(vals[iOdds]||'').trim().replace(',','.') :'';
         var original={}; headers.forEach(function(h,j){original[h]=vals[j]==null?'':String(vals[j]).trim();});
-        original._easybet={type:'classic'};
+        original._easybet={type:'classic',tipoGiocataDaFile:tipo,fileName:fileName||''};
         out.push({
           data:d.display, dataIso:d.iso, ora:t,
           campionato:iLeague>=0?String(vals[iLeague]||'').trim():'',
@@ -1225,10 +1232,10 @@
 
     function renderImportPreview(){
       var ruleBox=document.getElementById('importRule');
-      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML=currentAdminArea==='classic'?'<span>CSV classico</span><b>—</b><small>Colonne obbligatorie: Data, Ora, Squadra Casa, Squadra Ospite, Tipo Giocata. Facoltative: Campionato, Quota.</small>':'<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
+      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML=currentAdminArea==='classic'?'<span>CSV classico</span><b>—</b><small>Colonne obbligatorie: Data, Ora, Squadra Casa, Squadra Ospite. Il Tipo Giocata viene preso dal nome del file CSV. Facoltative: Campionato, Quota.</small>':'<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
       var byStrat={};importPending.forEach(function(x){var k=String(x.tipoGiocata||'').toUpperCase()+(x.quotaIngresso?' · '+x.quotaIngresso:'');byStrat[k]=(byStrat[k]||0)+1});var stratKeys=Object.keys(byStrat);var first=importPending[0], isO15=String(first.tipoGiocata||'').toLowerCase().indexOf('1.5')!==-1;
       if(currentAdminArea==='classic'){
-        if(ruleBox) ruleBox.innerHTML='<span>BETTING CLASSICO</span><b>'+importPending.length+' partite</b><span>Campi</span><b>Data · Ora · Casa · Ospite · Giocata</b><small>Ogni riga mantiene il proprio tipo di giocata e, se presente, la propria quota.</small>';
+        if(ruleBox) ruleBox.innerHTML='<span>BETTING CLASSICO</span><b>'+importPending.length+' partite</b><span>Tipo giocata</span><b>' + esc(String(first.tipoGiocata||'').toUpperCase()) + '</b><span>Campi</span><b>Data · Ora · Casa · Ospite</b><small>Il tipo di giocata viene assegnato dal nome del CSV; se presente, ogni riga mantiene la propria quota.</small>';
       } else if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+({'over 1.5 ft':'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.','banca x ht':'File EXCH LAY X HT: all’intervallo sullo 0-0 o 1-1 banca X solo a quota ≤ 2,10 e tieni fino al 90’.','under 0.5 ht':'File EXCH UNDER 0.5 HT: pre-match solo a quota ≥ 2,95 in exchange (≥ 2,85 bookmaker).','favorito ht':'File EXCH FAVORITO HT: all’intervallo in parità punta 1 ≥ 1,75, favorito sotto banca 2 ≤ 2,50.'}[String(first.tipoGiocata||'').toLowerCase()]||'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
       function isDup(m){var st=toStartAt(m.data,m.ora);return matches.some(function(x){return Number(x.startAt)===Number(st)&&String(x.tipoGiocata||'').trim().toLowerCase()===String(m.tipoGiocata||'').trim().toLowerCase()&&String(x.casa||'').trim().toLowerCase()===String(m.casa||'').trim().toLowerCase()&&String(x.trasferta||'').trim().toLowerCase()===String(m.trasferta||'').trim().toLowerCase();});}
       var dupCount=importPending.filter(isDup).length;
@@ -1254,8 +1261,8 @@
       var mt=document.getElementById('importModalTitle'), ih=document.getElementById('importHint'), rb=document.getElementById('importRule');
       if(currentAdminArea==='classic'){
         if(mt) mt.textContent='Importa CSV · Betting classico';
-        if(ih) ih.innerHTML='Colonne obbligatorie: <b>Data</b>, <b>Ora</b>, <b>Squadra Casa</b>, <b>Squadra Ospite</b>, <b>Tipo Giocata</b>. Facoltative: <b>Campionato</b> e <b>Quota</b>. Esempio data: 04/10/2026; ora: 18:00.';
-        if(rb) rb.innerHTML='<span>CSV classico</span><b>pronto</b><small>Ogni riga diventa una partita Betting classico e non viene mai inserita nell’Exchange Live.</small>';
+        if(ih) ih.innerHTML='Il <b>Tipo Giocata</b> viene preso automaticamente dal <b>nome del file CSV</b> (es. <b>OVER 2.5.csv</b> → OVER 2.5). Colonne obbligatorie: <b>Data</b>, <b>Ora</b>, <b>Squadra Casa</b>, <b>Squadra Ospite</b>. Facoltative: <b>Campionato</b> e <b>Quota</b>.';
+        if(rb) rb.innerHTML='<span>CSV classico</span><b>pronto</b><small>Il nome del file diventa il Tipo Giocata per tutte le righe di quel CSV.</small>';
       }else{
         if(mt) mt.textContent='Importa CSV · Exchange Live';
         if(ih) ih.innerHTML='Formati Exchange riconosciuti automaticamente: <b>Over 0.5 HT</b>, <b>Over 1.5 25-70</b>, Banca X HT, Under 0.5 HT e Favorito HT.';
@@ -1329,7 +1336,7 @@
         all=all.filter(function(m){var k=[m.data,m.ora,String(m.casa).toLowerCase(),String(m.trasferta).toLowerCase(),String(m.tipoGiocata).toLowerCase()].join('|');if(seen[k])return false;seen[k]=1;return true;});
         importPending=all;
         importBackdrop.classList.add('open');
-        if (bad.length) importErr.textContent=currentAdminArea==='classic'?'File non riconosciuti: '+bad.join(', ')+'. Nel Betting classico servono le colonne Data, Ora, Squadra Casa, Squadra Ospite e Tipo Giocata.':'File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
+        if (bad.length) importErr.textContent=currentAdminArea==='classic'?'File non riconosciuti: '+bad.join(', ')+'. Nel Betting classico servono Data, Ora, Squadra Casa e Squadra Ospite; il Tipo Giocata viene preso dal nome del CSV.':'File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
         renderImportPreview();
       });
     });
