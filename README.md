@@ -1,3 +1,11 @@
+STEP70 — MASANIELLO INTEGRATO MONEY MANAGEMENT
+
+- Rimossa la vecchia UI laterale Masaniello Studio.
+- Le casse Masaniello sono ora gestite con barra orizzontale coerente con Money Management.
+- Nuova cassa, modifica/rinomina, duplica, elimina, backup/import restano disponibili.
+- Motore matematico Masaniello invariato: stake, cicli, matrice, simulazioni, statistiche, confronto piani e storico.
+- Compatibile con le casse Masaniello già salvate.
+
 
 ## STEP52 — Box API GoalDir leggibile
 - Solo CSS del riquadro API: più larghezza e griglia interna stabile.

@@ -125,3 +125,31 @@ html[data-theme="dark"] .masaniello-board .ms-delete-compare{
   background:#3c211f!important;
   border-color:#7b3d3a!important;
 }
+
+
+/* STEP70 — Masaniello integrato nella nuova area Money Management */
+.masaniello-board .ms-shell{display:block;min-height:auto;border-radius:20px;overflow:visible;background:transparent;box-shadow:none;border:0}
+.masaniello-board .ms-sidebar.ms-cash-manager{min-height:0;border:1px solid var(--ms-line);border-radius:16px;padding:12px 14px;margin-bottom:12px;background:linear-gradient(180deg,#fffdf8,#f7ecd5);display:block}
+.masaniello-board .ms-cash-manager-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.masaniello-board .ms-cash-manager-head>div{display:flex;flex-direction:column;gap:2px}
+.masaniello-board .ms-cash-manager-head small{font-size:.56rem;letter-spacing:.14em;color:#a67a18;font-weight:1000}
+.masaniello-board .ms-cash-manager-head b{font-size:.78rem;color:var(--ms-text)}
+.masaniello-board .ms-list{display:flex;flex-direction:row;gap:8px;max-height:none;min-height:0;overflow-x:auto;padding-bottom:3px}
+.masaniello-board .ms-item{min-width:210px;max-width:280px;display:grid;grid-template-columns:1fr auto;grid-template-areas:'name bank' 'meta pl';gap:4px 12px;padding:11px 13px;border-radius:12px;background:#fffdf8}
+.masaniello-board .ms-item.active{background:linear-gradient(180deg,#fff3c8,#fffaf0);box-shadow:inset 0 0 0 1px rgba(196,143,17,.22)}
+.masaniello-board .ms-item .ms-cash-name{grid-area:name;font-size:.72rem;color:var(--ms-text);font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.masaniello-board .ms-item b{grid-area:bank;font-size:.76rem;text-align:right;white-space:nowrap}
+.masaniello-board .ms-item small{grid-area:meta;font-size:.53rem;color:var(--ms-muted);white-space:nowrap}
+.masaniello-board .ms-item em{grid-area:pl;text-align:right;font-style:normal;font-size:.58rem;font-weight:950;white-space:nowrap}
+.masaniello-board .ms-cash-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px solid var(--ms-line2)}
+.masaniello-board .ms-cash-actions .ms-save{margin-left:auto;padding:0 2px;font-size:.55rem}
+.masaniello-board .ms-content{padding:0;background:transparent}
+.masaniello-board .ms-head{margin-top:0}
+.masaniello-board .ms-main-empty{min-height:360px;border:1px solid var(--ms-line);border-radius:16px;background:linear-gradient(180deg,#fffdf8,#f8efd9)}
+.masaniello-board .ms-brand,.masaniello-board .ms-brand-copy,.masaniello-board .ms-side-title,.masaniello-board .ms-disc,.masaniello-board .ms-side-grid{display:none!important}
+@media(max-width:850px){.masaniello-board .ms-sidebar.ms-cash-manager{border-bottom:1px solid var(--ms-line)}.masaniello-board .ms-cash-manager-head{align-items:flex-start}.masaniello-board .ms-item{min-width:190px}.masaniello-board .ms-cash-actions .ms-save{width:100%;margin-left:0}}
+@media(max-width:560px){.masaniello-board .ms-cash-manager-head{flex-direction:column}.masaniello-board .ms-cash-manager-head .ms-btn{width:100%}.masaniello-board .ms-item{min-width:82vw}.masaniello-board .ms-cash-actions>*{flex:1 1 calc(50% - 7px)}.masaniello-board .ms-cash-actions .ms-save{flex-basis:100%}}
+html[data-theme="dark"] .masaniello-board .ms-sidebar.ms-cash-manager{background:linear-gradient(180deg,#231e16,#1a1611)!important;border-color:var(--ms-line)!important}
+html[data-theme="dark"] .masaniello-board .ms-item{background:#211c14!important}
+html[data-theme="dark"] .masaniello-board .ms-item.active{background:linear-gradient(180deg,#382d1b,#251e14)!important}
+html[data-theme="dark"] .masaniello-board .ms-main-empty{background:linear-gradient(180deg,#231e16,#1a1611)!important}
