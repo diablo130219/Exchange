@@ -520,3 +520,53 @@ html[data-theme="light"] body details.month-section{background:linear-gradient(1
   .esito-select-inline{font-size:.74rem}
   .bot-toggle{font-size:.7rem}
 }
+
+
+/* ===== STEP85 · Telegram solo spunta + logo / niente stats nel betting classico ===== */
+.bot-toggle.telegram-toggle{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:auto;
+  padding:8px 10px;
+  border:1px solid rgba(190,145,30,.24);
+  border-radius:999px;
+  background:rgba(255,255,255,.6);
+  color:var(--text);
+}
+.bot-toggle.telegram-toggle input{
+  width:15px;
+  height:15px;
+  accent-color:var(--gold);
+  margin:0;
+}
+.bot-toggle.telegram-toggle .tg-logo{
+  width:18px;
+  height:18px;
+  display:inline-grid;
+  place-items:center;
+  color:#229ED9;
+  flex:0 0 18px;
+}
+.bot-toggle.telegram-toggle .tg-svg{
+  width:18px;
+  height:18px;
+  display:block;
+}
+.classic-card .classic-card-foot{
+  justify-content:space-between;
+}
+.classic-card .classic-bot-toggle{
+  margin-left:0;
+}
+.exchange-bot-toggle{
+  margin-right:auto;
+}
+.month-section .month-summary:empty,
+.date-summary:empty{display:none!important}
+@media (max-width:680px){
+  .classic-card .classic-card-foot,
+  .card-foot{gap:10px}
+  .bot-toggle.telegram-toggle{padding:8px 10px}
+}

@@ -199,6 +199,10 @@
     var ICON_TARGET = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg>';
     var ICON_TROPHY = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 01-10 0V4z"/><path d="M7 5H4v1a4 4 0 004 4M17 5h3v1a4 4 0 01-4 4"/></svg>';
     var ICON_HOURGLASS = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 5.5 5 9s-5 4-5 9M17 3c0 5-5 5.5-5 9s5 4 5 9"/></svg>';
+    var ICON_TELEGRAM = '<svg class="tg-svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 4.2c.3.2.4.6.3 1L18.8 20c-.1.7-.8 1.1-1.4.8l-4.9-2.4-2.6 2.4c-.3.3-.8.4-1.2.2-.4-.2-.6-.6-.6-1v-4.1L18 7.3 6.1 14.2 2 12.4c-.5-.2-.7-.7-.7-1.2 0-.5.4-.9.9-1l18.2-6c.4-.1.8-.1 1.2 0z"/></svg>';
+    function telegramToggleHtml(m, extraClass){
+      return '<label class="bot-toggle telegram-toggle '+(extraClass||'')+'" title="Invia nel riepilogo Telegram" aria-label="Invia nel riepilogo Telegram"><input type="checkbox" data-role="bot" data-id="'+esc(m.id)+'"'+(m.botEnabled?' checked':'')+'><span class="tg-logo">'+ICON_TELEGRAM+'</span></label>';
+    }
 
     function esc(s){
       return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -332,7 +336,7 @@
             (m.quotaIngresso?'<div class="stat">'+ICON_CHART+'<div class="stat-text"><span class="stat-label">Quota</span><span class="stat-value">'+esc(m.quotaIngresso)+'</span></div></div>':'')+
           '</div>'+
           '<div class="card-foot classic-card-foot">'+
-            '<label class="bot-toggle classic-bot-toggle"><input type="checkbox" data-role="bot" data-id="'+esc(m.id)+'"'+(m.botEnabled?' checked':'')+'> su Telegram</label>'+
+            ''+telegramToggleHtml(m,'classic-bot-toggle')+''+
             '<div class="card-actions"><button class="icon-btn" data-role="edit" data-id="'+esc(m.id)+'" title="Modifica">✎</button></div>'+
           '</div>'+
         '</div>';
@@ -374,7 +378,7 @@
           '</div>'+
         '</div>'+
         '<div class="card-foot">'+
-          '<label class="bot-toggle"><input type="checkbox" data-role="bot" data-id="'+esc(m.id)+'"'+(m.botEnabled?' checked':'')+'> su Telegram</label>'+
+          ''+telegramToggleHtml(m,'exchange-bot-toggle')+''+
           '<div class="card-actions">'+
             (/^entrata_/.test(esito)?'<button class="icon-btn diario-btn'+(m.diarioLinkedAt?' linked':'')+'" data-role="diario" data-id="'+esc(m.id)+'" title="'+(m.diarioLinkedAt?'Nel Diario: '+fmtEuro(m.diarioProfit)+' · clicca per modificare':'Registra nel Diario Exchange')+'">📒</button>':'')+
             '<button class="icon-btn" data-role="edit" data-id="'+esc(m.id)+'" title="Modifica">✎</button>'+
@@ -498,7 +502,10 @@
       function renderDay(group, idx){
         var countLabel = group.items.length + ' ' + (group.items.length === 1 ? 'partita' : 'partite');
         var gW=0,gL=0,gN=0,gP=0,gHasP=false; group.items.forEach(function(x){ if(x.esitoManuale==='entrata_vinta')gW++; else if(x.esitoManuale==='entrata_persa')gL++; else if(x.esitoManuale==='non_entrata')gN++; if(x.diarioProfit!=null){gP+=Number(x.diarioProfit)||0;gHasP=true;} });
-        var daySummary=(gW+gL+gN)?'<span class="date-summary"><b class="w">'+gW+' V</b><b class="l">'+gL+' P</b><b class="n">'+gN+' NE</b>'+(gW+gL?'<b>'+Math.round(gW/(gW+gL)*100)+'%</b>':'')+(gHasP?'<b class="'+(gP>=0?'w':'l')+'">'+fmtEuro(gP)+'</b>':'')+'</span>':'';
+        var daySummary='';
+        if(currentAdminArea !== 'classic'){
+          daySummary=(gW+gL+gN)?'<span class="date-summary"><b class="w">'+gW+' V</b><b class="l">'+gL+' P</b><b class="n">'+gN+' NE</b>'+(gW+gL?'<b>'+Math.round(gW/(gW+gL)*100)+'%</b>':'')+(gHasP?'<b class="'+(gP>=0?'w':'l')+'">'+fmtEuro(gP)+'</b>':'')+'</span>':'';
+        }
         var shouldOpen = (hadSections && Object.prototype.hasOwnProperty.call(prevOpen, group.key)) ? prevOpen[group.key] : (group.key === keys.today || group.key === keys.tomorrow || (currentDateFilter !== 'tutte' && idx === 0));
         return '<details class="date-section" data-day="'+esc(group.key)+'"'+(shouldOpen?' open':'')+'><summary><div class="date-head"><div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span>'+daySummary+'</div><div class="date-tools"><div class="date-search-wrap"><span class="date-search-icon">⌕</span><input class="date-search" type="search" autocomplete="off" data-date-search="'+esc(group.key)+'" placeholder="Cerca squadra, campionato o strategia..."><button type="button" class="date-search-clear" data-date-clear="'+esc(group.key)+'" aria-label="Cancella ricerca">×</button></div><div class="date-count" data-date-count="'+esc(group.key)+'" data-total="'+group.items.length+'">' + esc(countLabel) + '</div></div></div></summary><div class="grid date-grid">' + group.items.map(renderCard).join('') + '<div class="date-search-empty">Nessuna partita trovata per questa ricerca.</div></div></details>';
       }
@@ -508,7 +515,9 @@
         var all=[]; month.days.forEach(function(d){all=all.concat(d.items)});
         var w=0,l=0,n=0; all.forEach(function(x){if(x.esitoManuale==='entrata_vinta')w++;else if(x.esitoManuale==='entrata_persa')l++;else if(x.esitoManuale==='non_entrata')n++;});
         var played=w+l, open = hasPrevMonths ? !!prevMonthOpen[month.key] : mi===0;
-        return '<details class="month-section" data-month="'+esc(month.key)+'"'+(open?' open':'')+'><summary><div class="month-head"><span class="month-icon">▣</span><div><small>ARCHIVIO MENSILE</small><strong>'+esc(month.label)+'</strong><span>'+month.days.length+' '+(month.days.length===1?'giorno':'giorni')+' · '+all.length+' '+(all.length===1?'partita':'partite')+'</span></div></div><span class="month-summary"><b class="w">'+w+' V</b><b class="l">'+l+' P</b><b class="n">'+n+' NE</b>'+(played?'<b>'+Math.round(w/played*100)+'%</b>':'')+'</span></summary><div class="date-groups">'+month.days.map(renderDay).join('')+'</div></details>';
+        var monthSummary = '';
+        if(currentAdminArea !== 'classic'){ monthSummary = '<span class="month-summary"><b class="w">'+w+' V</b><b class="l">'+l+' P</b><b class="n">'+n+' NE</b>'+(played?'<b>'+Math.round(w/played*100)+'%</b>':'')+'</span>'; }
+        return '<details class="month-section" data-month="'+esc(month.key)+'"'+(open?' open':'')+'><summary><div class="month-head"><span class="month-icon">▣</span><div><small>ARCHIVIO MENSILE</small><strong>'+esc(month.label)+'</strong><span>'+month.days.length+' '+(month.days.length===1?'giorno':'giorni')+' · '+all.length+' '+(all.length===1?'partita':'partite')+'</span></div></div>'+monthSummary+'</summary><div class="date-groups">'+month.days.map(renderDay).join('')+'</div></details>';
       }).join('') + '</div>';
       Object.keys(prevSearch).forEach(function(k){
         var inp = grid.querySelector('[data-date-search="'+k+'"]');
