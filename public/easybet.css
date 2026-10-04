@@ -2554,3 +2554,25 @@ html[data-theme="dark"] .ebbp-crest{background:rgba(255,255,255,.05)!important}
 
 /* STEP92 · Money Management nella stessa colonna delle altre pagine */
 body:not(.exchange-fullscreen) #partite .section-head, body:not(.exchange-fullscreen) #partite .money-board, body:not(.exchange-fullscreen) #partite .masaniello-board, body:not(.exchange-fullscreen) #partite .kelly-board{max-width:1500px;margin-left:auto;margin-right:auto;}
+
+/* STEP93 — stemmi Kelly + registra in attesa Roserpina/Martingala */
+.ky-match-block{display:flex;flex-direction:column;gap:6px;margin-top:3px}
+.ky-match-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:1rem;line-height:1.2}
+.ky-match-line strong{font-weight:900}
+.ky-match-vs{font-size:.72rem;font-weight:900;letter-spacing:.12em;opacity:.6;text-transform:uppercase}
+.ky-match-meta{font-size:.78rem;opacity:.72}
+.ky-match-fallback{font-size:.82rem;opacity:.72}
+.ky-crest-wrap{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid #e1d6be;overflow:hidden;flex:0 0 34px;box-shadow:0 4px 12px rgba(52,41,18,.08)}
+.ky-crest-wrap img{width:80%;height:80%;object-fit:contain;display:block}
+.ky-crest-fallback{display:none;font-size:.72rem;font-weight:900;color:#907636}
+.ky-crest-wrap.placeholder .ky-crest-fallback{display:block}
+html[data-theme="dark"] .ky-crest-wrap{background:rgba(255,255,255,.04);border-color:rgba(214,170,50,.18)}
+.mm-pending-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
+.mm-pending-actions button{border:1px solid rgba(213,169,50,.25);background:rgba(255,255,255,.05);color:inherit;border-radius:10px;padding:10px 13px;font-weight:900;cursor:pointer}
+.mm-pending-actions button.green{background:rgba(34,160,91,.14);border-color:rgba(34,160,91,.42)}
+.mm-pending-actions button.red{background:rgba(210,63,63,.13);border-color:rgba(210,63,63,.4)}
+.mm-pending-actions button.ghost{background:rgba(255,255,255,.04)}
+html[data-theme="light"] .mm-pending-actions button{background:#fff;border-color:#eadfc8}
+html[data-theme="light"] .mm-pending-actions button.green{background:#eef8f1;border-color:#b7dec7}
+html[data-theme="light"] .mm-pending-actions button.red{background:#fff0f0;border-color:#edc2c2}
+@media(max-width:640px){.ky-match-line{font-size:.94rem}.ky-crest-wrap{width:30px;height:30px;flex-basis:30px}.mm-pending-actions button{flex:1}}
