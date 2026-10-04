@@ -2479,3 +2479,47 @@ html[data-theme="dark"] .mm-delete-row{background:rgba(255,255,255,.03);border-c
 .ebbp-teams{display:flex;align-items:center;gap:10px}.ebbp-teams b{display:block;flex:1;min-width:0}.ebbp-crest{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff8eb;border:1px solid rgba(213,169,50,.24);overflow:hidden;flex:0 0 34px}.ebbp-crest img{width:78%;height:78%;object-fit:contain;display:block}.ebbp-crest>span{display:none;font-size:.72rem;font-weight:900;color:#9b7a18}.ebbp-crest.placeholder>span{display:block}
 @media(max-width:980px){.mm-history-item{grid-template-columns:1fr}.mm-history-right{grid-template-columns:repeat(2,minmax(0,1fr))}.mm-delete-row{grid-column:1/-1;height:42px}}
 @media(max-width:640px){.mm-history-item{padding:14px;border-radius:18px}.mm-history-left{gap:10px}.mm-history-num{width:34px;height:34px;border-radius:10px;font-size:.88rem}.mm-history-match{font-size:1rem}.mm-crest-wrap{width:36px;height:36px;flex-basis:36px}.mm-history-right{grid-template-columns:1fr 1fr;gap:8px}.mm-history-kpi{padding:10px 11px;min-height:64px}.mm-delete-row{padding:0 12px}.ebbp-row{grid-template-columns:52px 1fr}.ebbp-odd{grid-column:2}.ebbp-teams{gap:8px}.ebbp-crest{width:30px;height:30px;flex-basis:30px}}
+
+
+/* STEP90 picker: stemmi vicino alle squadre + giocata grande a destra */
+.ebbp-list{display:flex;flex-direction:column;gap:14px}
+.ebbp-day{display:flex;flex-direction:column;gap:10px}
+.ebbp-day h4{margin:16px 0 2px;color:#caa032;font-size:13px;font-weight:900;letter-spacing:.08em}
+.ebbp-row{width:100%;display:grid;grid-template-columns:86px minmax(0,1fr) 210px;gap:16px;align-items:center;padding:16px 18px;margin:0;border:1px solid rgba(213,169,50,.16);border-radius:18px;background:linear-gradient(180deg,#fffaf0,#f8f1df);color:inherit;text-align:left;cursor:pointer;box-shadow:0 8px 22px rgba(90,69,19,.05)}
+.ebbp-row:hover{border-color:rgba(213,169,50,.48);background:linear-gradient(180deg,#fffaf3,#f5ecd4);transform:translateY(-1px)}
+.ebbp-timecol{display:flex;align-items:center;justify-content:flex-start}
+.ebbp-time{font-size:1.65rem;line-height:1;font-weight:900;color:#c89d21;letter-spacing:.01em}
+.ebbp-maincol{min-width:0;display:flex;flex-direction:column;gap:8px}
+.ebbp-teams-line{display:grid;grid-template-columns:38px minmax(0,1fr) auto minmax(0,1fr) 38px;gap:10px;align-items:center}
+.ebbp-teamname{font-size:1.1rem;font-weight:900;color:#2f2615;line-height:1.15;min-width:0;word-break:break-word}
+.ebbp-teamname.away{text-align:left}
+.ebbp-vs{font-size:.92rem;font-weight:900;color:#9c8551;text-transform:uppercase;letter-spacing:.10em}
+.ebbp-meta{font-size:.88rem;color:#7f6c48;font-weight:700}
+.ebbp-inline-market{font-weight:900;color:#9a7a15}
+.ebbp-crest{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid rgba(213,169,50,.24);overflow:hidden;flex:0 0 38px;box-shadow:0 3px 10px rgba(70,50,9,.06)}
+.ebbp-crest img{width:78%;height:78%;object-fit:contain;display:block}.ebbp-crest>span{display:none;font-size:.78rem;font-weight:900;color:#9b7a18}.ebbp-crest.placeholder>span{display:block}
+.ebbp-sidecol{display:flex;justify-content:flex-end}
+.ebbp-marketbox{min-width:170px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;justify-content:center;padding:14px 16px;border-radius:16px;background:linear-gradient(180deg,#ecd168,#d7ab24);color:#241c0d;box-shadow:0 10px 20px rgba(216,173,61,.22)}
+.ebbp-marketbox span{font-size:.7rem;text-transform:uppercase;letter-spacing:.14em;font-weight:900;opacity:.85}
+.ebbp-marketbox b{font-size:1.08rem;line-height:1.05;font-weight:900;text-align:right}
+.ebbp-marketbox small{font-size:.9rem;font-weight:900;opacity:.9}
+html[data-theme="dark"] .ebbp-row{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.025));box-shadow:none}
+html[data-theme="dark"] .ebbp-teamname{color:#f3ecd8}
+html[data-theme="dark"] .ebbp-meta{color:#b8aa8a}
+html[data-theme="dark"] .ebbp-crest{background:rgba(255,255,255,.04);border-color:rgba(213,169,50,.18)}
+@media(max-width:820px){
+  .ebbp-row{grid-template-columns:78px minmax(0,1fr);gap:12px}
+  .ebbp-sidecol{grid-column:2;justify-content:flex-start}
+  .ebbp-marketbox{align-items:flex-start;min-width:0;width:100%}
+}
+@media(max-width:600px){
+  .ebbp-row{grid-template-columns:1fr;gap:12px;padding:14px}
+  .ebbp-timecol{justify-content:flex-start}
+  .ebbp-time{font-size:1.32rem}
+  .ebbp-maincol{gap:10px}
+  .ebbp-teams-line{grid-template-columns:34px minmax(0,1fr) auto minmax(0,1fr) 34px;gap:8px}
+  .ebbp-teamname{font-size:1rem}
+  .ebbp-sidecol{grid-column:1;justify-content:stretch}
+  .ebbp-marketbox{width:100%;align-items:flex-start;padding:12px 14px}
+  .ebbp-marketbox b{text-align:left;font-size:1.02rem}
+}
