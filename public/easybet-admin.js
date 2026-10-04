@@ -21,6 +21,7 @@
   var pinReset = document.getElementById('pinReset');
   var areaGate = document.getElementById('areaGate');
   var currentAdminArea = '';
+  var refreshAdminAreaView = null;
   function normalizeAdminArea(v){ return v === 'classic' ? 'classic' : (v === 'live' ? 'live' : ''); }
   function areaFromUrl(){ try { return normalizeAdminArea(new URLSearchParams(location.search).get('area')); } catch(e){ return ''; } }
   function applyAdminArea(area){
@@ -33,7 +34,7 @@
     if(hs) hs.textContent=currentAdminArea==='classic'?'Inserisci e gestisci solo le partite pre-match del betting classico. Restano separate dalle strategie Exchange Live.':'Gestisci le partite destinate alle strategie live, al Live Analyzer e all’Exchange.';
     document.querySelectorAll('[data-live-only="1"]').forEach(function(el){ el.style.display=currentAdminArea==='live'?'':'none'; });
     try { history.replaceState(null,'',location.pathname+'?area='+currentAdminArea); } catch(e){}
-    if(appInited){ selectedIds.clear(); loadMatches(); }
+    if(appInited && typeof refreshAdminAreaView === 'function'){ refreshAdminAreaView(); }
   }
   function chooseAdminArea(){
     if(areaGate){ areaGate.classList.add('open'); areaGate.setAttribute('aria-hidden','false'); }
@@ -551,6 +552,15 @@
         document.getElementById('grid').innerHTML = '<div class="empty">Errore nel caricamento.</div>';
       });
     }
+
+    // Cambio area senza refresh pagina: ridisegna subito con i dati già caricati
+    // e poi riallinea lo stato dal server. Questa callback è esposta al gate area
+    // perché matches/selectedIds/render/loadMatches vivono nello scope di startApp.
+    refreshAdminAreaView = function(){
+      selectedIds.clear();
+      render();
+      return loadMatches(false);
+    };
 
     // pills
     document.getElementById('pills').addEventListener('click', function(e){
