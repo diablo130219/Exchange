@@ -2604,3 +2604,11 @@ html[data-theme="light"] #moneyBoard .ky-history .pos{color:#4f7d55}html[data-th
 #moneyBoard .mm-leg-sub{display:block;margin-top:3px;font-size:11px;font-weight:700;opacity:.7}
 @media(max-width:700px){#moneyBoard .mm-fields.mm-leg-fields{grid-template-columns:1fr 1fr}}
 html[data-theme="dark"] #moneyBoard input[type=date],html[data-theme="dark"] #moneyBoard input[type=time]{color-scheme:dark}
+
+/* STEP103 · Kelly: puntata consigliata prima di registrare */
+.ky-draft-kelly{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;padding:13px 15px;border-radius:14px;border:1px solid rgba(213,169,50,.4);background:rgba(213,169,50,.1);font-size:13px;line-height:1.45}
+.ky-draft-kelly strong{font-size:20px;color:#d8aa32;margin-left:4px}
+.ky-draft-kelly em{font-style:normal;opacity:.75;font-size:12px}
+.ky-draft-kelly button{border:1px solid rgba(213,169,50,.4);background:rgba(213,169,50,.16);color:inherit;border-radius:10px;padding:8px 12px;font-weight:900;cursor:pointer}
+html[data-theme="light"] .ky-draft-kelly{background:#fbf3df;border-color:rgba(166,119,23,.35)}
+html[data-theme="light"] .ky-draft-kelly strong{color:#a87a12}
