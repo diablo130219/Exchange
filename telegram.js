@@ -244,7 +244,7 @@ function strategyRuleLine(tipo) {
   const s = String(tipo || '').toUpperCase().replace(',', '.');
   if (/OVER\s*1\.?5/.test(s)) return '<b>Regola:</b> entra sullo 0-0 tra 20\' e 30\' a quota ≥ 1.70 • esci al primo gol o al 71\'.';
   if (/OVER\s*0\.?5/.test(s)) return '<b>Regola:</b> live sullo 0-0 al 15\' a quota ≥ 1.60 (pre-match ≥ 1.33).';
-  if (/UNDER\s*0\.?5/.test(s)) return '<b>Regola:</b> pre-match Under 0.5 HT a quota ≥ 2.95 exchange (≥ 2.85 bookmaker).';
+  if (/UNDER\s*0\.?5/.test(s)) return '<b>Regola:</b> pre-match Under 0.5 HT, entra da quota 2.60 in su.';
   if (/BANCA|LAY\s*X/.test(s)) return '<b>Regola:</b> all\'intervallo sullo 0-0 / 1-1 banca la X solo a quota ≤ 2.10, tieni fino al 90\'.';
   if (/FAVORITO/.test(s)) return '<b>Regola:</b> all\'intervallo, favorito in parità → punta 1 ≥ 1.75 • favorito sotto → banca 2 ≤ 2.50.';
   return 'Attendi le condizioni live previste dalla strategia.';

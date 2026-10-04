@@ -51,7 +51,7 @@
       over15:{name:'OVER 1.5 FT',desc:'Almeno 2 gol nella partita.'},
       over05:{name:'OVER 0.5 HT',desc:'Almeno 1 gol nel primo tempo.'},
       banca:{name:'BANCA X HT',desc:'All’intervallo sullo 0-0 o 1-1, banca la X fino a quota 2,10.',quotaLabel:'Quota max'},
-      under05:{name:'UNDER 0.5 HT',desc:'Nessun gol nel primo tempo, pre-match da quota 2,95.',quotaLabel:'Quota min'},
+      under05:{name:'UNDER 0.5 HT',desc:'Nessun gol nel primo tempo, pre-match da quota 2,60 in su.',quotaLabel:'Quota min'},
       favht:{name:'FAVORITO HT',desc:'Favorito in casa all’intervallo: in parità punta 1, sotto banca 2.',quotaLabel:'Quota min'},
       favorita:{name:'SEGNA LA FAVORITA',desc:'La favorita deve trovare il gol.'}
     };
@@ -499,7 +499,7 @@
       over15:{bet:'PUNTA Over 1.5 FT',entry:'Sullo 0-0 tra il '+((o15.window||{}).from||20)+'’ e il '+((o15.window||{}).to||30)+'’, quota ≥ '+f((o15.base||{}).quotaMin,'1,70')+'.',exit:'Al primo gol chiudi in verde (cash-out), altrimenti esci al '+(o15.exitMinute||71)+'’.',sys:'EXCH O1.5 GOL 25-70'},
       over05:{bet:'PUNTA Over 0.5 HT',entry:'Sullo 0-0 tra il '+((o05.window||{}).from||15)+'’ e il '+((o05.window||{}).to||32)+'’, quota '+f((o05.base||{}).quotaMin,'1,60')+'–'+f((o05.base||{}).quotaMax,'2,10')+'.',exit:'Vinta al primo gol del primo tempo, persa all’intervallo sullo 0-0.',sys:'O0.5 HT PRE+LIVE'},
       banca:{bet:'BANCA la X',entry:'Solo all’intervallo sullo 0-0 o 1-1, quota Lay X ≤ '+f(lx.quotaMax,'2,10')+'.',exit:'Tieni fino al 90’.',sys:'EXCH LAY X HT'},
-      under05:{bet:'PUNTA Under 0.5 HT',entry:'Pre-match a quota ≥ '+f(u.quotaMin,'2,95')+'.',exit:'Tieni fino all’intervallo: vinta se il primo tempo finisce 0-0.',sys:'EXCH UNDER 0.5 HT'},
+      under05:{bet:'PUNTA Under 0.5 HT',entry:'Pre-match a quota ≥ '+f(u.quotaMin,'2,60')+'.',exit:'Tieni fino all’intervallo: vinta se il primo tempo finisce 0-0.',sys:'EXCH UNDER 0.5 HT'},
       favht:{bet:'Favorito HT · PUNTA 1 se pari / BANCA 2 se sotto',entry:'All’intervallo: se il favorito è in parità PUNTA 1 a quota ≥ '+f(fh.drawBackMin,'1,75')+'; se il favorito è sotto BANCA 2 a quota ≤ '+f(fh.trailLayMax,'2,50')+'.',exit:'Una sola giocata, tieni fino al 90’.',sys:'EXCH FAVORITO HT'},
       favorita:{bet:'PUNTA la favorita',entry:'Quando la favorita domina i dati live.',exit:'Gestisci in base al risultato.',sys:'Segna la favorita'}
     };
@@ -635,6 +635,7 @@
     el.classList.add('show');
   }
 
+  window.EasyBetCurrentView=function(){return currentView};
   function render(){
     updateViewUI();try{gdPaintUsage()}catch(e){}
     renderLivePriorityDashboard();

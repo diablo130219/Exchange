@@ -126,8 +126,8 @@
     },
     under05ht: {
       label: 'Under 0.5 HT',
-      system: 'EXCH UNDER 0.5 HT', // ingresso pre-match a quota >= 2.95, si tiene fino all'intervallo
-      quotaMin: 2.95,
+      system: 'EXCH UNDER 0.5 HT', // ingresso pre-match a quota >= 2.60, si tiene fino all'intervallo
+      quotaMin: 2.60,
       warn: { xg: 0.80, sot: 3, big: 2 }
     },
     favht: {
