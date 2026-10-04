@@ -2592,3 +2592,8 @@ html:not([data-theme="light"]) body .mm-ledger b{color:#f1eadf}
 .mm-bank-field button{margin-top:6px;white-space:nowrap;border:1px solid rgba(205,175,110,.45);background:#fffaf0;color:#6b5320;border-radius:11px;padding:0 12px;font:inherit;font-size:.74rem;font-weight:800;cursor:pointer}
 #kellyBoard .mm-bank-field button{margin-top:0}
 html:not([data-theme="light"]) body .mm-bank-field button{background:#211d15;color:#e8cf8a}
+
+/* STEP97 · Roserpina e Martingala con lo stesso stile di Kelly */
+#moneyBoard .mm-ky-block{margin-top:14px}
+#moneyBoard .ky-history .pos{color:#55cc8c}#moneyBoard .ky-history .neg{color:#ed7a7a}
+html[data-theme="light"] #moneyBoard .ky-history .pos{color:#4f7d55}html[data-theme="light"] #moneyBoard .ky-history .neg{color:#a3604b}
