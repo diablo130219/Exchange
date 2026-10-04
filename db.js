@@ -24,6 +24,8 @@ const pool = new Pool({
   connectionString: normalizedDatabaseUrl(process.env.DATABASE_URL),
   ssl: useSsl ? { rejectUnauthorized: false } : false
 });
+// Senza questo handler una connessione inattiva chiusa da Postgres farebbe terminare il processo Node.
+pool.on('error', (err) => { console.error('Postgres (connessione inattiva):', err && err.message ? err.message : err); });
 
 async function migrate() {
   // EasyBet non crea più le vecchie tabelle casse/bets/settings.
@@ -71,10 +73,6 @@ async function migrate() {
       sent_at BIGINT NOT NULL
     );
   `);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_start_at ON matches (start_at);`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_esito_manuale ON matches (esito_manuale);`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_tipo_giocata ON matches (tipo_giocata);`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_campionato ON matches (campionato);`);
 
   // --- Segnali Live (profili di ingresso VERDE/GIALLO/ROSSO da bookmarklet FlashScore) ---
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS live_strategy TEXT;`);
@@ -102,7 +100,6 @@ async function migrate() {
   // --- STEP 72: separazione definitiva Betting classico / Exchange Live ---
   // La colonna distingue in modo persistente le due aree.
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS betting_area TEXT NOT NULL DEFAULT 'live';`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_betting_area ON matches (betting_area);`);
 
   // Migrazione UNA SOLA VOLTA: al momento dell'introduzione del Betting classico
   // l'utente non aveva ancora caricato partite classiche. Tutto lo storico già
@@ -143,8 +140,6 @@ async function migrate() {
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS signal_first_level TEXT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS signal_first_score INTEGER;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS outcome_set_at BIGINT;`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_live_started_at ON matches (live_started_at);`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_signal_first_at ON matches (signal_first_at);`);
 
   // --- STEP 7: snapshot del segnale VERDE ---
   await pool.query(`
@@ -213,6 +208,16 @@ async function migrate() {
     );
   `);
 
+  // --- Money Management (Roserpina, Martingala, Multipla, Kelly): stato salvato sul server ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS mm_state (
+      key TEXT PRIMARY KEY,
+      state JSONB NOT NULL,
+      version BIGINT NOT NULL DEFAULT 1,
+      updated_at BIGINT NOT NULL
+    );
+  `);
+
   // --- Masaniello Studio integrato (stato JSON privato area admin) ---
   await pool.query(`
     CREATE TABLE IF NOT EXISTS masaniello_state (
@@ -221,6 +226,15 @@ async function migrate() {
       updated_at BIGINT NOT NULL
     );
   `);
+
+  // Indici creati per ultimi: su un database nuovo le colonne esistono solo dopo gli ALTER TABLE.
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_start_at ON matches (start_at);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_esito_manuale ON matches (esito_manuale);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_tipo_giocata ON matches (tipo_giocata);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_campionato ON matches (campionato);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_betting_area ON matches (betting_area);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_live_started_at ON matches (live_started_at);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_signal_first_at ON matches (signal_first_at);`);
 }
 
 module.exports = { pool, migrate };

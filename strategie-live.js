@@ -497,6 +497,7 @@
   // Partita "andata": la strategia non può più dare un ingresso (gol prima/dentro la finestra, finestra superata, condizione HT non valida).
   function exclusionOf(s) {
     if (!s) return null;
+    if (s.state === 'NON ATTIVA' && /favorito in casa|indica la favorita|testato solo/i.test(String(s.reason || ''))) return null;
     if (s.state === 'INGIOCABILE' || s.state === 'CHIUSA' || s.state === 'NON ATTIVA') return s.reason || s.state;
     if (s.state === 'NO BET' && /superata|secondo tempo iniziato/i.test(String(s.reason || ''))) return s.reason;
     return null;

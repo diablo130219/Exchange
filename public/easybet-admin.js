@@ -645,12 +645,12 @@
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload)
-      }).then(function(r){ return r.json(); }).then(function(updated){
+      }).then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok) throw new Error(j.error||('Errore '+r.status)); return j; }); }).then(function(updated){
         var idx = matches.findIndex(function(m){ return m.id === id; });
         if (idx !== -1) matches[idx] = updated;
         render();
         if (role === 'esito' && /^entrata_/.test(String(payload.esitoManuale||''))) openDiarioDialog(updated);
-      });
+      }).catch(function(err){ window.alert('Modifica non salvata: '+(err&&err.message||'errore')); render(); });
     });
 
     document.getElementById('grid').addEventListener('click', function(e){
