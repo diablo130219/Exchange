@@ -2304,3 +2304,28 @@ html[data-theme="light"] .ky-ticket{background:#fbf7ee;border-color:rgba(135,97,
 html[data-theme="light"] .mm-card,html[data-theme="light"] .mm-cashes,html[data-theme="light"] .mm-panel-head,html[data-theme="light"] .mm-methods button{background:#fff;color:#3b3324;box-shadow:0 8px 26px rgba(94,68,13,.05)}html[data-theme="light"] .mm-methods button.active,html[data-theme="light"] .mm-cash.active{background:#f7efd9}html[data-theme="light"] .mm-fields input,html[data-theme="light"] .mm-modal select{background:#fff;color:#3b3324}html[data-theme="light"] .mm-modal{background:#fff;color:#3b3324}
 @media(max-width:900px){.mm-methods{grid-template-columns:repeat(2,1fr)}.mm-methods .mm-new{grid-column:1/-1}.mm-grid{grid-template-columns:1fr}.mm-fields{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.mm-head h2{font-size:25px}.mm-panel-head{align-items:flex-start}.mm-bank{min-width:110px}.mm-fields,.mm-fields.two,.mm-kpis,.mm-kpis.two{grid-template-columns:1fr}.mm-methods{grid-template-columns:1fr 1fr}.mm-methods button{min-height:58px}.mm-legacy-note{align-items:flex-start;flex-direction:column}.mm-legacy-note button{width:100%}}
+
+/* ===== STEP75 · Archivio raggruppato per mese ===== */
+#grid.home-history .archive-months{display:grid;gap:16px;width:100%}
+#grid.home-history details.history-month{display:block;width:100%;border:1px solid rgba(205,175,110,.34);border-radius:22px;background:linear-gradient(155deg,#fffdf8,#f7efdf);box-shadow:0 12px 28px rgba(116,87,30,.08);overflow:hidden}
+#grid.home-history details.history-month>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto 38px;align-items:center;gap:14px;padding:15px 18px;position:relative}
+#grid.home-history details.history-month>summary::-webkit-details-marker{display:none}
+#grid.home-history details.history-month>summary:after{content:'+';grid-column:4;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:linear-gradient(180deg,#f4d878,#d5aa34);color:#352708;font-weight:900;font-size:1.2rem}
+#grid.home-history details.history-month[open]>summary:after{content:'−'}
+#grid.home-history details.history-month[open]>summary{border-bottom:1px solid rgba(205,175,110,.25)}
+#grid.home-history .month-folder-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:rgba(218,177,66,.16);color:#b88612;font-size:1.2rem}
+#grid.home-history .month-folder-copy{display:flex;flex-direction:column;min-width:0}
+#grid.home-history .month-folder-copy small{font-size:.62rem;letter-spacing:.16em;color:#b68a20;font-weight:800}
+#grid.home-history .month-folder-copy strong{font-size:1.12rem;color:#342b1f}
+#grid.home-history .month-folder-copy span{font-size:.72rem;color:#81735d;margin-top:2px}
+#grid.home-history .month-folder-stats{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+#grid.home-history .month-folder-stats b{padding:5px 8px;border-radius:999px;font-size:.66rem;background:#f5efe3;color:#77684f}
+#grid.home-history .month-folder-stats .w{color:#5d8a62;background:rgba(111,154,115,.13)}
+#grid.home-history .month-folder-stats .l{color:#b06d57;background:rgba(194,122,99,.13)}
+#grid.home-history .month-folder-stats .n{color:#9a8455;background:rgba(190,165,110,.14)}
+#grid.home-history .month-folder-stats .r{color:#8a6d2c;background:rgba(205,170,90,.18)}
+#grid.home-history details.history-month>.archive-tiles{padding:14px!important}
+html[data-theme="dark"] body #grid.home-history details.history-month{background:linear-gradient(160deg,#171510,#0f0e0b);border-color:rgba(216,173,61,.22)}
+html[data-theme="dark"] body #grid.home-history .month-folder-copy strong{color:#eee6d9}
+html[data-theme="dark"] body #grid.home-history .month-folder-copy span{color:#a99d89}
+@media(max-width:760px){#grid.home-history details.history-month>summary{grid-template-columns:auto minmax(0,1fr) 36px}.month-folder-stats{grid-column:2/4;justify-content:flex-start!important}#grid.home-history details.history-month>summary:after{grid-column:3;grid-row:1}}

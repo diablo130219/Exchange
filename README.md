@@ -153,3 +153,8 @@ Il pulsante **+ Nuova cassa** nell'area Money Management permette di scegliere p
 - Corretto il cambio tra Betting classico ed Exchange Live nell'admin.
 - La lista partite viene filtrata e ridisegnata subito, senza refresh manuale del browser.
 - Dopo il cambio area viene anche ricaricato lo stato dal server per mantenere i dati sincronizzati.
+
+## STEP75 - Archivio per mese
+- Storico pubblico raggruppato prima per mese/anno e poi per giorno.
+- Admin raggruppato prima per mese/anno e poi per giorno.
+- Conteggi V/P/NE e percentuali conservati a livello giorno e riepilogati a livello mese.

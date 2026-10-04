@@ -422,6 +422,13 @@
       });
     }
 
+    function monthKeyFromDay(key){ return /^\d{4}-\d{2}/.test(key) ? key.slice(0,7) : 'sconosciuto'; }
+    function monthLabelFromKey(key){
+      if (!/^\d{4}-\d{2}$/.test(key)) return 'Archivio';
+      var p = key.split('-'), d = new Date(Number(p[0]), Number(p[1])-1, 1);
+      var t = d.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+      return t.charAt(0).toUpperCase()+t.slice(1);
+    }
     function render(){
       var grid = document.getElementById('grid');
       var list = matches.filter(matchesFilter).filter(matchesDateFilter);
@@ -441,44 +448,46 @@
         }
         existing.items.push(m);
       });
-
       groups.sort(function(a,b){ return b.key.localeCompare(a.key); });
 
+      var months = [];
+      groups.forEach(function(g){
+        var mk = monthKeyFromDay(g.key), m = months.find(function(x){ return x.key === mk; });
+        if(!m){ m={key:mk,label:monthLabelFromKey(mk),days:[]}; months.push(m); }
+        m.days.push(g);
+      });
+      months.sort(function(a,b){return b.key.localeCompare(a.key)});
+
       var keys = relativeDateKeys();
-      var prevOpen = {}, prevSearch = {}, hadSections = false;
+      var prevOpen = {}, prevMonthOpen = {}, prevSearch = {}, hadSections = false;
       Array.prototype.forEach.call(grid.querySelectorAll('details.date-section'), function(d){
         var inp = d.querySelector('[data-date-search]'); if (!inp) return;
         var k = inp.getAttribute('data-date-search'); hadSections = true;
         prevOpen[k] = d.open; if (inp.value) prevSearch[k] = inp.value;
       });
+      Array.prototype.forEach.call(grid.querySelectorAll('details.month-section'),function(d){prevMonthOpen[d.getAttribute('data-month')] = d.open;});
       var scrollY = window.scrollY;
-      grid.innerHTML = '<div class="date-groups">' + groups.map(function(group, idx){
+
+      function renderDay(group, idx){
         var countLabel = group.items.length + ' ' + (group.items.length === 1 ? 'partita' : 'partite');
         var gW=0,gL=0,gN=0,gP=0,gHasP=false; group.items.forEach(function(x){ if(x.esitoManuale==='entrata_vinta')gW++; else if(x.esitoManuale==='entrata_persa')gL++; else if(x.esitoManuale==='non_entrata')gN++; if(x.diarioProfit!=null){gP+=Number(x.diarioProfit)||0;gHasP=true;} });
         var daySummary=(gW+gL+gN)?'<span class="date-summary"><b class="w">'+gW+' V</b><b class="l">'+gL+' P</b><b class="n">'+gN+' NE</b>'+(gW+gL?'<b>'+Math.round(gW/(gW+gL)*100)+'%</b>':'')+(gHasP?'<b class="'+(gP>=0?'w':'l')+'">'+fmtEuro(gP)+'</b>':'')+'</span>':'';
         var shouldOpen = (hadSections && Object.prototype.hasOwnProperty.call(prevOpen, group.key)) ? prevOpen[group.key] : (group.key === keys.today || group.key === keys.tomorrow || (currentDateFilter !== 'tutte' && idx === 0));
-        return '<details class="date-section"'+(shouldOpen?' open':'')+'>'+
-          '<summary>'+
-            '<div class="date-head">'+
-              '<div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span>'+daySummary+'</div>'+
-              '<div class="date-tools">'+
-                '<div class="date-search-wrap">'+
-                  '<span class="date-search-icon">⌕</span>'+
-                  '<input class="date-search" type="search" autocomplete="off" data-date-search="'+esc(group.key)+'" placeholder="Cerca squadra, campionato o strategia...">'+
-                  '<button type="button" class="date-search-clear" data-date-clear="'+esc(group.key)+'" aria-label="Cancella ricerca">×</button>'+
-                '</div>'+
-                '<div class="date-count" data-date-count="'+esc(group.key)+'" data-total="'+group.items.length+'">' + esc(countLabel) + '</div>'+
-              '</div>'+
-            '</div>'+
-          '</summary>'+
-          '<div class="grid date-grid">' + group.items.map(renderCard).join('') + '<div class="date-search-empty">Nessuna partita trovata per questa ricerca.</div></div>'+
-        '</details>';
+        return '<details class="date-section" data-day="'+esc(group.key)+'"'+(shouldOpen?' open':'')+'><summary><div class="date-head"><div><div class="date-title">📅 ' + esc(group.label) + '</div><span class="date-sub">Partite raggruppate per data</span>'+daySummary+'</div><div class="date-tools"><div class="date-search-wrap"><span class="date-search-icon">⌕</span><input class="date-search" type="search" autocomplete="off" data-date-search="'+esc(group.key)+'" placeholder="Cerca squadra, campionato o strategia..."><button type="button" class="date-search-clear" data-date-clear="'+esc(group.key)+'" aria-label="Cancella ricerca">×</button></div><div class="date-count" data-date-count="'+esc(group.key)+'" data-total="'+group.items.length+'">' + esc(countLabel) + '</div></div></div></summary><div class="grid date-grid">' + group.items.map(renderCard).join('') + '<div class="date-search-empty">Nessuna partita trovata per questa ricerca.</div></div></details>';
+      }
+
+      var hasPrevMonths=Object.keys(prevMonthOpen).length>0;
+      grid.innerHTML = '<div class="month-groups">' + months.map(function(month, mi){
+        var all=[]; month.days.forEach(function(d){all=all.concat(d.items)});
+        var w=0,l=0,n=0; all.forEach(function(x){if(x.esitoManuale==='entrata_vinta')w++;else if(x.esitoManuale==='entrata_persa')l++;else if(x.esitoManuale==='non_entrata')n++;});
+        var played=w+l, open = hasPrevMonths ? !!prevMonthOpen[month.key] : mi===0;
+        return '<details class="month-section" data-month="'+esc(month.key)+'"'+(open?' open':'')+'><summary><div class="month-head"><span class="month-icon">▣</span><div><small>ARCHIVIO MENSILE</small><strong>'+esc(month.label)+'</strong><span>'+month.days.length+' '+(month.days.length===1?'giorno':'giorni')+' · '+all.length+' '+(all.length===1?'partita':'partite')+'</span></div></div><span class="month-summary"><b class="w">'+w+' V</b><b class="l">'+l+' P</b><b class="n">'+n+' NE</b>'+(played?'<b>'+Math.round(w/played*100)+'%</b>':'')+'</span></summary><div class="date-groups">'+month.days.map(renderDay).join('')+'</div></details>';
       }).join('') + '</div>';
       Object.keys(prevSearch).forEach(function(k){
         var inp = grid.querySelector('[data-date-search="'+k+'"]');
         if (inp){ inp.value = prevSearch[k]; filterDateSection(inp); }
       });
-      if (hadSections) window.scrollTo(0, scrollY);
+      if (hadSections || hasPrevMonths) window.scrollTo(0, scrollY);
       updateBulkUI();
     }
 

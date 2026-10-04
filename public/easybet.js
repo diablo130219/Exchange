@@ -540,6 +540,13 @@
   }
   function gdLoadUsage(){fetch('/api/goaldir/usage?ts='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(d){if(d){gdUsageData=d;gdPaintUsage()}}).catch(function(){})}
   gdLoadUsage();setInterval(gdLoadUsage,60000);
+  function archiveMonthKey(day){return /^\d{4}-\d{2}/.test(day)?day.slice(0,7):'sconosciuto'}
+  function archiveMonthLabel(key){
+    if(!/^\d{4}-\d{2}$/.test(key))return 'Archivio';
+    var p=key.split('-'),d=new Date(+p[0],+p[1]-1,1);
+    var name=d.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+    return name.charAt(0).toUpperCase()+name.slice(1);
+  }
   function renderFinishedByDate(list,grid){
     var groups={};
     list.slice().sort(function(a,b){return Number(b.startAt)-Number(a.startAt)}).forEach(function(m){var k=dayKey(m);(groups[k]||(groups[k]=[])).push(m)});
@@ -550,18 +557,29 @@
       html+='<section class="history-section recent"><div class="history-section-head"><div class="history-section-badge">'+relativeDateLabel(k)+'</div><div class="history-section-line"></div>'+daySummaryHtml(groups[k])+'<div class="history-section-date">'+esc(shortDateLabelFromKey(k))+'</div></div><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></section>';
       delete groups[k];
     });
-    var prevOpen={};Array.prototype.forEach.call(grid.querySelectorAll('details.history-archive[data-day]'),function(d){if(d.open)prevOpen[d.getAttribute('data-day')]=1});
+    var prevOpen={},prevMonthOpen={};
+    Array.prototype.forEach.call(grid.querySelectorAll('details.history-archive[data-day]'),function(d){if(d.open)prevOpen[d.getAttribute('data-day')]=1});
+    Array.prototype.forEach.call(grid.querySelectorAll('details.history-month[data-month]'),function(d){if(d.open)prevMonthOpen[d.getAttribute('data-month')]=1});
     var keepScroll=window.scrollY;
-    var archiveKeys=Object.keys(groups).sort().reverse();
-    if(archiveKeys.length)html+='<div class="archive-tiles">';
-    archiveKeys.forEach(function(k){
-      var count=groups[k].length;
-      html+='<details class="date-group archive history-archive" data-day="'+esc(k)+'"'+(prevOpen[k]?' open':'')+'><summary class="'+archiveTone(groups[k])+'">'+archiveCal(k)+'<span class="archive-main"><span class="archive-copy"><small>Archivio · '+esc(k.slice(0,4))+'</small><strong>'+esc(dateLabelFromKey(k).replace(/\s\d{4}$/,''))+'</strong>'+daySummaryHtml(groups[k])+'</span></span><span class="archive-meta"><b>'+count+'</b><span>'+(count===1?'partita':'partite')+'</span></span><span class="archive-story">OGNI PARTITA<br>UNA STORIA</span>'+archiveBar(groups[k])+'</summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
+    var archiveKeys=Object.keys(groups).sort().reverse(),months={};
+    archiveKeys.forEach(function(k){var mk=archiveMonthKey(k);(months[mk]||(months[mk]=[])).push(k)});
+    var monthKeys=Object.keys(months).sort().reverse();
+    if(monthKeys.length)html+='<div class="archive-months">';
+    monthKeys.forEach(function(mk,mi){
+      var days=months[mk],monthItems=[];days.forEach(function(k){monthItems=monthItems.concat(groups[k])});
+      var mc=archiveCounts(monthItems),played=mc.w+mc.l,rate=played?Math.round(mc.w/played*100):0;
+      var openMonth=prevMonthOpen[mk]||(!Object.keys(prevMonthOpen).length&&mi===0);
+      html+='<details class="history-month" data-month="'+esc(mk)+'"'+(openMonth?' open':'')+'><summary><span class="month-folder-icon">▣</span><span class="month-folder-copy"><small>ARCHIVIO MENSILE</small><strong>'+esc(archiveMonthLabel(mk))+'</strong><span>'+days.length+' '+(days.length===1?'giorno':'giorni')+' · '+monthItems.length+' '+(monthItems.length===1?'partita':'partite')+'</span></span><span class="month-folder-stats"><b class="w">'+mc.w+' V</b><b class="l">'+mc.l+' P</b><b class="n">'+mc.n+' NE</b>'+(played?'<b class="r">'+rate+'%</b>':'')+'</span></summary><div class="archive-tiles">';
+      days.forEach(function(k){
+        var count=groups[k].length;
+        html+='<details class="date-group archive history-archive" data-day="'+esc(k)+'"'+(prevOpen[k]?' open':'')+'><summary class="'+archiveTone(groups[k])+'">'+archiveCal(k)+'<span class="archive-main"><span class="archive-copy"><small>Archivio · '+esc(k.slice(0,4))+'</small><strong>'+esc(dateLabelFromKey(k).replace(/\s\d{4}$/,''))+'</strong>'+daySummaryHtml(groups[k])+'</span></span><span class="archive-meta"><b>'+count+'</b><span>'+(count===1?'partita':'partite')+'</span></span><span class="archive-story">OGNI PARTITA<br>UNA STORIA</span>'+archiveBar(groups[k])+'</summary><div class="date-group-grid">'+groups[k].map(renderMatchCard).join('')+'</div></details>';
+      });
+      html+='</div></details>';
     });
-    if(archiveKeys.length)html+='</div>';
+    if(monthKeys.length)html+='</div>';
     grid.classList.add('home-history');
     grid.innerHTML=html||'<div class="empty">Nessuna partita terminata disponibile.</div>';
-    if(Object.keys(prevOpen).length)window.scrollTo(0,keepScroll);
+    if(Object.keys(prevOpen).length||Object.keys(prevMonthOpen).length)window.scrollTo(0,keepScroll);
   }
   function livePriorityLevel(m){
     var raw=String(m.liveLastLevel||'').trim().toLowerCase();
