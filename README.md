@@ -129,3 +129,17 @@ Il pulsante **+ Nuova cassa** nell'area Money Management permette di scegliere p
 - L'admin mostra solo le partite dell'area scelta; è disponibile `Cambia area`.
 - L'import CSV delle strategie live è visibile solo in Exchange Live.
 - La pagina pubblica Live esclude le partite Betting classico.
+
+## STEP71 - Masaniello layout uniforme
+- Rimossa la vecchia nota/modulo intermedio del Masaniello dentro Money Management.
+- Barra casse Masaniello resa coerente con Roserpina/Kelly/Martingala.
+- Header cassa con nome, cassa attuale e P/L nello stesso stile degli altri metodi.
+- Comandi Rinomina/Modifica, Duplica, Elimina, Backup e Importa spostati nel pannello della cassa selezionata.
+- KPI del Masaniello riallineati alle card Money Management.
+- Motore matematico, cicli, matrice, simulatore, statistiche e storico invariati.
+
+## STEP72 — Storico Exchange Live separato dal Betting classico
+- Tutte le partite già presenti al momento dell'aggiornamento vengono assegnate una sola volta a Exchange Live.
+- Il Betting classico parte vuoto finché non vengono inserite nuove partite classiche.
+- Le nuove partite mantengono in modo persistente l'area scelta (`classic` o `live`).
+- La migrazione usa un marker persistente e non viene ripetuta ai riavvii, quindi non sposta in futuro le partite classiche verso il Live.

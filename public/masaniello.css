@@ -153,3 +153,121 @@ html[data-theme="dark"] .masaniello-board .ms-sidebar.ms-cash-manager{background
 html[data-theme="dark"] .masaniello-board .ms-item{background:#211c14!important}
 html[data-theme="dark"] .masaniello-board .ms-item.active{background:linear-gradient(180deg,#382d1b,#251e14)!important}
 html[data-theme="dark"] .masaniello-board .ms-main-empty{background:linear-gradient(180deg,#231e16,#1a1611)!important}
+
+/* STEP71 — Masaniello allineato graficamente a Roserpina / Kelly / Martingala */
+.masaniello-board.show{max-width:1500px;margin:0 auto 16px;padding:0;font-family:Inter,system-ui,sans-serif}
+.masaniello-board .ms-shell{display:block;min-height:auto;border:0;border-radius:0;background:transparent;box-shadow:none}
+.masaniello-board .ms-content{padding:0;background:transparent}
+
+/* Barra casse: stessa gerarchia di .mm-cashes */
+.masaniello-board .ms-sidebar.ms-cash-manager{
+  min-height:0;margin:0 0 14px;padding:15px;border:1px solid rgba(213,169,50,.20);
+  border-radius:18px;background:rgba(255,255,255,.025);box-shadow:none
+}
+.masaniello-board .ms-cash-manager-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0}
+.masaniello-board .ms-cash-manager-head small{display:block;font-size:10px;line-height:1.2;font-weight:900;letter-spacing:.14em;color:#d8aa32}
+.masaniello-board .ms-cash-manager-head b{display:block;margin-top:3px;font-size:13px;color:inherit}
+.masaniello-board .ms-cash-manager-head .ms-btn{border:1px solid rgba(213,169,50,.28);background:rgba(213,169,50,.08);color:inherit;border-radius:10px;padding:8px 11px;font-size:11px;font-weight:900;box-shadow:none}
+.masaniello-board .ms-list{display:flex;flex-direction:row;gap:9px;overflow:auto;max-height:none;min-height:0;padding:11px 0 0}
+.masaniello-board .ms-item{
+  min-width:175px;max-width:none;display:block;padding:11px;border:1px solid rgba(255,255,255,.08);
+  border-radius:13px;background:rgba(255,255,255,.035);color:inherit;text-align:left;box-shadow:none
+}
+.masaniello-board .ms-item.active{border-color:rgba(213,169,50,.5);background:rgba(213,169,50,.1);box-shadow:none}
+.masaniello-board .ms-item .ms-cash-name{display:block;font-size:11px;font-weight:900;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.masaniello-board .ms-item b{display:block;margin:4px 0;font-family:inherit;font-size:17px;text-align:left;white-space:nowrap}
+.masaniello-board .ms-item em{display:block;text-align:left;font-size:10px;font-style:normal;font-weight:900}
+.masaniello-board .ms-empty-list{padding:24px;text-align:center;opacity:.6;border:0;background:transparent;font-size:12px}
+
+/* Header cassa: equivalente a .mm-panel-head */
+.masaniello-board .ms-head{
+  margin:0 0 14px;padding:20px 22px;border:1px solid rgba(213,169,50,.20);border-radius:18px;
+  background:rgba(255,255,255,.028);box-shadow:none
+}
+.masaniello-board .ms-head-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.masaniello-board .ms-eyebrow{font-size:10px;font-weight:900;letter-spacing:.18em;color:#d8aa32}
+.masaniello-board .ms-head h1{margin:4px 0;font-size:28px;line-height:1.15;color:inherit}
+.masaniello-board .ms-head p{margin:0;font-size:13px;color:inherit;opacity:.72}
+.masaniello-board .ms-bank-block{text-align:right;min-width:150px}
+.masaniello-board .ms-bank-block small{display:block;font-size:10px;font-weight:900;opacity:.65}
+.masaniello-board .ms-bank-block b{display:block;font-family:inherit;font-size:27px;line-height:1.15}
+.masaniello-board .ms-bank-block em{display:block;margin-top:3px;font-size:11px;font-style:normal;font-weight:900}
+
+/* Impostazioni cassa: stessa card degli altri metodi */
+.masaniello-board .ms-manage-card{
+  margin:0 0 14px;padding:18px;border:1px solid rgba(213,169,50,.18);border-radius:18px;
+  background:rgba(255,255,255,.035)
+}
+.masaniello-board .ms-manage-title{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.masaniello-board .ms-manage-title h3{margin:0;font-size:13px;letter-spacing:.1em;color:inherit}
+.masaniello-board .ms-manage-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px}
+.masaniello-board .ms-manage-actions .ms-btn,.masaniello-board .ms-manage-actions .ms-file{
+  border:1px solid rgba(213,169,50,.28);background:rgba(213,169,50,.08);color:inherit;
+  border-radius:10px;padding:8px 11px;font-size:11px;font-weight:900;box-shadow:none;transform:none
+}
+.masaniello-board .ms-manage-actions .ms-btn.danger{background:rgba(210,63,63,.08);border-color:rgba(210,63,63,.28)}
+.masaniello-board .ms-inline-save{display:block;margin-top:10px;padding:0;font-size:10px;text-align:right}
+
+/* KPI Masaniello come i KPI degli altri money management */
+.masaniello-board .ms-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:13px}
+.masaniello-board .ms-tile{padding:13px;border-radius:13px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.04)}
+.masaniello-board .ms-tile small{display:block;font-size:9px;font-weight:900;opacity:.65;color:inherit}
+.masaniello-board .ms-tile b{display:block;margin-top:3px;font-family:inherit;font-size:20px}
+.masaniello-board .ms-tile span{display:block;margin-top:2px;font-size:10px;opacity:.65;color:inherit}
+
+/* Tabs e contenuti conservano il motore, ma usano la stessa larghezza/card */
+.masaniello-board .ms-tabs{margin:0 0 14px;padding:4px;border:1px solid rgba(213,169,50,.20);border-radius:13px;background:rgba(255,255,255,.025)}
+.masaniello-board .ms-tabs button{font-size:11px;color:inherit;opacity:.7}
+.masaniello-board .ms-tabs button.active{background:rgba(213,169,50,.12);color:inherit;opacity:1;box-shadow:inset 0 0 0 1px rgba(213,169,50,.18)}
+.masaniello-board .ms-card{margin-bottom:14px;padding:18px;border:1px solid rgba(213,169,50,.18);border-radius:18px;background:rgba(255,255,255,.035)}
+.masaniello-board .ms-card h3{margin:0 0 13px;font-size:13px;letter-spacing:.1em;color:inherit}
+.masaniello-board .ms-field label{font-size:11px;font-weight:900;color:inherit;opacity:.88}
+.masaniello-board .ms-field input,.masaniello-board .ms-field select,.masaniello-board .ms-field textarea{border:1px solid rgba(213,169,50,.22);border-radius:11px;padding:11px 12px;background:rgba(0,0,0,.04);color:inherit;font-size:12px}
+.masaniello-board .ms-btn,.masaniello-board .ms-file{border-radius:10px;font-size:11px;padding:10px 13px}
+.masaniello-board .ms-main-empty{min-height:260px;padding:36px;border:1px solid rgba(213,169,50,.18);border-radius:18px;background:rgba(255,255,255,.035)}
+.masaniello-board .ms-main-empty .ms-badge{display:none}
+.masaniello-board .ms-main-empty h2{margin:0 0 8px;font-size:22px;color:inherit}
+.masaniello-board .ms-main-empty p{font-size:13px;opacity:.7}
+
+html[data-theme="light"] .masaniello-board .ms-sidebar.ms-cash-manager,
+html[data-theme="light"] .masaniello-board .ms-head,
+html[data-theme="light"] .masaniello-board .ms-manage-card,
+html[data-theme="light"] .masaniello-board .ms-card,
+html[data-theme="light"] .masaniello-board .ms-tabs,
+html[data-theme="light"] .masaniello-board .ms-main-empty{background:#fff;color:#3b3324;box-shadow:0 8px 26px rgba(94,68,13,.05)}
+html[data-theme="light"] .masaniello-board .ms-item{background:#fff;color:#3b3324;border-color:rgba(213,169,50,.18)}
+html[data-theme="light"] .masaniello-board .ms-item.active{background:#f7efd9;border-color:rgba(213,169,50,.5)}
+html[data-theme="light"] .masaniello-board .ms-tile{background:#fffaf0;border-color:rgba(213,169,50,.14)}
+html[data-theme="light"] .masaniello-board .ms-field input,
+html[data-theme="light"] .masaniello-board .ms-field select,
+html[data-theme="light"] .masaniello-board .ms-field textarea{background:#fff;color:#3b3324}
+
+html[data-theme="dark"] .masaniello-board .ms-sidebar.ms-cash-manager,
+html[data-theme="dark"] .masaniello-board .ms-head,
+html[data-theme="dark"] .masaniello-board .ms-manage-card,
+html[data-theme="dark"] .masaniello-board .ms-card,
+html[data-theme="dark"] .masaniello-board .ms-tabs,
+html[data-theme="dark"] .masaniello-board .ms-main-empty{background:rgba(255,255,255,.025)!important;border-color:rgba(213,169,50,.20)!important;color:inherit!important;box-shadow:none!important}
+html[data-theme="dark"] .masaniello-board .ms-item{background:rgba(255,255,255,.035)!important;color:inherit!important;border-color:rgba(255,255,255,.08)!important}
+html[data-theme="dark"] .masaniello-board .ms-item.active{background:rgba(213,169,50,.10)!important;border-color:rgba(213,169,50,.5)!important}
+html[data-theme="dark"] .masaniello-board .ms-tile{background:rgba(255,255,255,.04)!important;border-color:rgba(255,255,255,.06)!important}
+html[data-theme="dark"] .masaniello-board .ms-field input,
+html[data-theme="dark"] .masaniello-board .ms-field select,
+html[data-theme="dark"] .masaniello-board .ms-field textarea{background:rgba(0,0,0,.15)!important;color:inherit!important;border-color:rgba(213,169,50,.22)!important}
+html[data-theme="dark"] .masaniello-board .ms-manage-actions .ms-btn,
+html[data-theme="dark"] .masaniello-board .ms-manage-actions .ms-file,
+html[data-theme="dark"] .masaniello-board .ms-cash-manager-head .ms-btn{background:rgba(213,169,50,.08)!important;color:inherit!important;border-color:rgba(213,169,50,.28)!important}
+
+@media(max-width:900px){
+  .masaniello-board .ms-tiles{grid-template-columns:repeat(2,1fr)}
+  .masaniello-board .ms-head-top{align-items:flex-start}
+  .masaniello-board .ms-manage-title{align-items:flex-start;flex-direction:column}
+  .masaniello-board .ms-manage-actions{justify-content:flex-start}
+}
+@media(max-width:560px){
+  .masaniello-board .ms-head-top{flex-direction:column}
+  .masaniello-board .ms-bank-block{text-align:left}
+  .masaniello-board .ms-tiles{grid-template-columns:1fr}
+  .masaniello-board .ms-item{min-width:75vw}
+  .masaniello-board .ms-manage-actions>*{flex:1 1 calc(50% - 7px)}
+}

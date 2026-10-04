@@ -92,10 +92,27 @@ async function migrate() {
   // rimangono nel DB se già create in precedenza ma il codice non le legge più.
 
   // --- Sito EasyBet (gestione manuale: quota ingresso, esito, invio al bot) ---
-  // --- STEP 69: separazione Betting classico / Exchange Live ---
-  // Le partite esistenti restano Exchange Live grazie al default 'live'.
+  // --- STEP 72: separazione definitiva Betting classico / Exchange Live ---
+  // La colonna distingue in modo persistente le due aree.
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS betting_area TEXT NOT NULL DEFAULT 'live';`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_matches_betting_area ON matches (betting_area);`);
+
+  // Migrazione UNA SOLA VOLTA: al momento dell'introduzione del Betting classico
+  // l'utente non aveva ancora caricato partite classiche. Tutto lo storico già
+  // esistente appartiene quindi all'Exchange Live. Il marker impedisce che i
+  // futuri riavvii spostino le nuove partite classiche nell'area Live.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS app_migrations (
+      key TEXT PRIMARY KEY,
+      applied_at BIGINT NOT NULL
+    );
+  `);
+  const areaResetKey = 'step72_existing_matches_are_live';
+  const areaResetDone = await pool.query('SELECT 1 FROM app_migrations WHERE key = $1 LIMIT 1', [areaResetKey]);
+  if (!areaResetDone.rows.length) {
+    await pool.query(`UPDATE matches SET betting_area = 'live'`);
+    await pool.query(`INSERT INTO app_migrations (key, applied_at) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`, [areaResetKey, Date.now()]);
+  }
 
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS quota_ingresso TEXT;`);
   await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS esito_manuale TEXT;`); // null|'entrata_vinta'|'entrata_persa'|'non_entrata'
