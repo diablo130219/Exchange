@@ -151,8 +151,8 @@
   function updateViewUI(){
     var title=document.getElementById('sectionTitle'),sub=document.getElementById('sectionSubtitle'),toolbar=document.getElementById('toolbar'),liveSearchBar=document.getElementById('liveSearchBar');
     document.body.classList.toggle('exchange-fullscreen',currentView==='exchange');
-    document.body.classList.toggle('masaniello-fullscreen',currentView==='money');
-    document.body.classList.toggle('kelly-fullscreen',currentView==='money');
+    document.body.classList.toggle('masaniello-fullscreen',false);
+    document.body.classList.toggle('kelly-fullscreen',false);
     if(liveSearchBar) liveSearchBar.style.display=currentView==='live'?'flex':'none';
     document.querySelectorAll('[data-view]').forEach(function(a){a.classList.toggle('active',a.getAttribute('data-view')===currentView)});
     if(currentView==='pronostici'){

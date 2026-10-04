@@ -2551,3 +2551,6 @@ html[data-theme="dark"] .ebbp-league{color:#b9aa89}
 html[data-theme="dark"] .ebbp-crest{background:rgba(255,255,255,.05)!important}
 @media(max-width:760px){.ebbp-row{grid-template-columns:64px minmax(0,1fr)!important}.ebbp-sidecol{grid-column:2!important}.ebbp-marketbox{width:auto!important;display:inline-flex!important;align-items:flex-start!important}.ebbp-league{padding-left:0}.ebbp-teamrow{grid-template-columns:1fr}.ebbp-vs{display:none}.ebbp-team.away{justify-content:flex-start}.ebbp-team.away strong{text-align:left}.ebbp-team.away .ebbp-crest{order:-1}}
 @media(max-width:520px){.ebbp-row{grid-template-columns:1fr!important}.ebbp-timecol{justify-content:flex-start}.ebbp-sidecol{grid-column:1!important}.ebbp-marketbox{width:100%!important}.ebbp-teamrow{gap:7px}}
+
+/* STEP92 · Money Management nella stessa colonna delle altre pagine */
+body:not(.exchange-fullscreen) #partite .section-head, body:not(.exchange-fullscreen) #partite .money-board, body:not(.exchange-fullscreen) #partite .masaniello-board, body:not(.exchange-fullscreen) #partite .kelly-board{max-width:1500px;margin-left:auto;margin-right:auto;}
