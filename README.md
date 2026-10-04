@@ -143,3 +143,8 @@ Il pulsante **+ Nuova cassa** nell'area Money Management permette di scegliere p
 - Il Betting classico parte vuoto finché non vengono inserite nuove partite classiche.
 - Le nuove partite mantengono in modo persistente l'area scelta (`classic` o `live`).
 - La migrazione usa un marker persistente e non viene ripetuta ai riavvii, quindi non sposta in futuro le partite classiche verso il Live.
+
+## STEP73 — Masaniello larghezza uniforme
+- Il pannello Masaniello non occupa più tutta la larghezza della pagina.
+- Casse, configurazione, pannello operativo, storico e stato vuoto sono centrati nella stessa colonna visiva degli altri Money Management.
+- Il motore Masaniello non è stato modificato.

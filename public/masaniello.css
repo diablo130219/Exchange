@@ -271,3 +271,31 @@ html[data-theme="dark"] .masaniello-board .ms-cash-manager-head .ms-btn{backgrou
   .masaniello-board .ms-item{min-width:75vw}
   .masaniello-board .ms-manage-actions>*{flex:1 1 calc(50% - 7px)}
 }
+
+/* STEP73 — Masaniello nella stessa colonna centrale degli altri Money Management */
+.masaniello-board.show{
+  width:min(1120px,100%)!important;
+  max-width:1120px!important;
+  margin:0 auto 16px!important;
+  padding:0!important;
+}
+.masaniello-board .ms-shell,
+.masaniello-board .ms-sidebar.ms-cash-manager,
+.masaniello-board .ms-content,
+.masaniello-board .ms-head,
+.masaniello-board .ms-manage-card,
+.masaniello-board .ms-tabs,
+.masaniello-board .ms-card,
+.masaniello-board .ms-main-empty{
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+.masaniello-board .ms-main-empty{
+  min-height:240px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+@media(max-width:1180px){
+  .masaniello-board.show{width:100%!important;max-width:100%!important}
+}
