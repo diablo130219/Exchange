@@ -99,3 +99,16 @@ STEP66
 - La multipla mostra quota totale, stima combinata (ipotesi di indipendenza), Kelly teorico e importo scelto manualmente.
 - Le singole trasformate in multipla vengono rimosse dalla lista singole per evitare doppia registrazione involontaria.
 - Storico unico per cassa con distinzione Singola/Multipla.
+
+## STEP68 — Money Management unificato
+
+La navigazione pubblica ora espone una sola area **Money Management**.
+
+Metodi disponibili:
+- **Masaniello**: conserva il motore completo già presente (cicli, piano, quote, storico, simulazioni).
+- **Roserpina variabile**: cassa dedicata con resa obiettivo, numero di vincite, quota reale, perdite accumulate e stake ricalcolato.
+- **Kelly**: ogni cassa può scegliere **1/4 Kelly**, **1/2 Kelly** oppure **Kelly totale**; restano multi-giocata e multiple della strategia.
+- **Martingala**: cassa dedicata con stake base, moltiplicatore, serie di perdite e limite massimo percentuale della cassa.
+- **Bolletta multipla classica**: builder separato con più selezioni, quota totale, importo libero e storico.
+
+Il pulsante **+ Nuova cassa** nell'area Money Management permette di scegliere prima il tipo di gestione da creare.
