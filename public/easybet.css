@@ -2696,3 +2696,50 @@ html[data-theme="dark"] .mm-leg-status-actions .mm-leg-status-btn.pending{color:
 html[data-theme="light"] .mm-multi-when{color:#997016}
 @media(max-width:900px){.mm-multi-add-fields{grid-template-columns:1fr 1fr!important}}
 @media(max-width:560px){.mm-multi-add-fields{grid-template-columns:1fr!important}.mm-multi-when{font-size:10px}}
+
+/* ===== STEP105 · Multipla: intera riga colorata in base all'esito ===== */
+.mm-multi-legs>div.mm-multi-leg{
+  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.mm-multi-legs>div.mm-multi-leg.win{
+  background:rgba(34,160,91,.14)!important;
+  border:1px solid rgba(34,160,91,.28)!important;
+  border-left:4px solid rgba(34,160,91,.72)!important;
+  box-shadow:inset 0 0 0 1px rgba(34,160,91,.04);
+}
+.mm-multi-legs>div.mm-multi-leg.loss{
+  background:rgba(210,63,63,.13)!important;
+  border:1px solid rgba(210,63,63,.27)!important;
+  border-left:4px solid rgba(210,63,63,.72)!important;
+  box-shadow:inset 0 0 0 1px rgba(210,63,63,.035);
+}
+.mm-multi-legs>div.mm-multi-leg.void{
+  background:rgba(145,145,145,.10)!important;
+  border:1px solid rgba(145,145,145,.22)!important;
+  border-left:4px solid rgba(145,145,145,.58)!important;
+}
+.mm-multi-legs>div.mm-multi-leg.pending{
+  background:rgba(213,169,50,.075)!important;
+  border:1px solid rgba(213,169,50,.16)!important;
+  border-left:4px solid rgba(213,169,50,.42)!important;
+}
+html[data-theme="light"] .mm-multi-legs>div.mm-multi-leg.win{
+  background:rgba(34,160,91,.14)!important;
+  border-color:rgba(34,160,91,.25)!important;
+  border-left-color:rgba(34,160,91,.68)!important;
+}
+html[data-theme="light"] .mm-multi-legs>div.mm-multi-leg.loss{
+  background:rgba(210,63,63,.11)!important;
+  border-color:rgba(210,63,63,.22)!important;
+  border-left-color:rgba(210,63,63,.66)!important;
+}
+html[data-theme="light"] .mm-multi-legs>div.mm-multi-leg.void{
+  background:rgba(120,120,120,.08)!important;
+  border-color:rgba(120,120,120,.16)!important;
+  border-left-color:rgba(120,120,120,.48)!important;
+}
+html[data-theme="light"] .mm-multi-legs>div.mm-multi-leg.pending{
+  background:rgba(213,169,50,.055)!important;
+  border-color:rgba(213,169,50,.13)!important;
+  border-left-color:rgba(213,169,50,.34)!important;
+}
