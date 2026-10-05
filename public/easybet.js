@@ -624,10 +624,10 @@
   function renderLivePriorityDashboard(){
     var el=document.getElementById('livePriorityDashboard');if(!el)return;
     if(currentView!=='live'){el.classList.remove('show');el.innerHTML='';return}
-    var live=matches.filter(isLive),now=Date.now();
+    var live=matches.filter(function(m){return isLive(m) && ((m.bettingArea||'live')==='live')});var now=Date.now();
     var green=live.filter(function(m){return livePriorityLevel(m)==='green'});
     var yellow=live.filter(function(m){return livePriorityLevel(m)==='yellow'});
-    var upcoming30=matches.filter(function(m){var d=Number(m.startAt)-now;return isUpcoming(m)&&d>0&&d<=30*60*1000});
+    var upcoming30=matches.filter(function(m){var d=Number(m.startAt)-now;return ((m.bettingArea||'live')==='live')&&isUpcoming(m)&&d>0&&d<=30*60*1000});
     var priorities=live.slice().sort(function(a,b){var d=priorityScore(b)-priorityScore(a);return d||Number(a.startAt)-Number(b.startAt)}).slice(0,6);
     var list=priorities.map(function(m,i){var lv=livePriorityLevel(m),label=lv==='green'?'VERDE':lv==='yellow'?'QUASI PRONTO':lv==='excluded'?'ESCLUSA':lv==='closed'?'CHIUSA':'DA CONTROLLARE',sub=[m.campionato||'Campionato',laPrettyStrategy?laPrettyStrategy(m.tipoGiocata||m.liveStrategy||''):String(m.tipoGiocata||'') ,livePriorityAge(m)].filter(Boolean).join(' • ');return '<button type="button" class="live-priority-item js-priority-open" data-match-key="'+escAttr(liveAnalyzerMatchKey(m))+'"><span class="live-priority-rank">'+String(i+1).padStart(2,'0')+'</span><span class="live-priority-copy"><b>'+esc((m.casa||'')+' – '+(m.trasferta||''))+'</b><span>'+esc(sub)+'</span></span><span class="live-priority-state '+lv+'">'+label+'</span></button>'}).join('');
     el.innerHTML='<div class="live-priority-shell"><div class="live-priority-head"><div><h3>⚡ Cosa devo guardare adesso</h3><p>EasyBet mette in cima le partite LIVE più interessanti in base all’ultimo stato disponibile.</p></div><div class="live-priority-updated">'+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})+'</div></div><div class="live-priority-kpis"><div class="live-priority-kpi gold"><small>LIVE ORA</small><strong>'+live.length+'</strong></div><div class="live-priority-kpi green"><small>SEGNALI VERDI</small><strong>'+green.length+'</strong></div><div class="live-priority-kpi yellow"><small>QUASI PRONTI</small><strong>'+yellow.length+'</strong></div><div class="live-priority-kpi blue"><small>ENTRO 30 MIN</small><strong>'+upcoming30.length+'</strong></div></div>'+(list?'<div class="live-priority-list">'+list+'</div>':'<div class="live-priority-empty">Nessuna partita LIVE da prioritizzare in questo momento.</div>')+'</div>';
@@ -682,7 +682,7 @@
     if(currentView==='live'){grid.classList.add('live-mode')}
     grid.innerHTML=list.map(renderMatchCard).join('')
   }
-  document.addEventListener('click',function(e){var b=e.target.closest('.js-priority-open');if(!b)return;var key=b.getAttribute('data-match-key');var m=matches.find(function(x){return liveAnalyzerMatchKey(x)===key});if(m)openLiveAnalyzer(m)});
+  document.addEventListener('click',function(e){var b=e.target.closest('.js-priority-open');if(!b)return;var key=b.getAttribute('data-match-key');var m=matches.find(function(x){return ((x.bettingArea||'live')==='live')&&liveAnalyzerMatchKey(x)===key});if(m)openLiveAnalyzer(m)});
   var loadInProgress=false,hasLoadedOnce=false,loadWatchdog=null;
   function normalizeMatchesPayload(s){
     if(Array.isArray(s)) return s;
@@ -760,7 +760,7 @@
   document.getElementById('pills').addEventListener('click',function(e){var b=e.target.closest('.pill');if(!b)return;currentFilter=b.getAttribute('data-f');document.querySelectorAll('#pills .pill').forEach(function(p){p.classList.remove('active')});b.classList.add('active');render()});
   var liveSearchInput=document.getElementById('liveSearchInput');if(liveSearchInput){liveSearchInput.addEventListener('input',function(){liveSearchQuery=String(this.value||'').trim();render()});}
   document.getElementById('grid').addEventListener('click',function(e){var openBtn=e.target.closest('.js-open-strategy');if(openBtn){currentPronosticiStrategy=openBtn.getAttribute('data-strategy')||null;render();return}var backBtn=e.target.closest('.js-back-pronostici');if(backBtn){currentPronosticiStrategy=null;render()}});
-  document.getElementById('grid').addEventListener('click',function(e){var b=e.target.closest('.js-live-analyze');if(!b)return;var key=b.getAttribute('data-match-key');var m=matches.find(function(x){return liveAnalyzerMatchKey(x)===key});if(m)openLiveAnalyzer(m)});
+  document.getElementById('grid').addEventListener('click',function(e){var b=e.target.closest('.js-live-analyze');if(!b)return;var key=b.getAttribute('data-match-key');var m=matches.find(function(x){return ((x.bettingArea||'live')==='live')&&liveAnalyzerMatchKey(x)===key});if(m)openLiveAnalyzer(m)});
   document.getElementById('grid').addEventListener('click',function(e){var b=e.target.closest('.js-signal-snapshot');if(!b)return;openSignalSnapshot(b.getAttribute('data-match-id'))});
 
   /* ===== Snapshot del primo segnale verde ===== */
@@ -1072,7 +1072,7 @@
       var autoState=liveAnalyzerState[liveAnalyzerCurrentKey]||{};
       if(currentMatch)laPrefillPrimaryOdd(currentMatch,laStrategySignalName(autoState.strategy||currentMatch.tipoGiocata||''),true);
       var h=document.getElementById('laHome').value,a=document.getElementById('laAway').value;
-      var r=await fetch('/api/goaldir/live-stats?home='+encodeURIComponent(h)+'&away='+encodeURIComponent(a),{cache:'no-store'});
+      var r=await fetch('/api/goaldir/live-stats?area=live&home='+encodeURIComponent(h)+'&away='+encodeURIComponent(a),{cache:'no-store'});
       var d=await r.json().catch(function(){return{}});
       if(!r.ok){
         if(d&&d.code==='MATCH_NOT_FOUND'){laAutoManualOnly=true;laStopAuto();laSetMode('manual');laSetAutoStatus('PARTITA NON TROVATA NEL FEED GOALDIR • possibile campionato non coperto oppure nomi squadre differenti. Usa il riquadro qui sopra e incolla le statistiche manualmente.','manual');return}

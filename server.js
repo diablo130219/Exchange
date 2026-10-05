@@ -1183,6 +1183,8 @@ app.get('/api/goaldir/status', async (req, res) => {
 });
 
 app.get('/api/goaldir/live-stats', async (req, res) => {
+  const area = String(req.query.area || '').trim().toLowerCase();
+  if (area !== 'live') return res.status(403).json({ code: 'EXCHANGE_ONLY', error: 'Il Live Analyzer GoalDir è riservato alle partite Exchange.' });
   const home = String(req.query.home || '').trim();
   const away = String(req.query.away || '').trim();
   if (!home || !away) return res.status(400).json({ error: 'Squadre mancanti.' });
@@ -1679,7 +1681,7 @@ app.post('/api/live-stats', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT * FROM matches
        WHERE live_strategy IS NOT NULL
-         AND COALESCE(betting_area, 'live') = 'live'
+         AND betting_area = 'live'
          AND esito_manuale IS NULL
        ORDER BY ABS(start_at - $1) ASC`,
       [Date.now()]
@@ -2584,7 +2586,7 @@ async function liveAutoScanOnce() {
   try {
     await autoCloseExcluded();
     const { rows } = await pool.query(
-      `SELECT * FROM matches WHERE COALESCE(betting_area, 'live') = 'live' AND start_at <= $1 AND start_at >= $2 AND (esito_manuale IS NULL OR esito_manuale = '')`,
+      `SELECT * FROM matches WHERE betting_area = 'live' AND start_at <= $1 AND start_at >= $2 AND (esito_manuale IS NULL OR esito_manuale = '')`,
       [now, now - 170 * 60 * 1000]);
     const settleTargets = rows.filter(m => m.signal_first_at && !m.esito_auto && !/"manual"/.test(m.settle_state || '') && scanSignalName(m.tipo_giocata));
     const targets = rows.filter(m => {
