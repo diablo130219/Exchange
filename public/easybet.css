@@ -2637,3 +2637,53 @@ html[data-theme="light"] .pi-textarea,html[data-theme="light"] .pi-stake input{b
 html[data-theme="light"] .mm-multi-progress>div{background:#fff}.mm-fields:has(#mm-multi-bonus){grid-template-columns:repeat(3,1fr)}
 @media(max-width:900px){.mm-multi-progress{grid-template-columns:repeat(2,1fr)}.mm-multi-progress>strong{grid-column:1/-1}.mm-multi-legs>div.mm-multi-leg{grid-template-columns:1fr auto}.mm-leg-status-actions{grid-column:1/-1;justify-content:flex-start}.mm-fields:has(#mm-multi-bonus){grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.mm-multi-progress{grid-template-columns:1fr 1fr}.mm-fields:has(#mm-multi-bonus){grid-template-columns:1fr}.mm-multi-legs>div.mm-multi-leg{grid-template-columns:1fr}.mm-multi-leg>strong{justify-self:start}.mm-multi-leg>button[data-mm-remove-leg]{justify-self:end}.mm-multi-history-legs>div{grid-template-columns:1fr auto}.mm-multi-history-legs em{grid-column:1/-1;justify-self:start}}
+
+
+/* STEP103 · Multipla: esiti singoli immediatamente distinguibili */
+.mm-leg-status-actions{gap:7px!important}
+.mm-leg-status-actions .mm-leg-status-btn{
+  min-width:62px;
+  padding:7px 10px!important;
+  border-radius:10px!important;
+  border:1px solid transparent!important;
+  font-size:9px!important;
+  font-weight:950!important;
+  letter-spacing:.025em;
+  line-height:1;
+  box-shadow:none;
+  transition:transform .14s ease,box-shadow .14s ease,filter .14s ease;
+}
+.mm-leg-status-actions .mm-leg-status-btn:hover{transform:translateY(-1px);filter:saturate(1.06)}
+.mm-leg-status-actions .mm-leg-status-btn.win{
+  color:#24784c!important;
+  background:linear-gradient(180deg,#e8f7ef,#d9f0e4)!important;
+  border-color:#a9d7bd!important;
+}
+.mm-leg-status-actions .mm-leg-status-btn.loss{
+  color:#a93838!important;
+  background:linear-gradient(180deg,#fdebea,#f8d9d8)!important;
+  border-color:#efb7b4!important;
+}
+.mm-leg-status-actions .mm-leg-status-btn.void{
+  color:#68635d!important;
+  background:linear-gradient(180deg,#f3f1ee,#e8e4df)!important;
+  border-color:#d5cec6!important;
+}
+.mm-leg-status-actions .mm-leg-status-btn.pending{
+  color:#9a6710!important;
+  background:linear-gradient(180deg,#fff8e7,#f9edc9)!important;
+  border-color:#dfb452!important;
+}
+.mm-leg-status-actions .mm-leg-status-btn.active{
+  box-shadow:inset 0 0 0 2px currentColor,0 4px 10px rgba(61,45,13,.08)!important;
+  transform:translateY(-1px);
+}
+.mm-leg-status-actions .mm-leg-status-btn.win.active{background:linear-gradient(180deg,#d8f3e4,#c6ead7)!important}
+.mm-leg-status-actions .mm-leg-status-btn.loss.active{background:linear-gradient(180deg,#fbd9d7,#f3c7c4)!important}
+.mm-leg-status-actions .mm-leg-status-btn.void.active{background:linear-gradient(180deg,#ebe7e2,#ddd7d0)!important}
+.mm-leg-status-actions .mm-leg-status-btn.pending.active{background:linear-gradient(180deg,#fff2c7,#f6df9b)!important}
+html[data-theme="dark"] .mm-leg-status-actions .mm-leg-status-btn.win{color:#87d9aa!important;background:rgba(42,153,95,.15)!important;border-color:rgba(82,188,128,.4)!important}
+html[data-theme="dark"] .mm-leg-status-actions .mm-leg-status-btn.loss{color:#f08d8d!important;background:rgba(210,63,63,.15)!important;border-color:rgba(225,97,97,.4)!important}
+html[data-theme="dark"] .mm-leg-status-actions .mm-leg-status-btn.void{color:#c7c2bb!important;background:rgba(145,140,134,.13)!important;border-color:rgba(173,167,160,.28)!important}
+html[data-theme="dark"] .mm-leg-status-actions .mm-leg-status-btn.pending{color:#e6bd5b!important;background:rgba(213,169,50,.12)!important;border-color:rgba(213,169,50,.42)!important}
+@media(max-width:560px){.mm-leg-status-actions .mm-leg-status-btn{min-width:58px;flex:1 1 auto}}
