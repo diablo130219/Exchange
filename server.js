@@ -11,7 +11,7 @@ app.set('trust proxy', 1);
 app.disable('x-powered-by');
 const jsonSmall = express.json({ limit: '1mb' });
 const jsonCrest = express.json({ limit: '12mb' }); // stemmi caricati a mano (immagini in base64)
-app.use((req, res, next) => (req.path === '/api/team-crest' || req.path === '/api/team-crests/bulk' || req.path.indexOf('/api/mm-state/') === 0 || req.path === '/api/masaniello/state') ? jsonCrest(req, res, next) : jsonSmall(req, res, next));
+app.use((req, res, next) => (req.path === '/api/team-crest' || req.path === '/api/team-crests/bulk') ? jsonCrest(req, res, next) : jsonSmall(req, res, next));
 let sharpLib = null; try { sharpLib = require('sharp'); } catch (_) { sharpLib = null; }
 
 app.use((req, res, next) => {
@@ -58,7 +58,7 @@ function parseCookies(req) {
     if (i < 0) return;
     const k = part.slice(0, i).trim();
     const v = part.slice(i + 1).trim();
-    if (k) { try { out[k] = decodeURIComponent(v); } catch (_) { out[k] = v; } }
+    if (k) out[k] = decodeURIComponent(v);
   });
   return out;
 }
@@ -191,8 +191,6 @@ app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
       pool.query('SELECT * FROM exchange_periods ORDER BY start_date ASC, uid ASC')
     ]);
     const crestImgRes = await pool.query('SELECT id, mime, encode(data, \'base64\') AS data_base64, updated_at FROM crest_images ORDER BY id ASC').catch(() => ({ rows: [] }));
-    const mmRes = await pool.query('SELECT key, state, version, updated_at FROM mm_state ORDER BY key ASC').catch(() => ({ rows: [] }));
-    const masRes = await pool.query("SELECT state, updated_at FROM masaniello_state WHERE id='main'").catch(() => ({ rows: [] }));
 
     const payload = {
       format: 'easybet-backup',
@@ -204,8 +202,7 @@ app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
         signalSnapshots: snapshotsRes.rows.length,
         teamCrests: crestsRes.rows.length,
         exchangePeriods: exchangeRes.rows.length,
-        crestImages: crestImgRes.rows.length,
-        moneyManagement: mmRes.rows.length
+        crestImages: crestImgRes.rows.length
       },
       data: {
         matches: matchesRes.rows,
@@ -213,9 +210,7 @@ app.get('/api/admin/backup', requireSameSiteAdmin, async (req, res) => {
         alertSettings: alertRes.rows[0] || null,
         teamCrests: crestsRes.rows,
         exchangePeriods: exchangeRes.rows,
-        crestImages: crestImgRes.rows,
-        moneyManagement: mmRes.rows,
-        masaniello: masRes.rows[0] || null
+        crestImages: crestImgRes.rows
       }
     };
 
@@ -817,26 +812,6 @@ app.put('/api/exchange/periods/:uid', requireSameSiteAdmin, async (req, res) => 
     const uid = String(req.params.uid || '').trim().slice(0,64);
     const state = exchangeNormalizeState(req.body, uid);
     const now = Date.now();
-    // Protezione: un Diario aperto da prima non cancella le operazioni registrate dopo da una partita (link-match / "Sono entrata").
-    const loadedAt = Number((req.body || {})._loadedAt) || 0;
-    try {
-      const curQ = await pool.query('SELECT state FROM exchange_periods WHERE uid=$1', [uid]);
-      const curOps = (curQ.rows[0] && curQ.rows[0].state && Array.isArray(curQ.rows[0].state.ops)) ? curQ.rows[0].state.ops : [];
-      state.ops = Array.isArray(state.ops) ? state.ops : [];
-      const have = new Set(state.ops.map(o => o.uid)), haveRef = new Set(state.ops.map(o => o.ref).filter(Boolean));
-      const keep = curOps.filter(o => o && o.ref && String(o.ref).indexOf('match:') === 0 && Number(o.linkedAt || 0) > loadedAt && !have.has(o.uid) && !haveRef.has(o.ref));
-      if (keep.length) {
-        state.ops = state.ops.concat(keep);
-        state.days = state.days && typeof state.days === 'object' ? state.days : {};
-        keep.forEach(o => {
-          const d = state.days[o.day] || { sessions: [], deposit: 0, note: '' };
-          d.sessions = Array.isArray(d.sessions) ? d.sessions.slice(0, 10) : [];
-          const slot = Number(o.slot) || 0; while (d.sessions.length <= slot) d.sessions.push(null);
-          const tot = state.ops.filter(x => x.day === o.day && Number(x.slot) === slot).reduce((a, x) => a + (Number(x.profit) || 0), 0);
-          d.sessions[slot] = Math.round(tot * 100) / 100; state.days[o.day] = d;
-        });
-      }
-    } catch (e) { console.warn('exchange merge:', e.message); }
     const q = await pool.query(`UPDATE exchange_periods SET name=$2, start_date=$3, state=$4::jsonb, updated_at=$5 WHERE uid=$1 RETURNING uid`,
       [uid, state.name, state.start, JSON.stringify(state), now]);
     if (!q.rowCount) return res.status(404).json({ error: 'Periodo non trovato.' });
@@ -919,7 +894,7 @@ app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
       op={uid:'op_'+crypto.randomBytes(5).toString('hex'),ref}; st.ops.push(op);
     }
     Object.assign(op,{day,slot,event,league:m.campionato||'',market:DIARIO_MARKETS[strategy]||String(b.market||m.tipo_giocata||''),strategy,side:['Punta','Banca','Trading'].includes(b.side)?b.side:'Punta',
-      linkedAt:Date.now(),oddsIn:num(b.oddsIn)||Number(op.oddsIn)||0,oddsOut:num(b.oddsOut)||Number(op.oddsOut)||0,stake:Math.abs(num(b.stake))||Number(op.stake)||0,minute:String(b.minute||op.minute||''),profit:Math.round((isOpen?(Number(op.profit)||0):profit)*100)/100,note:(isOpen&&!(Number(op.profit)))?'APERTA · ingresso dal Live Analyzer':'da partita EasyBet · '+(m.esito_manuale||'')});
+      oddsIn:num(b.oddsIn)||Number(op.oddsIn)||0,oddsOut:num(b.oddsOut)||Number(op.oddsOut)||0,stake:Math.abs(num(b.stake))||Number(op.stake)||0,minute:String(b.minute||op.minute||''),profit:Math.round((isOpen?(Number(op.profit)||0):profit)*100)/100,note:(isOpen&&!(Number(op.profit)))?'APERTA · ingresso dal Live Analyzer':'da partita EasyBet · '+(m.esito_manuale||'')});
     const dd=getDay(day); while(dd.sessions.length<=slot) dd.sessions.push(null);
     const tot=st.ops.filter(o=>o.day===day&&Number(o.slot)===slot).reduce((a,o)=>a+(Number(o.profit)||0),0);
     dd.sessions[slot]=Math.round(tot*100)/100; setDay(day,dd);
@@ -930,42 +905,6 @@ app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
     else await pool.query('UPDATE matches SET diario_profit=$2, diario_linked_at=$3, diario_entry=COALESCE(diario_entry,$4) WHERE id=$1',[id,Math.round(profit*100)/100,now,JSON.stringify(entry)]);
     res.json({ok:true,period:st.name||row.uid,day,slot:slot+1});
   }catch(err){ console.error('link-match:',err); res.status(500).json({error:'Impossibile registrare nel Diario.'}); }
-});
-
-// ---------- Money Management: stato persistente sul server con controllo versione ----------
-const MM_KEYS = ['money', 'kelly'];
-app.get('/api/mm-state/:key', requireSameSiteAdmin, async (req, res) => {
-  const key = String(req.params.key || '');
-  if (!MM_KEYS.includes(key)) return res.status(404).json({ error: 'Sezione sconosciuta.' });
-  try {
-    const { rows } = await pool.query('SELECT state, version, updated_at FROM mm_state WHERE key=$1', [key]);
-    res.setHeader('Cache-Control', 'no-store');
-    if (!rows[0]) return res.json({ state: null, version: 0, updatedAt: 0 });
-    res.json({ state: rows[0].state, version: Number(rows[0].version) || 0, updatedAt: Number(rows[0].updated_at) || 0 });
-  } catch (err) { console.error('mm-state get:', err); res.status(500).json({ error: 'Errore nel caricamento del Money Management.' }); }
-});
-app.put('/api/mm-state/:key', requireSameSiteAdmin, async (req, res) => {
-  const key = String(req.params.key || '');
-  if (!MM_KEYS.includes(key)) return res.status(404).json({ error: 'Sezione sconosciuta.' });
-  try {
-    const b = req.body || {};
-    const state = b.state;
-    if (!state || typeof state !== 'object' || Array.isArray(state)) return res.status(400).json({ error: 'Dati non validi.' });
-    const json = JSON.stringify(state);
-    if (json.length > 4 * 1024 * 1024) return res.status(413).json({ error: 'Dati troppo grandi.' });
-    const base = Number(b.baseVersion) || 0, now = Date.now();
-    // Aggiorna solo se la versione di partenza è quella attuale: niente sovrascritture da schede/dispositivi vecchi.
-    const upd = await pool.query('UPDATE mm_state SET state=$2::jsonb, version=version+1, updated_at=$3 WHERE key=$1 AND version=$4 RETURNING version',
-      [key, json, now, base]);
-    if (upd.rowCount) return res.json({ ok: true, version: Number(upd.rows[0].version), updatedAt: now });
-    const cur = await pool.query('SELECT state, version, updated_at FROM mm_state WHERE key=$1', [key]);
-    if (!cur.rows[0]) {
-      const ins = await pool.query('INSERT INTO mm_state (key, state, version, updated_at) VALUES ($1,$2::jsonb,1,$3) ON CONFLICT (key) DO NOTHING RETURNING version', [key, json, now]);
-      if (ins.rowCount) return res.json({ ok: true, version: 1, updatedAt: now });
-    }
-    const c = (await pool.query('SELECT state, version, updated_at FROM mm_state WHERE key=$1', [key])).rows[0];
-    return res.status(409).json({ error: 'Dati aggiornati da un altro dispositivo.', state: c.state, version: Number(c.version), updatedAt: Number(c.updated_at) });
-  } catch (err) { console.error('mm-state put:', err); res.status(500).json({ error: 'Impossibile salvare il Money Management.' }); }
 });
 
 // ---------- Masaniello Studio (privato, integrato in EasyBet) ----------
@@ -993,19 +932,6 @@ app.put('/api/masaniello/state', requireSameSiteAdmin, async (req, res) => {
   try {
     const state = masanielloNormalizeState(req.body);
     const now = Date.now();
-    // Protezione: se il browser salva partendo da una versione vecchia, non sovrascrive i dati più recenti.
-    const base = Number(req.headers['x-base-version']);
-    if (Number.isFinite(base) && base >= 0) {
-      const cur = await pool.query("SELECT state, updated_at FROM masaniello_state WHERE id='main'");
-      const curAt = cur.rows[0] ? Number(cur.rows[0].updated_at) || 0 : 0;
-      if (curAt > base) return res.status(409).json({ error: 'Dati Masaniello aggiornati da un altro dispositivo.', state: cur.rows[0].state, updatedAt: curAt });
-    }
-    // Sicurezza anti-azzeramento: uno stato vuoto non cancella piani esistenti senza conferma esplicita.
-    if (!state.items.length && String(req.headers['x-confirm-empty'] || '') !== '1') {
-      const cur = await pool.query("SELECT state FROM masaniello_state WHERE id='main'");
-      const had = cur.rows[0] && cur.rows[0].state && Array.isArray(cur.rows[0].state.items) && cur.rows[0].state.items.length;
-      if (had) return res.status(409).json({ error: 'Salvataggio vuoto bloccato per non cancellare i piani esistenti.', state: cur.rows[0].state });
-    }
     await pool.query(`INSERT INTO masaniello_state (id, state, updated_at)
                       VALUES ('main',$1::jsonb,$2)
                       ON CONFLICT (id) DO UPDATE SET state=EXCLUDED.state, updated_at=EXCLUDED.updated_at`,
@@ -1346,12 +1272,7 @@ app.post('/api/matches', requireSameSiteAdmin, async (req, res) => {
 app.patch('/api/matches/:id', requireSameSiteAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const fields = Object.assign({}, req.body || {});
-    const curQ = await pool.query('SELECT start_at, bot_enabled, esito_manuale FROM matches WHERE id = $1', [id]);
-    if (!curQ.rows.length) return res.status(404).json({ error: 'Partita non trovata.' });
-    const cur = curQ.rows[0];
-    // Il form invia sempre tutti i campi: un esito identico non deve azzerare l'esito automatico né l'orario esito.
-    if (Object.prototype.hasOwnProperty.call(fields, 'esitoManuale') && String(fields.esitoManuale || '').trim() === String(cur.esito_manuale || '').trim()) delete fields.esitoManuale;
+    const fields = req.body || {};
     const sets = [];
     const vals = [];
     let i = 1;
@@ -1370,8 +1291,10 @@ app.patch('/api/matches/:id', requireSameSiteAdmin, async (req, res) => {
     const shouldRearmPrematch =
       !Object.prototype.hasOwnProperty.call(fields, 'notified') &&
       (
-        (Object.prototype.hasOwnProperty.call(fields, 'startAt') && Number(fields.startAt) !== Number(cur.start_at)) ||
-        (Object.prototype.hasOwnProperty.call(fields, 'botEnabled') && fields.botEnabled === true && cur.bot_enabled === false)
+        Object.prototype.hasOwnProperty.call(fields, 'startAt') ||
+        Object.prototype.hasOwnProperty.call(fields, 'data') ||
+        Object.prototype.hasOwnProperty.call(fields, 'ora') ||
+        (Object.prototype.hasOwnProperty.call(fields, 'botEnabled') && fields.botEnabled === true)
       );
     if (Object.prototype.hasOwnProperty.call(fields, 'liveStrategy')) {
       const v = String(fields.liveStrategy || '').trim();
@@ -1539,7 +1462,7 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
     if (event === 'signal') {
       const score = Number((req.body || {}).score);
       const level = String((req.body || {}).level || 'verde').trim().toLowerCase();
-      const prevQ = await pool.query('SELECT signal_first_at, live_alert_sent, bot_enabled, live_excluded_at FROM matches WHERE id = $1', [id]);
+      const prevQ = await pool.query('SELECT signal_first_at, live_alert_sent, bot_enabled FROM matches WHERE id = $1', [id]);
       const prev = prevQ.rows[0] || {};
       const { rows } = await pool.query(
         `UPDATE matches SET
@@ -1555,8 +1478,7 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
         const resultForSnapshot = { level: 'verde', score100: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null, summary: String((req.body || {}).summary || '') };
         await saveSignalSnapshot(rows[0], resultForSnapshot, (req.body || {}).snapshot || {}, String((req.body || {}).source || 'analyzer'), now);
         // Notifica Telegram: una sola volta per partita (stesso flag dei segnali live automatici).
-        let tgStatus = prev.live_alert_sent ? 'already' : prev.live_excluded_at ? 'excluded' : prev.bot_enabled === false ? 'bot_off' : !telegram.isConfigured ? 'not_configured' : 'pending';
-        if (tgStatus === 'pending' && !(await claimLiveAlert(id, now))) tgStatus = 'already';
+        let tgStatus = prev.live_alert_sent ? 'already' : prev.bot_enabled === false ? 'bot_off' : !telegram.isConfigured ? 'not_configured' : 'pending';
         res.locals.tgStatus = tgStatus;
         if (tgStatus === 'pending') {
           try {
@@ -1572,6 +1494,7 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
               '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
               (Number.isFinite(score) ? '\n🎯 <b>' + Math.round(score) + '/100</b>' : '');
             const sentTo = await telegram.broadcast(text);
+            await pool.query('UPDATE matches SET live_alert_sent = true, live_last_notified_at = $2 WHERE id = $1', [id, now]);
             rows[0].live_alert_sent = true;
             res.locals.tgStatus = sentTo > 0 ? 'sent' : 'no_subscribers';
           } catch (e) { console.error('telegram signal:', e.message); res.locals.tgStatus = 'error'; }
@@ -1883,7 +1806,7 @@ app.post('/api/live-stats', async (req, res) => {
     ].join(' • ');
 
     // 1) Un solo alert VERDE per match/strategia.
-    if (result.level === 'verde' && result.gateOk && !match.live_alert_sent && match.bot_enabled !== false && await claimLiveAlert(match.id, lifecycleNow)) {
+    if (result.level === 'verde' && result.gateOk && !match.live_alert_sent && match.bot_enabled !== false) {
       const league = match.campionato ? ' (' + escapeHtmlLite(match.campionato) + ')' : '';
       const tipo = match.tipo_giocata ? escapeHtmlLite(match.tipo_giocata) : '—';
       const text = '🟢 <b>SEGNALE LIVE — ' + escapeHtmlLite(result.label) + '</b>' + league + '\n' +
@@ -2595,11 +2518,6 @@ app.post('/api/cron/telegram', async (req, res) => {
 
 
 
-// Riserva atomica dell'invio Telegram del segnale: true solo per la prima richiesta che arriva.
-async function claimLiveAlert(matchId, now) {
-  const r = await pool.query('UPDATE matches SET live_alert_sent = true, live_last_notified_at = $2 WHERE id = $1 AND live_alert_sent = false AND live_excluded_at IS NULL RETURNING id', [matchId, now || Date.now()]);
-  return r.rowCount > 0;
-}
 // ---------- Partita esclusa (⛔): una sola volta, solo se non c'è stato un segnale ----------
 async function markMatchExcluded(matchId, reason, info) {
   info = info || {};
@@ -2624,7 +2542,7 @@ async function autoCloseExcluded() {
   const now = Date.now();
   try {
     await pool.query(`UPDATE matches SET esito_manuale = 'non_entrata', outcome_set_at = COALESCE(outcome_set_at, $1)
-      WHERE live_excluded_at IS NOT NULL AND signal_first_at IS NULL AND (esito_manuale IS NULL OR esito_manuale = '') AND start_at < $2`, [now, now - 125 * 60 * 1000]);
+      WHERE live_excluded_at IS NOT NULL AND (esito_manuale IS NULL OR esito_manuale = '') AND start_at < $2`, [now, now - 125 * 60 * 1000]);
   } catch (e) { console.warn('autoCloseExcluded:', e.message); }
 }
 
@@ -2737,7 +2655,9 @@ async function liveAutoScanOnce() {
           '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
           (sig.score100 != null && !htReady ? '\n🎯 <b>' + sig.score100 + '/100</b>' : '');
         try {
-          if (await claimLiveAlert(m.id, now)) { await telegram.broadcast(text); alerts++; }
+          await telegram.broadcast(text);
+          await pool.query('UPDATE matches SET live_alert_sent=true, live_last_notified_at=$2 WHERE id=$1', [m.id, now]);
+          alerts++;
         } catch (e) { console.error('autoscan telegram:', e.message); }
       }
     }
@@ -2761,7 +2681,7 @@ function gdFindEvent(m, events, eventId) {
   }
   return best && bestScore >= 0.5 ? best : null;
 }
-function gdIsFinished(ev) { const s = gdStatusText(ev).toLowerCase(); return /finished|ended|full\s*time|^ft$|terminat|after\s*(extra|pen)|\baet\b|\bpen(alties|s)?\b/.test(s) && !/suspend|postpon|interrupt|abandon|cancel/.test(s); }
+function gdIsFinished(ev) { const s = gdStatusText(ev).toLowerCase(); return /finished|ended|full\s*time|^ft$|terminat|after|aet|pen/.test(s); }
 async function settleMatch(m, events, now) {
   const name = scanSignalName(m.tipo_giocata);
   let st = {}; try { st = m.settle_state ? JSON.parse(m.settle_state) : {}; } catch (_) { st = {}; }

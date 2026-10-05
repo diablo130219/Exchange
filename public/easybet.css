@@ -2576,39 +2576,40 @@ html[data-theme="light"] .mm-pending-actions button{background:#fff;border-color
 html[data-theme="light"] .mm-pending-actions button.green{background:#eef8f1;border-color:#b7dec7}
 html[data-theme="light"] .mm-pending-actions button.red{background:#fff0f0;border-color:#edc2c2}
 @media(max-width:640px){.ky-match-line{font-size:.94rem}.ky-crest-wrap{width:30px;height:30px;flex-basis:30px}.mm-pending-actions button{flex:1}}
-.mm-fields select{display:block;width:100%;margin-top:6px;border:1px solid rgba(213,169,50,.22);border-radius:11px;padding:11px 12px;background:rgba(0,0,0,.15);color:inherit;font:inherit;font-size:.82rem}
-html[data-theme="light"] .mm-fields select{background:#fff;color:#3b3324}
-.mm-fields select option{color:#3b3324;background:#fff}
-/* Riepilogo cassa: da dove arriva il saldo */
-.mm-ledger{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin:-4px 0 14px;padding:10px 14px;border-radius:14px;border:1px dashed rgba(205,175,110,.45);background:rgba(255,250,240,.6);font-size:.8rem;color:#7a6a4c}
-.mm-ledger b{color:#3a3122;margin-left:4px}.mm-ledger b.pos{color:#4f7d55}.mm-ledger b.neg{color:#a3604b}
-.mm-ledger .tot{margin-left:auto;font-weight:700}
-html:not([data-theme="light"]) body .mm-ledger{background:rgba(255,255,255,.03);color:#b8a98f}
-html:not([data-theme="light"]) body .mm-ledger b{color:#f1eadf}
-#kellyBoard .mm-ledger{margin:10px 0 14px}
 
-.mm-bank-field{display:flex;gap:8px;align-items:stretch}
-.mm-bank-field input{flex:1;min-width:0;background:rgba(205,175,110,.08)!important;cursor:default}
-.mm-bank-field button{margin-top:6px;white-space:nowrap;border:1px solid rgba(205,175,110,.45);background:#fffaf0;color:#6b5320;border-radius:11px;padding:0 12px;font:inherit;font-size:.74rem;font-weight:800;cursor:pointer}
-#kellyBoard .mm-bank-field button{margin-top:0}
-html:not([data-theme="light"]) body .mm-bank-field button{background:#211d15;color:#e8cf8a}
-
-/* STEP97 · Roserpina e Martingala con lo stesso stile di Kelly */
-#moneyBoard .mm-ky-block{margin-top:14px}
-#moneyBoard .ky-history .pos{color:#55cc8c}#moneyBoard .ky-history .neg{color:#ed7a7a}
-html[data-theme="light"] #moneyBoard .ky-history .pos{color:#4f7d55}html[data-theme="light"] #moneyBoard .ky-history .neg{color:#a3604b}
-
-/* STEP98 · Multipla: selezione con tipo giocata, data e ora */
-#moneyBoard .mm-fields.mm-leg-fields{grid-template-columns:repeat(4,1fr)}
-#moneyBoard .mm-leg-fields .wide{grid-column:span 2}
-#moneyBoard .mm-leg-sub{display:block;margin-top:3px;font-size:11px;font-weight:700;opacity:.7}
-@media(max-width:700px){#moneyBoard .mm-fields.mm-leg-fields{grid-template-columns:1fr 1fr}}
-html[data-theme="dark"] #moneyBoard input[type=date],html[data-theme="dark"] #moneyBoard input[type=time]{color-scheme:dark}
-
-/* STEP103 · Kelly: puntata consigliata prima di registrare */
-.ky-draft-kelly{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;padding:13px 15px;border-radius:14px;border:1px solid rgba(213,169,50,.4);background:rgba(213,169,50,.1);font-size:13px;line-height:1.45}
-.ky-draft-kelly strong{font-size:20px;color:#d8aa32;margin-left:4px}
-.ky-draft-kelly em{font-style:normal;opacity:.75;font-size:12px}
-.ky-draft-kelly button{border:1px solid rgba(213,169,50,.4);background:rgba(213,169,50,.16);color:inherit;border-radius:10px;padding:8px 12px;font-weight:900;cursor:pointer}
-html[data-theme="light"] .ky-draft-kelly{background:#fbf3df;border-color:rgba(166,119,23,.35)}
-html[data-theme="light"] .ky-draft-kelly strong{color:#a87a12}
+/* STEP94 — Import ticket GoldBet OCR */
+.mm-title-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.gb-import-btn{background:linear-gradient(180deg,rgba(244,199,59,.20),rgba(213,169,50,.12))!important;border-color:rgba(213,169,50,.48)!important}
+.gb-overlay{z-index:10050;align-items:start;overflow:auto;padding:32px 18px}
+.gb-modal{width:min(1180px,100%);margin:auto;border:1px solid rgba(213,169,50,.30);border-radius:24px;background:#171714;color:#f3efe5;padding:22px;box-shadow:0 30px 90px rgba(0,0,0,.55)}
+html[data-theme="light"] .gb-modal{background:#fffdf9;color:#332a19}
+.gb-eyebrow{display:block;font-size:10px;font-weight:900;letter-spacing:.18em;color:#d8aa32;margin-bottom:5px}
+.gb-upload{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0;padding:14px;border-radius:16px;background:rgba(213,169,50,.07);border:1px dashed rgba(213,169,50,.35)}
+.gb-upload button,.gb-actions button{border:1px solid rgba(213,169,50,.3);background:rgba(213,169,50,.10);color:inherit;border-radius:12px;padding:11px 14px;font-weight:900;cursor:pointer}
+.gb-upload span{font-size:12px;opacity:.72;font-weight:700}
+.gb-preview{max-height:220px;overflow:hidden;border-radius:16px;border:1px solid rgba(213,169,50,.15);background:#fff;margin-bottom:14px;text-align:center}
+.gb-preview img{display:block;width:100%;max-height:220px;object-fit:contain;background:#fff}
+.gb-progress{display:grid;gap:8px;padding:12px 0}
+.gb-progress>div{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+html[data-theme="light"] .gb-progress>div{background:#eee5d3}
+.gb-progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#c99400,#f1cb49);transition:width .15s ease}
+.gb-progress b{font-size:12px;color:#cda52e}
+.gb-summary{display:grid;grid-template-columns:1fr 1fr .7fr .9fr;gap:10px;margin:16px 0}
+.gb-summary label{font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.gb-summary input{width:100%;margin-top:6px;border:1px solid rgba(213,169,50,.23);border-radius:11px;background:rgba(255,255,255,.04);color:inherit;padding:10px 11px}
+html[data-theme="light"] .gb-summary input{background:#fff}
+.gb-summary>div{padding:10px 12px;border:1px solid rgba(213,169,50,.18);border-radius:13px;background:rgba(213,169,50,.06);display:flex;flex-direction:column;justify-content:center}
+.gb-summary small{font-size:9px;font-weight:900;letter-spacing:.10em;opacity:.65}.gb-summary b{font-size:20px;margin-top:3px}
+.gb-table-head,.gb-row{display:grid;grid-template-columns:36px 1fr 1fr 1.2fr 90px 36px;gap:8px;align-items:center}
+.gb-table-head{padding:0 8px 7px;font-size:9px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;opacity:.58}
+.gb-rows{display:grid;gap:8px;max-height:390px;overflow:auto;padding-right:3px}
+.gb-row{padding:10px 8px;border:1px solid rgba(213,169,50,.14);border-radius:14px;background:rgba(255,255,255,.025)}
+html[data-theme="light"] .gb-row{background:#fbf7ee}
+.gb-row input{min-width:0;border:1px solid rgba(213,169,50,.20);border-radius:10px;background:rgba(0,0,0,.12);color:inherit;padding:9px 10px;font-weight:700}
+html[data-theme="light"] .gb-row input{background:#fff}
+.gb-num{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:rgba(213,169,50,.14);color:#d3a323;font-weight:900}
+.gb-row button{width:32px;height:32px;border-radius:9px;border:1px solid rgba(210,63,63,.30);background:rgba(210,63,63,.10);color:#dd7070;font-weight:900;cursor:pointer}
+.gb-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}.gb-actions button.green{background:rgba(34,160,91,.16);border-color:rgba(34,160,91,.42)}
+.gb-help{padding:24px 8px;text-align:center;opacity:.65;line-height:1.55;font-size:13px}
+@media(max-width:860px){.gb-summary{grid-template-columns:1fr 1fr}.gb-table-head{display:none}.gb-row{grid-template-columns:32px 1fr 1fr}.gb-row input[data-gb-market],.gb-row input[data-gb-odd]{grid-column:auto}.gb-row button{grid-column:3;justify-self:end}.gb-row input[data-gb-home]{grid-column:2}.gb-row input[data-gb-away]{grid-column:3}.gb-row input[data-gb-market]{grid-column:2/3}.gb-row input[data-gb-odd]{grid-column:3/4}}
+@media(max-width:560px){.gb-overlay{padding:8px}.gb-modal{padding:14px;border-radius:18px}.gb-summary{grid-template-columns:1fr}.gb-row{grid-template-columns:28px 1fr}.gb-row input[data-gb-home],.gb-row input[data-gb-away],.gb-row input[data-gb-market],.gb-row input[data-gb-odd]{grid-column:2}.gb-row button{grid-column:2;justify-self:end}.gb-actions{flex-direction:column}.gb-actions button{width:100%}.mm-title-actions{width:100%;justify-content:stretch}.mm-title-actions button{flex:1}}

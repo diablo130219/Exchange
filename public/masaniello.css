@@ -155,7 +155,7 @@ html[data-theme="dark"] .masaniello-board .ms-item.active{background:linear-grad
 html[data-theme="dark"] .masaniello-board .ms-main-empty{background:linear-gradient(180deg,#231e16,#1a1611)!important}
 
 /* STEP71 — Masaniello allineato graficamente a Roserpina / Kelly / Martingala */
-.masaniello-board.show{max-width:1500px;margin:0 auto 16px;padding:0;font-family:inherit}
+.masaniello-board.show{max-width:1500px;margin:0 auto 16px;padding:0;font-family:Inter,system-ui,sans-serif}
 .masaniello-board .ms-shell{display:block;min-height:auto;border:0;border-radius:0;background:transparent;box-shadow:none}
 .masaniello-board .ms-content{padding:0;background:transparent}
 
@@ -274,8 +274,8 @@ html[data-theme="dark"] .masaniello-board .ms-cash-manager-head .ms-btn{backgrou
 
 /* STEP73 — Masaniello nella stessa colonna centrale degli altri Money Management */
 .masaniello-board.show{
-  width:100%!important;
-  max-width:100%!important;
+  width:min(1120px,100%)!important;
+  max-width:1120px!important;
   margin:0 auto 16px!important;
   padding:0!important;
 }
@@ -299,16 +299,3 @@ html[data-theme="dark"] .masaniello-board .ms-cash-manager-head .ms-btn{backgrou
 @media(max-width:1180px){
   .masaniello-board.show{width:100%!important;max-width:100%!important}
 }
-
-/* Stato salvataggio Money Management */
-.mm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
-.mm-sync{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:.74rem;font-weight:700;border:1px solid rgba(205,175,110,.35);background:#fffaf0;color:#7a6a4c;max-width:420px;line-height:1.25}
-.mm-sync span{font-size:.9rem}
-.mm-sync-ok{background:#eef6ef;border-color:#a9cdb0;color:#3f6e46}
-.mm-sync-warn{background:#fff6dc;border-color:#e2c272;color:#8a6d2c}
-.mm-sync-local{background:#fbeee9;border-color:#e3b4a6;color:#a3402c}
-#kySyncBadge{margin-left:auto;align-self:center}
-.mm-alert.good{background:#eef6ef;border-color:#a9cdb0;color:#3f6e46}
-html:not([data-theme="light"]) body .mm-sync{background:#1d1a13;color:#d8ccb3}
-html:not([data-theme="light"]) body .mm-sync-ok{background:#15201a;color:#a3c7a7;border-color:rgba(143,179,147,.4)}
-html:not([data-theme="light"]) body .mm-sync-local{background:#2a1714;color:#ffb3a3}

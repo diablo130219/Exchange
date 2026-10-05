@@ -126,8 +126,8 @@
     },
     under05ht: {
       label: 'Under 0.5 HT',
-      system: 'EXCH UNDER 0.5 HT', // ingresso pre-match a quota >= 2.60, si tiene fino all'intervallo
-      quotaMin: 2.60,
+      system: 'EXCH UNDER 0.5 HT', // ingresso pre-match a quota >= 2.95, si tiene fino all'intervallo
+      quotaMin: 2.95,
       warn: { xg: 0.80, sot: 3, big: 2 }
     },
     favht: {
@@ -497,7 +497,6 @@
   // Partita "andata": la strategia non può più dare un ingresso (gol prima/dentro la finestra, finestra superata, condizione HT non valida).
   function exclusionOf(s) {
     if (!s) return null;
-    if (s.state === 'NON ATTIVA' && /favorito in casa|indica la favorita|testato solo/i.test(String(s.reason || ''))) return null;
     if (s.state === 'INGIOCABILE' || s.state === 'CHIUSA' || s.state === 'NON ATTIVA') return s.reason || s.state;
     if (s.state === 'NO BET' && /superata|secondo tempo iniziato/i.test(String(s.reason || ''))) return s.reason;
     return null;
