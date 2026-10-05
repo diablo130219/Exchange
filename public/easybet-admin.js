@@ -417,8 +417,15 @@
       return true;
     }
 
+    function isClassicCurrentOrFuture(m){
+      if(currentAdminArea !== 'classic') return true;
+      var keys = relativeDateKeys();
+      var mk = localDateKey(m.startAt);
+      return !!mk && mk >= keys.today;
+    }
+
     function visibleMatches(){
-      return matches.filter(matchesFilter).filter(matchesDateFilter);
+      return matches.filter(matchesFilter).filter(isClassicCurrentOrFuture).filter(matchesDateFilter);
     }
 
     function updateBulkUI(){
@@ -462,7 +469,7 @@
     }
     function render(){
       var grid = document.getElementById('grid');
-      var list = matches.filter(matchesFilter).filter(matchesDateFilter);
+      var list = matches.filter(matchesFilter).filter(isClassicCurrentOrFuture).filter(matchesDateFilter);
       if (!list.length){
         grid.innerHTML = '<div class="empty">Nessuna partita in questa vista.</div>';
         updateBulkUI();
