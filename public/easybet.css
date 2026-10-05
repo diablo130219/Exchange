@@ -2687,3 +2687,12 @@ html[data-theme="dark"] .mm-leg-status-actions .mm-leg-status-btn.loss{color:#f0
 html[data-theme="dark"] .mm-leg-status-actions .mm-leg-status-btn.void{color:#c7c2bb!important;background:rgba(145,140,134,.13)!important;border-color:rgba(173,167,160,.28)!important}
 html[data-theme="dark"] .mm-leg-status-actions .mm-leg-status-btn.pending{color:#e6bd5b!important;background:rgba(213,169,50,.12)!important;border-color:rgba(213,169,50,.42)!important}
 @media(max-width:560px){.mm-leg-status-actions .mm-leg-status-btn{min-width:58px;flex:1 1 auto}}
+
+/* STEP104 · Data e ora nelle selezioni Multiple */
+.mm-multi-add-fields{grid-template-columns:minmax(280px,2fr) minmax(130px,.65fr) minmax(100px,.5fr) minmax(110px,.55fr)!important}
+.mm-multi-leg-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+.mm-multi-when{display:block;margin-top:3px;font-size:11px;font-weight:800;color:#9b7413;letter-spacing:.02em}
+.mm-multi-history-legs span strong{display:block;font-size:11px}
+html[data-theme="light"] .mm-multi-when{color:#997016}
+@media(max-width:900px){.mm-multi-add-fields{grid-template-columns:1fr 1fr!important}}
+@media(max-width:560px){.mm-multi-add-fields{grid-template-columns:1fr!important}.mm-multi-when{font-size:10px}}
