@@ -272,10 +272,10 @@ html[data-theme="dark"] .masaniello-board .ms-cash-manager-head .ms-btn{backgrou
   .masaniello-board .ms-manage-actions>*{flex:1 1 calc(50% - 7px)}
 }
 
-/* STEP73 — Masaniello nella stessa colonna centrale degli altri Money Management */
+/* STEP106 — Masaniello: larghezza ampia ripristinata */
 .masaniello-board.show{
-  width:min(1120px,100%)!important;
-  max-width:1120px!important;
+  width:min(1500px,100%)!important;
+  max-width:1500px!important;
   margin:0 auto 16px!important;
   padding:0!important;
 }
