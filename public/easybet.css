@@ -2616,3 +2616,16 @@ html[data-theme="light"] .gb-row input{background:#fff}
 .gb-help{padding:24px 8px;text-align:center;opacity:.65;line-height:1.55;font-size:13px}
 @media(max-width:860px){.gb-summary{grid-template-columns:1fr 1fr}.gb-table-head{display:none}.gb-row{grid-template-columns:32px 1fr 1fr}.gb-row input[data-gb-market],.gb-row input[data-gb-odd]{grid-column:auto}.gb-row button{grid-column:3;justify-self:end}.gb-row input[data-gb-home]{grid-column:2}.gb-row input[data-gb-away]{grid-column:3}.gb-row input[data-gb-market]{grid-column:2/3}.gb-row input[data-gb-odd]{grid-column:3/4}}
 @media(max-width:560px){.gb-overlay{padding:8px}.gb-modal{padding:14px;border-radius:18px}.gb-summary{grid-template-columns:1fr}.gb-row{grid-template-columns:28px 1fr}.gb-row input[data-gb-home],.gb-row input[data-gb-away],.gb-row input[data-gb-market],.gb-row input[data-gb-odd]{grid-column:2}.gb-row button{grid-column:2;justify-self:end}.gb-actions{flex-direction:column}.gb-actions button{width:100%}.mm-title-actions{width:100%;justify-content:stretch}.mm-title-actions button{flex:1}}
+
+
+/* STEP100 — Import multipla da copia/incolla */
+.paste-import-btn{background:rgba(213,169,50,.13)!important;border-color:rgba(213,169,50,.34)!important}
+.pi-modal{max-width:1120px!important}
+.pi-help{margin:12px 0;padding:12px 14px;border-radius:12px;background:rgba(213,169,50,.08);border:1px solid rgba(213,169,50,.18);font-size:12px;line-height:1.5}
+.pi-textarea{width:100%;min-height:180px;resize:vertical;border:1px solid rgba(213,169,50,.25);border-radius:14px;padding:14px;background:rgba(0,0,0,.1);color:inherit;font:500 13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}
+.pi-textarea:focus{border-color:rgba(213,169,50,.6);box-shadow:0 0 0 3px rgba(213,169,50,.08)}
+.pi-parse-actions{justify-content:space-between;align-items:end;margin-top:10px}
+.pi-stake{display:flex;flex-direction:column;gap:5px;font-size:10px;font-weight:900;letter-spacing:.06em}.pi-stake input{width:150px;border:1px solid rgba(213,169,50,.25);border-radius:10px;padding:10px;background:rgba(0,0,0,.08);color:inherit}
+.pi-row{position:relative;padding-bottom:30px!important}.pi-meta{position:absolute;left:56px;right:52px;bottom:7px;font-size:10px;font-weight:700;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme="light"] .pi-textarea,html[data-theme="light"] .pi-stake input{background:#fff;color:#3b3324}
+@media(max-width:760px){.pi-parse-actions{flex-direction:column;align-items:stretch}.pi-stake input{width:100%}.pi-meta{left:44px;right:12px}.mm-title-actions{display:grid!important;grid-template-columns:1fr!important}.mm-title-actions button{width:100%}}
