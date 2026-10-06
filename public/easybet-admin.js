@@ -35,7 +35,10 @@
     document.querySelectorAll('[data-live-only="1"]').forEach(function(el){ el.style.display=currentAdminArea==='live'?'':'none'; });
     var outcomeFilters=document.getElementById('outcomeFilters');
     if(outcomeFilters) outcomeFilters.style.display=currentAdminArea==='classic'?'none':'';
+    var strategyFilters=document.getElementById('strategyFilters');
+    if(strategyFilters) strategyFilters.style.display=currentAdminArea==='classic'?'flex':'none';
     if(currentAdminArea==='classic') currentFilter='tutte';
+    else currentStrategyFilter='tutte';
     var importBtnArea=document.getElementById('importBtn');
     if(importBtnArea) importBtnArea.textContent=currentAdminArea==='classic'?'📥 Importa CSV classico':'📋 Importa CSV Exchange';
     try { history.replaceState(null,'',location.pathname+'?area='+currentAdminArea); } catch(e){}
@@ -192,6 +195,7 @@
     var selectedIds = new Set();
     var currentFilter = 'tutte';
     var currentDateFilter = 'tutte';
+    var currentStrategyFilter = 'tutte';
 
     var ICON_CLOCK = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
     var ICON_SHIELD = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"/></svg>';
@@ -417,6 +421,35 @@
       return true;
     }
 
+    function normStrategy(v){
+      return String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
+    }
+
+    function matchesStrategyFilter(m){
+      if(currentAdminArea !== 'classic' || currentStrategyFilter === 'tutte') return true;
+      return normStrategy(m.tipoGiocata) === currentStrategyFilter;
+    }
+
+    function refreshStrategyFilterOptions(){
+      var sel=document.getElementById('strategyFilterSelect');
+      var row=document.getElementById('strategyFilters');
+      if(row) row.style.display=currentAdminArea==='classic'?'flex':'none';
+      if(!sel) return;
+      var values=[];
+      matches.forEach(function(m){
+        if((m.bettingArea==='classic'?'classic':'live')!=='classic') return;
+        var label=String(m.tipoGiocata||'').trim();
+        if(!label) return;
+        var key=normStrategy(label);
+        if(!values.some(function(x){return x.key===key;})) values.push({key:key,label:label});
+      });
+      values.sort(function(a,b){return a.label.localeCompare(b.label,'it',{sensitivity:'base'});});
+      var keep=currentStrategyFilter;
+      sel.innerHTML='<option value="tutte">Tutte le strategie</option>'+values.map(function(x){return '<option value="'+esc(x.key)+'">'+esc(x.label)+'</option>';}).join('');
+      if(keep!=='tutte' && values.some(function(x){return x.key===keep;})) sel.value=keep;
+      else { currentStrategyFilter='tutte'; sel.value='tutte'; }
+    }
+
     function isClassicCurrentOrFuture(m){
       if(currentAdminArea !== 'classic') return true;
       var keys = relativeDateKeys();
@@ -425,7 +458,7 @@
     }
 
     function visibleMatches(){
-      return matches.filter(matchesFilter).filter(isClassicCurrentOrFuture).filter(matchesDateFilter);
+      return matches.filter(matchesFilter).filter(isClassicCurrentOrFuture).filter(matchesDateFilter).filter(matchesStrategyFilter);
     }
 
     function updateBulkUI(){
@@ -469,7 +502,7 @@
     }
     function render(){
       var grid = document.getElementById('grid');
-      var list = matches.filter(matchesFilter).filter(isClassicCurrentOrFuture).filter(matchesDateFilter);
+      var list = matches.filter(matchesFilter).filter(isClassicCurrentOrFuture).filter(matchesDateFilter).filter(matchesStrategyFilter);
       if (!list.length){
         grid.innerHTML = '<div class="empty">Nessuna partita in questa vista.</div>';
         updateBulkUI();
@@ -599,6 +632,7 @@
         if (auto===true && (sig===lastMatchesSig || adminBusy())) return;
         lastMatchesSig=sig;
         matches = list;
+        refreshStrategyFilterOptions();
         render();
       }).catch(function(){
         document.getElementById('grid').innerHTML = '<div class="empty">Errore nel caricamento.</div>';
@@ -610,6 +644,7 @@
     // perché matches/selectedIds/render/loadMatches vivono nello scope di startApp.
     refreshAdminAreaView = function(){
       selectedIds.clear();
+      refreshStrategyFilterOptions();
       render();
       return loadMatches(false);
     };
@@ -630,6 +665,18 @@
       currentDateFilter = btn.getAttribute('data-datef') || 'tutte';
       document.querySelectorAll('.date-pill').forEach(function(p){ p.classList.remove('active'); });
       btn.classList.add('active');
+      render();
+    });
+
+    var strategyFilterSelect=document.getElementById('strategyFilterSelect');
+    if(strategyFilterSelect) strategyFilterSelect.addEventListener('change',function(){
+      currentStrategyFilter=this.value||'tutte';
+      render();
+    });
+    var strategyFilterClear=document.getElementById('strategyFilterClear');
+    if(strategyFilterClear) strategyFilterClear.addEventListener('click',function(){
+      currentStrategyFilter='tutte';
+      if(strategyFilterSelect) strategyFilterSelect.value='tutte';
       render();
     });
 

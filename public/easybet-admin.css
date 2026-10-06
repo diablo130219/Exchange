@@ -88,6 +88,14 @@
   .date-filter-label{font-size:.68rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-right:3px;}
   .date-pill{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.72rem;padding:7px 12px;border-radius:999px;cursor:pointer;font-family:inherit;}
   .date-pill.active{background:linear-gradient(180deg,rgba(240,205,110,.16),rgba(138,109,34,.12));border-color:var(--gold-deep);color:var(--gold-bright);}
+  .strategy-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-8px 0 18px;}
+  .strategy-filter-label{font-size:.68rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-right:3px;}
+  .strategy-filter-select{min-width:260px;max-width:520px;height:38px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);padding:0 38px 0 14px;font:inherit;font-size:.76rem;font-weight:700;cursor:pointer;outline:none;}
+  .strategy-filter-select:focus{border-color:var(--gold-deep);box-shadow:0 0 0 3px rgba(216,173,61,.12);}
+  .strategy-filter-clear{width:38px;height:38px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:1.05rem;cursor:pointer;}
+  .strategy-filter-clear:hover{border-color:var(--gold-deep);color:var(--gold-bright);}
+  html[data-theme="light"] body .strategy-filter-select,html[data-theme="light"] body .strategy-filter-clear{background:#fff;color:#3b3324;}
+
   details.date-section{padding:0;overflow:hidden;}
   details.date-section>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 62px 15px 16px;user-select:none;position:relative;min-width:0;}
   details.date-section>summary::-webkit-details-marker{display:none;}
@@ -570,3 +578,5 @@ html[data-theme="light"] body details.month-section{background:linear-gradient(1
   .card-foot{gap:10px}
   .bot-toggle.telegram-toggle{padding:8px 10px}
 }
+
+@media(max-width:620px){.strategy-filter-row{margin:-6px 0 15px;flex-wrap:nowrap}.strategy-filter-label{display:none}.strategy-filter-select{min-width:0;max-width:none;flex:1;width:100%}.strategy-filter-clear{flex:0 0 38px}}
