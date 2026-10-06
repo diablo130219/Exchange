@@ -728,6 +728,10 @@
     loadInProgress=true;
     var note=document.getElementById('refreshNote');
     if(note)note.textContent=currentView==='money'?'Money Management':(hasLoadedOnce?'aggiornamento…':'caricamento…');
+    /* Money Management non dipende dal feed partite: renderizzalo subito e sincronizza il resto in background. */
+    if(currentView==='money'){
+      try{render()}catch(err){console.error('EasyBet Money immediate render:',err)}
+    }
 
     /* Usa ESATTAMENTE lo stesso endpoint e lo stesso metodo dell'area admin,
        che e' la fonte dati gia' verificata per l'elenco partite. */
@@ -1161,5 +1165,5 @@
   }
   initLiveAnalyzerUI();
 
-  var initial=(location.hash||'#home').replace('#','');if(initial==='masaniello'||initial==='kelly')initial='money';if(['home','pronostici','live','statistiche','strategie','consigli','exchange','money'].indexOf(initial)<0)initial='home';currentView=initial;load();setInterval(load,15000);setInterval(function(){render()},30000)
+  var initial=(location.hash||'#home').replace('#','');if(initial==='masaniello'||initial==='kelly')initial='money';if(['home','pronostici','live','statistiche','strategie','consigli','exchange','money'].indexOf(initial)<0)initial='home';currentView=initial;if(currentView==='money'){try{render()}catch(err){console.error('EasyBet initial Money render:',err)}}load();setInterval(load,15000);setInterval(function(){render()},30000)
 })();

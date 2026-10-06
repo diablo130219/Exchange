@@ -33,6 +33,8 @@ function normalize(d){
     u.name=u.name||'Multipla 1';
     d.multipla={selected:u.id,items:[u]};
   }
+  d.multipla.items=d.multipla.items.filter(x=>x&&typeof x==='object');
+  if(!d.multipla.items.length){let u=multiDefaults();d.multipla.items=[u];d.multipla.selected=u.id}
   d.selectedMethod=METHOD_LABELS[d.selectedMethod]?d.selectedMethod:'roserpina';
   d.roserpina.items.forEach(x=>{x.bank=n(x.bank,100);x.initial=n(x.initial,x.bank);x.targetRoi=n(x.targetRoi,20);x.targetWins=Math.max(1,Math.round(n(x.targetWins,5)));x.wins=Math.max(0,Math.round(n(x.wins)));x.lossPool=Math.max(0,n(x.lossPool));x.history=Array.isArray(x.history)?x.history:[];x.history.forEach(h=>{if(h&&!h.id)h.id=uid('hist')});x.pending=Array.isArray(x.pending)?x.pending:[];x.pending.forEach(p=>{if(p&&!p.id)p.id=uid('pend')});x.draft=x.draft||{desc:'',odds:1.8,meta:null};if(!(n(x.draft.odds)>0))x.draft.odds=1.8;x.draft.meta=cleanMeta(x.draft.meta)});
   d.martingala.items.forEach(x=>{x.bank=n(x.bank,100);x.initial=n(x.initial,x.bank);x.baseStake=Math.max(.01,n(x.baseStake,2));x.multiplier=Math.max(1,n(x.multiplier,2));x.lossStreak=Math.max(0,Math.round(n(x.lossStreak)));x.maxStakePct=Math.max(0,n(x.maxStakePct,100));x.history=Array.isArray(x.history)?x.history:[];x.history.forEach(h=>{if(h&&!h.id)h.id=uid('hist')});x.pending=Array.isArray(x.pending)?x.pending:[];x.pending.forEach(p=>{if(p&&!p.id)p.id=uid('pend')});x.draft=x.draft||{desc:'',odds:2,meta:null};if(!(n(x.draft.odds)>0))x.draft.odds=2;x.draft.meta=cleanMeta(x.draft.meta)});
