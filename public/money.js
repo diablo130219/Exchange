@@ -22,27 +22,47 @@ function multiDefaults(name='Multipla 1',bank=100){return{id:uid('multi'),name,b
 function defaults(){let r=roseDefaults(),m=martDefaults(),u=multiDefaults();return{selectedMethod:'roserpina',roserpina:{selected:r.id,items:[r]},martingala:{selected:m.id,items:[m]},multipla:{selected:u.id,items:[u]}}}
 function normalize(d){
   d=d&&typeof d==='object'?d:defaults();
-  if(!d.roserpina||!Array.isArray(d.roserpina.items)||!d.roserpina.items.length){let r=roseDefaults();d.roserpina={selected:r.id,items:[r]}}
-  if(!d.martingala||!Array.isArray(d.martingala.items)||!d.martingala.items.length){let m=martDefaults();d.martingala={selected:m.id,items:[m]}}
+  if(!d.roserpina||!Array.isArray(d.roserpina.items)){let r=roseDefaults();d.roserpina={selected:r.id,items:[r]}}
+  d.roserpina.items=d.roserpina.items.filter(x=>x&&typeof x==='object');
+  if(!d.roserpina.items.length){let r=roseDefaults();d.roserpina.items=[r];d.roserpina.selected=r.id}
+  if(!d.martingala||!Array.isArray(d.martingala.items)){let m=martDefaults();d.martingala={selected:m.id,items:[m]}}
+  d.martingala.items=d.martingala.items.filter(x=>x&&typeof x==='object');
+  if(!d.martingala.items.length){let m=martDefaults();d.martingala.items=[m];d.martingala.selected=m.id}
   if(!d.multipla||(Array.isArray(d.multipla.items)&&!d.multipla.items.length)){let u=multiDefaults();d.multipla={selected:u.id,items:[u]}}
   if(!Array.isArray(d.multipla.items)){
     let legacy=d.multipla&&typeof d.multipla==='object'?d.multipla:{};
     let u=multiDefaults(legacy.name||'Multipla 1',n(legacy.initial,legacy.bank||100));
     Object.assign(u,legacy);
-    u.id=u.id||uid('multi');
-    u.name=u.name||'Multipla 1';
+    u.id=u.id||uid('multi');u.name=u.name||'Multipla 1';
     d.multipla={selected:u.id,items:[u]};
   }
   d.multipla.items=d.multipla.items.filter(x=>x&&typeof x==='object');
   if(!d.multipla.items.length){let u=multiDefaults();d.multipla.items=[u];d.multipla.selected=u.id}
   d.selectedMethod=METHOD_LABELS[d.selectedMethod]?d.selectedMethod:'roserpina';
-  d.roserpina.items.forEach(x=>{x.bank=n(x.bank,100);x.initial=n(x.initial,x.bank);x.targetRoi=n(x.targetRoi,20);x.targetWins=Math.max(1,Math.round(n(x.targetWins,5)));x.wins=Math.max(0,Math.round(n(x.wins)));x.lossPool=Math.max(0,n(x.lossPool));x.history=Array.isArray(x.history)?x.history:[];x.history.forEach(h=>{if(h&&!h.id)h.id=uid('hist')});x.pending=Array.isArray(x.pending)?x.pending:[];x.pending.forEach(p=>{if(p&&!p.id)p.id=uid('pend')});x.draft=x.draft||{desc:'',odds:1.8,meta:null};if(!(n(x.draft.odds)>0))x.draft.odds=1.8;x.draft.meta=cleanMeta(x.draft.meta)});
-  d.martingala.items.forEach(x=>{x.bank=n(x.bank,100);x.initial=n(x.initial,x.bank);x.baseStake=Math.max(.01,n(x.baseStake,2));x.multiplier=Math.max(1,n(x.multiplier,2));x.lossStreak=Math.max(0,Math.round(n(x.lossStreak)));x.maxStakePct=Math.max(0,n(x.maxStakePct,100));x.history=Array.isArray(x.history)?x.history:[];x.history.forEach(h=>{if(h&&!h.id)h.id=uid('hist')});x.pending=Array.isArray(x.pending)?x.pending:[];x.pending.forEach(p=>{if(p&&!p.id)p.id=uid('pend')});x.draft=x.draft||{desc:'',odds:2,meta:null};if(!(n(x.draft.odds)>0))x.draft.odds=2;x.draft.meta=cleanMeta(x.draft.meta)});
-  d.multipla.items.forEach(x=>{x.id=x.id||uid('multi');x.name=x.name||'Multipla';x.bank=n(x.bank,100);x.initial=n(x.initial,x.bank);x.stake=Math.max(2,n(x.stake,2));x.bonus=Math.max(0,n(x.bonus,0));x.legs=Array.isArray(x.legs)?x.legs:[];x.legs.forEach(l=>{if(!l.status)l.status='pending';if(!['pending','win','loss','void'].includes(l.status))l.status='pending'});x.history=Array.isArray(x.history)?x.history:[];x.history.forEach(h=>{if(h&&!h.id)h.id=uid('hist');if(h&&Array.isArray(h.legs))h.legs.forEach(l=>{if(!l.status)l.status='pending'})});x.archived=!!x.archived;x.status=['open','win','loss','void'].includes(x.status)?x.status:(x.archived&&x.history.length?(x.history[x.history.length-1].result||'open'):'open');x.closedAt=x.closedAt||''});
+  d.roserpina.items.forEach((x,i)=>{
+    x.id=x.id||uid('rose');x.name=x.name||('Roserpina '+(i+1));x.bank=n(x.bank,100);x.initial=n(x.initial,x.bank);x.targetRoi=n(x.targetRoi,20);x.targetWins=Math.max(1,Math.round(n(x.targetWins,5)));x.wins=Math.max(0,Math.round(n(x.wins)));x.lossPool=Math.max(0,n(x.lossPool));
+    x.history=Array.isArray(x.history)?x.history.filter(h=>h&&typeof h==='object'):[];x.history.forEach(h=>{if(!h.id)h.id=uid('hist')});
+    x.pending=Array.isArray(x.pending)?x.pending.filter(z=>z&&typeof z==='object'):[];x.pending.forEach(z=>{if(!z.id)z.id=uid('pend')});
+    x.draft=x.draft&&typeof x.draft==='object'?x.draft:{desc:'',odds:1.8,meta:null};if(!(n(x.draft.odds)>0))x.draft.odds=1.8;x.draft.desc=String(x.draft.desc||'');x.draft.meta=cleanMeta(x.draft.meta);
+  });
+  d.roserpina.selected=d.roserpina.items.some(x=>x.id===d.roserpina.selected)?d.roserpina.selected:d.roserpina.items[0].id;
+  d.martingala.items.forEach((x,i)=>{
+    x.id=x.id||uid('mart');x.name=x.name||('Martingala '+(i+1));x.bank=n(x.bank,100);x.initial=n(x.initial,x.bank);x.baseStake=Math.max(.01,n(x.baseStake,2));x.multiplier=Math.max(1,n(x.multiplier,2));x.lossStreak=Math.max(0,Math.round(n(x.lossStreak)));x.maxStakePct=Math.max(0,n(x.maxStakePct,100));
+    x.history=Array.isArray(x.history)?x.history.filter(h=>h&&typeof h==='object'):[];x.history.forEach(h=>{if(!h.id)h.id=uid('hist')});
+    x.pending=Array.isArray(x.pending)?x.pending.filter(z=>z&&typeof z==='object'):[];x.pending.forEach(z=>{if(!z.id)z.id=uid('pend')});
+    x.draft=x.draft&&typeof x.draft==='object'?x.draft:{desc:'',odds:2,meta:null};if(!(n(x.draft.odds)>0))x.draft.odds=2;x.draft.desc=String(x.draft.desc||'');x.draft.meta=cleanMeta(x.draft.meta);
+  });
+  d.martingala.selected=d.martingala.items.some(x=>x.id===d.martingala.selected)?d.martingala.selected:d.martingala.items[0].id;
+  d.multipla.items.forEach((x,i)=>{
+    x.id=x.id||uid('multi');x.name=x.name||('Multipla '+(i+1));x.bank=n(x.bank,100);x.initial=n(x.initial,x.bank);x.stake=Math.max(2,n(x.stake,2));x.bonus=Math.max(0,n(x.bonus,0));
+    x.legs=Array.isArray(x.legs)?x.legs.filter(l=>l&&typeof l==='object'):[];x.legs.forEach(l=>{l.desc=String(l.desc||'Selezione');l.odds=n(l.odds,1);if(!l.status)l.status='pending';if(!['pending','win','loss','void'].includes(l.status))l.status='pending';l.date=String(l.date||l.matchDate||'');l.time=String(l.time||l.matchTime||'')});
+    x.history=Array.isArray(x.history)?x.history.filter(h=>h&&typeof h==='object'):[];x.history.forEach(h=>{if(!h.id)h.id=uid('hist');h.legs=Array.isArray(h.legs)?h.legs.filter(l=>l&&typeof l==='object'):[];h.legs.forEach(l=>{if(!l.status)l.status='pending';l.desc=String(l.desc||'Selezione');l.odds=n(l.odds,1)})});
+    x.archived=!!x.archived;x.status=['open','win','loss','void'].includes(x.status)?x.status:(x.archived&&x.history.length?(x.history[x.history.length-1].result||'open'):'open');x.closedAt=String(x.closedAt||'');
+  });
   d.multipla.selected=d.multipla.items.some(x=>x.id===d.multipla.selected)?d.multipla.selected:d.multipla.items[0].id;
   return d;
 }
-let data=(()=>{try{return normalize(JSON.parse(localStorage.getItem(KEY)||'null'))}catch{return defaults()}})();
+let data=(()=>{try{let raw=localStorage.getItem(KEY);if(raw){try{localStorage.setItem(KEY+'.backup',raw)}catch(_){}}return normalize(JSON.parse(raw||'null'))}catch(err){console.warn('Money local recovery:',err);return defaults()}})();
 const CLOUD_SECTION='money',CLOUD_MIGRATION_KEY='easybet.moneyManagement.cloudMigrated.v1';
 let cloudReady=false,cloudSaveTimer=null,cloudUpdatedAt=0,cloudLoading=false;
 function localSave(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(_){}}
@@ -50,7 +70,7 @@ function moneyStateScore(d){try{d=normalize(JSON.parse(JSON.stringify(d)));let s
 async function cloudPut(){if(!cloudReady)return;try{let r=await fetch('/api/money-management/state/'+CLOUD_SECTION,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:data})});if(r.ok){let j=await r.json();cloudUpdatedAt=Number(j.updatedAt)||Date.now()}}catch(_){}}
 function queueCloudSave(){if(!cloudReady)return;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(cloudPut,300)}
 function save(){localSave();queueCloudSave()}
-async function cloudLoad(force=false){if(cloudLoading)return;cloudLoading=true;try{let r=await fetch('/api/money-management/state/'+CLOUD_SECTION+'?ts='+Date.now(),{cache:'no-store'});if(!r.ok)return;let j=await r.json(),remote=j&&j.state,remoteAt=Number(j&&j.updatedAt)||0,migrated=false;try{migrated=localStorage.getItem(CLOUD_MIGRATION_KEY)==='1'}catch(_){}if(!cloudReady){if(remote){let localScore=moneyStateScore(data),remoteScore=moneyStateScore(remote);if(!migrated&&localScore>remoteScore){cloudReady=true;await cloudPut()}else{data=normalize(remote);localSave();cloudUpdatedAt=remoteAt;cloudReady=true;render()}}else{cloudReady=true;await cloudPut()}try{localStorage.setItem(CLOUD_MIGRATION_KEY,'1')}catch(_){}return}if(force&&remote&&remoteAt>cloudUpdatedAt){data=normalize(remote);cloudUpdatedAt=remoteAt;localSave();render()}}catch(_){}finally{cloudLoading=false}}
+async function cloudLoad(force=false){if(cloudLoading)return;cloudLoading=true;try{let r=await fetch('/api/money-management/state/'+CLOUD_SECTION+'?ts='+Date.now(),{cache:'no-store'});if(!r.ok)return;let j=await r.json(),remote=j&&j.state,remoteAt=Number(j&&j.updatedAt)||0,migrated=false;try{migrated=localStorage.getItem(CLOUD_MIGRATION_KEY)==='1'}catch(_){}if(!cloudReady){if(remote){let localScore=moneyStateScore(data),remoteScore=moneyStateScore(remote);if(!migrated&&localScore>remoteScore){cloudReady=true;await cloudPut()}else{try{data=normalize(remote);localSave();cloudUpdatedAt=remoteAt;cloudReady=true;render()}catch(err){console.warn('Money cloud state ignored:',err);cloudReady=true}}}else{cloudReady=true;await cloudPut()}try{localStorage.setItem(CLOUD_MIGRATION_KEY,'1')}catch(_){}return}if(force&&remote&&remoteAt>cloudUpdatedAt){data=normalize(remote);cloudUpdatedAt=remoteAt;localSave();render()}}catch(_){}finally{cloudLoading=false}}
 function root(){return document.getElementById('moneyBoard')}
 function current(kind){let d=data[kind];return d&&d.items.find(x=>x.id===d.selected)||d?.items?.[0]||null}
 function methodNav(){return `<div class="mm-methods">${Object.entries(METHOD_LABELS).map(([k,v])=>`<button class="${data.selectedMethod===k?'active':''}" data-mm-method="${k}"><span>${k==='masaniello'?'M':k==='roserpina'?'R':k==='kelly'?'K':k==='martingala'?'×2':'×'}</span><b>${v}</b></button>`).join('')}<button class="mm-new" data-mm="new-cash">+ Nuova cassa</button></div>`}
@@ -237,16 +257,20 @@ window.addEventListener('focus',()=>cloudLoad(true));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')cloudLoad(true)});
 setTimeout(()=>cloudLoad(false),0);
 function bootMoneyManagement(){
+  let hash='';try{hash=String(location&&location.hash||'').replace(/^#/,'')}catch(_){}
+  if(hash!=='money')return;
+  let r=root();if(r)r.classList.add('show');
   try{
-    let hash=String(location&&location.hash||'').replace(/^#/,'');
-    if(hash==='money'){
-      let r=root();if(r)r.classList.add('show');
-      render();
-      let note=document.getElementById('refreshNote');if(note&&/caricamento|aggiornamento/i.test(note.textContent||''))note.textContent='Money Management pronto';
-    }
+    data=normalize(data);localSave();render();
+    let note=document.getElementById('refreshNote');if(note&&/caricamento|aggiornamento/i.test(note.textContent||''))note.textContent='Money Management pronto';
   }catch(err){
     console.error('EasyBet Money boot:',err);
-    let r=root();if(r){r.classList.add('show');r.innerHTML='<div class="mm-shell"><div class="mm-card"><h3>MONEY MANAGEMENT</h3><div class="mm-alert bad">Errore di inizializzazione. Ricarica la pagina: i dati salvati non vengono cancellati.</div></div></div>'}
+    try{
+      data=normalize(JSON.parse(JSON.stringify(data||{})));localSave();render();
+    }catch(err2){
+      console.error('EasyBet Money recovery:',err2);
+      if(r)r.innerHTML='<div class="mm-shell"><div class="mm-card"><h3>MONEY MANAGEMENT</h3><div class="mm-alert bad">Errore dati: '+esc(err2&&err2.message?err2.message:'inizializzazione non riuscita')+'. Il backup locale è stato mantenuto.</div></div></div>';
+    }
   }
 }
 window.EasyBetMoney={render,select(method){if(METHOD_LABELS[method]){data.selectedMethod=method;save()}render()},boot:bootMoneyManagement};
