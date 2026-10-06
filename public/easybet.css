@@ -2743,3 +2743,28 @@ html[data-theme="light"] .mm-multi-legs>div.mm-multi-leg.pending{
   border-color:rgba(213,169,50,.13)!important;
   border-left-color:rgba(213,169,50,.34)!important;
 }
+
+/* STEP111 · Multiple multiple + archivio stato */
+.mm-multi-tab{position:relative;padding-top:12px!important}
+.mm-multi-tab-status{display:inline-flex!important;align-items:center;justify-content:center;width:max-content;margin:4px 0 2px;padding:4px 8px;border-radius:999px;font-size:9px!important;font-style:normal!important;font-weight:900!important;letter-spacing:.08em!important}
+.mm-multi-tab-status.open{background:rgba(213,169,50,.14);color:#a47605}
+.mm-multi-tab-status.win{background:rgba(34,160,91,.13);color:#258855}
+.mm-multi-tab-status.loss{background:rgba(210,63,63,.12);color:#bf4747}
+.mm-multi-tab-status.void{background:rgba(120,120,120,.11);color:#6f6f6f}
+.mm-multi-tab.archived{opacity:.88}
+.mm-multi-archive-banner{margin:0 0 14px;padding:13px 16px;border-radius:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:800}
+.mm-multi-archive-banner strong{font-size:13px;letter-spacing:.08em}
+.mm-multi-archive-banner span{font-size:11px;opacity:.74}
+.mm-multi-archive-banner.win{background:rgba(34,160,91,.11);border:1px solid rgba(34,160,91,.25);color:#277b51}
+.mm-multi-archive-banner.loss{background:rgba(210,63,63,.1);border:1px solid rgba(210,63,63,.24);color:#a94242}
+.mm-multi-archive-banner.void{background:rgba(120,120,120,.09);border:1px solid rgba(120,120,120,.2);color:#676767}
+.mm-multi-archive-banner.open{background:rgba(213,169,50,.1);border:1px solid rgba(213,169,50,.23)}
+.mm-multi-leg button:disabled,.mm-title-actions button:disabled{opacity:.42;cursor:not-allowed}
+html[data-theme="dark"] .mm-multi-tab-status.open{color:#e1b744}
+html[data-theme="dark"] .mm-multi-tab-status.win{color:#67d69a}
+html[data-theme="dark"] .mm-multi-tab-status.loss{color:#ef8b8b}
+html[data-theme="dark"] .mm-multi-tab-status.void{color:#c4c4c4}
+html[data-theme="dark"] .mm-multi-archive-banner.win{color:#76d9a1}
+html[data-theme="dark"] .mm-multi-archive-banner.loss{color:#f09292}
+html[data-theme="dark"] .mm-multi-archive-banner.void{color:#d0d0d0}
+@media(max-width:560px){.mm-multi-archive-banner{align-items:flex-start;flex-direction:column}.mm-multi-tab{min-width:165px}}
