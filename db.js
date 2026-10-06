@@ -221,6 +221,18 @@ async function migrate() {
       updated_at BIGINT NOT NULL
     );
   `);
+
+
+  // --- Money Management sincronizzato tra dispositivi (Supabase/Postgres) ---
+  // Roserpina, Martingala e Multipla condividono lo stato `money`; Kelly usa `kelly`.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS money_management_state (
+      id TEXT PRIMARY KEY,
+      state JSONB NOT NULL,
+      updated_at BIGINT NOT NULL
+    );
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_money_management_state_updated_at ON money_management_state (updated_at DESC);`);
 }
 
 module.exports = { pool, migrate };

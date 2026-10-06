@@ -907,6 +907,45 @@ app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
   }catch(err){ console.error('link-match:',err); res.status(500).json({error:'Impossibile registrare nel Diario.'}); }
 });
 
+// ---------- Money Management sincronizzato (Supabase/Postgres) ----------
+const MONEY_STATE_SECTIONS = new Set(['money', 'kelly']);
+function moneyStateSection(req, res) {
+  const section = String(req.params.section || '').toLowerCase();
+  if (!MONEY_STATE_SECTIONS.has(section)) {
+    res.status(400).json({ error: 'Sezione Money Management non valida.' });
+    return null;
+  }
+  return section;
+}
+app.get('/api/money-management/state/:section', requireSameSiteAdmin, async (req, res) => {
+  const section = moneyStateSection(req, res); if (!section) return;
+  try {
+    const { rows } = await pool.query('SELECT state, updated_at FROM money_management_state WHERE id=$1 LIMIT 1', [section]);
+    res.setHeader('Cache-Control', 'no-store');
+    if (!rows.length) return res.json({ state: null, updatedAt: 0 });
+    res.json({ state: rows[0].state || null, updatedAt: Number(rows[0].updated_at) || 0 });
+  } catch (err) {
+    console.error('money management state load:', err);
+    res.status(500).json({ error: 'Errore nel caricamento del Money Management.' });
+  }
+});
+app.put('/api/money-management/state/:section', requireSameSiteAdmin, async (req, res) => {
+  const section = moneyStateSection(req, res); if (!section) return;
+  try {
+    const state = req.body && req.body.state && typeof req.body.state === 'object' && !Array.isArray(req.body.state) ? req.body.state : null;
+    if (!state) return res.status(400).json({ error: 'Stato Money Management non valido.' });
+    const now = Date.now();
+    await pool.query(`INSERT INTO money_management_state (id, state, updated_at)
+                      VALUES ($1,$2::jsonb,$3)
+                      ON CONFLICT (id) DO UPDATE SET state=EXCLUDED.state, updated_at=EXCLUDED.updated_at`,
+                     [section, JSON.stringify(state), now]);
+    res.json({ ok: true, updatedAt: now });
+  } catch (err) {
+    console.error('money management state save:', err);
+    res.status(500).json({ error: 'Impossibile salvare il Money Management.' });
+  }
+});
+
 // ---------- Masaniello Studio (privato, integrato in EasyBet) ----------
 function masanielloNormalizeState(body) {
   const b = body && typeof body === 'object' ? body : {};

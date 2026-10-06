@@ -32,7 +32,14 @@ function normalize(d){
   return d;
 }
 let data=(()=>{try{return normalize(JSON.parse(localStorage.getItem(KEY)||'null'))}catch{return defaults()}})();
-function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+const CLOUD_SECTION='money',CLOUD_MIGRATION_KEY='easybet.moneyManagement.cloudMigrated.v1';
+let cloudReady=false,cloudSaveTimer=null,cloudUpdatedAt=0,cloudLoading=false;
+function localSave(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(_){}}
+function moneyStateScore(d){try{d=normalize(JSON.parse(JSON.stringify(d)));let score=0;score+=(d.roserpina?.items?.length||0)*2;score+=(d.martingala?.items?.length||0)*2;for(const x of d.roserpina?.items||[])score+=(x.history?.length||0)*8+(x.pending?.length||0)*5+Math.abs(n(x.bank,100)-100)>0?1:0;for(const x of d.martingala?.items||[])score+=(x.history?.length||0)*8+(x.pending?.length||0)*5+Math.abs(n(x.bank,100)-100)>0?1:0;score+=(d.multipla?.history?.length||0)*8+(d.multipla?.legs?.length||0)*5;return score}catch(_){return 0}}
+async function cloudPut(){if(!cloudReady)return;try{let r=await fetch('/api/money-management/state/'+CLOUD_SECTION,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:data})});if(r.ok){let j=await r.json();cloudUpdatedAt=Number(j.updatedAt)||Date.now()}}catch(_){}}
+function queueCloudSave(){if(!cloudReady)return;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(cloudPut,300)}
+function save(){localSave();queueCloudSave()}
+async function cloudLoad(force=false){if(cloudLoading)return;cloudLoading=true;try{let r=await fetch('/api/money-management/state/'+CLOUD_SECTION+'?ts='+Date.now(),{cache:'no-store'});if(!r.ok)return;let j=await r.json(),remote=j&&j.state,remoteAt=Number(j&&j.updatedAt)||0,migrated=false;try{migrated=localStorage.getItem(CLOUD_MIGRATION_KEY)==='1'}catch(_){}if(!cloudReady){if(remote){let localScore=moneyStateScore(data),remoteScore=moneyStateScore(remote);if(!migrated&&localScore>remoteScore){cloudReady=true;await cloudPut()}else{data=normalize(remote);localSave();cloudUpdatedAt=remoteAt;cloudReady=true;render()}}else{cloudReady=true;await cloudPut()}try{localStorage.setItem(CLOUD_MIGRATION_KEY,'1')}catch(_){}return}if(force&&remote&&remoteAt>cloudUpdatedAt){data=normalize(remote);cloudUpdatedAt=remoteAt;localSave();render()}}catch(_){}finally{cloudLoading=false}}
 function root(){return document.getElementById('moneyBoard')}
 function current(kind){let d=data[kind];return d&&d.items.find(x=>x.id===d.selected)||d?.items?.[0]||null}
 function methodNav(){return `<div class="mm-methods">${Object.entries(METHOD_LABELS).map(([k,v])=>`<button class="${data.selectedMethod===k?'active':''}" data-mm-method="${k}"><span>${k==='masaniello'?'M':k==='roserpina'?'R':k==='kelly'?'K':k==='martingala'?'×2':'×'}</span><b>${v}</b></button>`).join('')}<button class="mm-new" data-mm="new-cash">+ Nuova cassa</button></div>`}
@@ -217,5 +224,8 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{if(!e.target.closest('#moneyBoard'))return;if(/^mm-(rose|mart|multi)-/.test(e.target.id||''))sync()});
 document.addEventListener('change',e=>{if(!e.target.closest('#moneyBoard'))return;if(/^mm-(rose|mart|multi)-/.test(e.target.id||'')){sync();render()}});
+window.addEventListener('focus',()=>cloudLoad(true));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')cloudLoad(true)});
+setTimeout(()=>cloudLoad(false),0);
 window.EasyBetMoney={render,select(method){if(METHOD_LABELS[method]){data.selectedMethod=method;save()}render()}};
 })();
