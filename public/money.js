@@ -234,5 +234,19 @@ document.addEventListener('change',e=>{if(!e.target.closest('#moneyBoard'))retur
 window.addEventListener('focus',()=>cloudLoad(true));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')cloudLoad(true)});
 setTimeout(()=>cloudLoad(false),0);
-window.EasyBetMoney={render,select(method){if(METHOD_LABELS[method]){data.selectedMethod=method;save()}render()}};
+function bootMoneyManagement(){
+  try{
+    let hash=String(location&&location.hash||'').replace(/^#/,'');
+    if(hash==='money'){
+      let r=root();if(r)r.classList.add('show');
+      render();
+      let note=document.getElementById('refreshNote');if(note&&/caricamento|aggiornamento/i.test(note.textContent||''))note.textContent='Money Management pronto';
+    }
+  }catch(err){
+    console.error('EasyBet Money boot:',err);
+    let r=root();if(r){r.classList.add('show');r.innerHTML='<div class="mm-shell"><div class="mm-card"><h3>MONEY MANAGEMENT</h3><div class="mm-alert bad">Errore di inizializzazione. Ricarica la pagina: i dati salvati non vengono cancellati.</div></div></div>'}
+  }
+}
+window.EasyBetMoney={render,select(method){if(METHOD_LABELS[method]){data.selectedMethod=method;save()}render()},boot:bootMoneyManagement};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootMoneyManagement,{once:true});else setTimeout(bootMoneyManagement,0);
 })();

@@ -661,7 +661,13 @@
       grid.classList.remove('home-history','pronostici-detail-mode','pronostici-summary-mode','live-mode');
       grid.classList.add('view-hidden');grid.style.display='none';
       var mm=document.getElementById('moneyBoard');if(mm){mm.classList.add('show');}
-      if(window.EasyBetMoney&&window.EasyBetMoney.render)window.EasyBetMoney.render();
+      if(window.EasyBetMoney&&window.EasyBetMoney.render){
+        try{window.EasyBetMoney.render()}catch(err){console.error('EasyBet Money render:',err)}
+      }else if(!window.__easyBetMoneyFallbackLoading){
+        window.__easyBetMoneyFallbackLoading=true;
+        var sc=document.createElement('script');sc.src='/money.js?v=112-fallback';sc.onload=function(){window.__easyBetMoneyFallbackLoading=false;if(window.EasyBetMoney&&window.EasyBetMoney.render)window.EasyBetMoney.render()};sc.onerror=function(){window.__easyBetMoneyFallbackLoading=false};document.head.appendChild(sc);
+      }
+      var moneyNote=document.getElementById('refreshNote');if(moneyNote)moneyNote.textContent='Money Management';
       return;
     }
     var exb=document.getElementById('exchangeBoard');if(exb)exb.classList.remove('show');
@@ -721,7 +727,7 @@
     if(loadInProgress)return;
     loadInProgress=true;
     var note=document.getElementById('refreshNote');
-    if(note)note.textContent=hasLoadedOnce?'aggiornamento…':'caricamento…';
+    if(note)note.textContent=currentView==='money'?'Money Management':(hasLoadedOnce?'aggiornamento…':'caricamento…');
 
     /* Usa ESATTAMENTE lo stesso endpoint e lo stesso metodo dell'area admin,
        che e' la fonte dati gia' verificata per l'elenco partite. */
