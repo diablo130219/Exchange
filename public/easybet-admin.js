@@ -576,7 +576,7 @@
       cards.forEach(function(card){
         var hay = String(card.getAttribute('data-search') || '').toLowerCase();
         var show = !q || hay.indexOf(q) !== -1;
-        card.style.display = show ? '' : 'none';
+        card.classList.toggle('date-search-hidden', !show);
         if (show) visible++;
       });
       var key = input.getAttribute('data-date-search');

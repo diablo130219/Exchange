@@ -580,3 +580,6 @@ html[data-theme="light"] body details.month-section{background:linear-gradient(1
 }
 
 @media(max-width:620px){.strategy-filter-row{margin:-6px 0 15px;flex-wrap:nowrap}.strategy-filter-label{display:none}.strategy-filter-select{min-width:0;max-width:none;flex:1;width:100%}.strategy-filter-clear{flex:0 0 38px}}
+
+/* STEP109 · fix ricerca giornaliera */
+.grid.date-grid > .card.date-search-hidden{display:none!important}
