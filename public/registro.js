@@ -10,7 +10,11 @@ const STATUS_CLASS={open:'open',win:'win',halfwin:'win',loss:'loss',halfloss:'lo
 const TYPES={singola:'SINGOLA',multipla:'MULTIPLA',sistema:'SISTEMA'};
 const MARKETS=['1X2','Doppia chance','U/O','GG/NG','Multigol','DNB','Handicap','Risultato esatto','Primo tempo','Marcatore','Testa a testa','Vincente','Altro'];
 const DEFAULT_BOOKS=[['Bet365','#127a3d'],['Eurobet','#1f57b4'],['Betfair Exchange','#f2b705'],['AdmiralBet','#24418f'],['Snai','#d3202a'],['Sisal','#0b8a47'],['GoldBet','#c99a1e'],['Lottomatica','#0e63b8'],['Planetwin365','#e0262f'],['William Hill','#14274e'],['Betflag','#ef6a10'],['Better','#00804a']];
-const LEAGUE_FLAGS=[[/bundesliga|dfb|german|germ/i,'🇩🇪'],[/ligue|coupe de france|franc/i,'🇫🇷'],[/coppa italia|serie a|serie b|serie c|supercoppa italiana|ital/i,'🇮🇹'],[/premier|championship|fa cup|efl|ingh|engl/i,'🇬🇧'],[/liga|laliga|spagn|copa del rey/i,'🇪🇸'],[/ligue|coupe de france|franc/i,'🇫🇷'],[/eredivisie|olan/i,'🇳🇱'],[/primeira|portog/i,'🇵🇹'],[/super lig|turch/i,'🇹🇷'],[/scot|scoz/i,'🇬🇧'],[/belg|jupiler/i,'🇧🇪'],[/brasil|brazil|serie a bra/i,'🇧🇷'],[/argentin/i,'🇦🇷'],[/mls|usa/i,'🇺🇸'],[/champions|europa|conference|uefa|nations|mondial|world|euro/i,'🌍'],[/atp|wta|itf|slam|wimbledon|open/i,'🎾'],[/nba|euroleague/i,'🏀']];
+/* Bandiere: prima il PAESE scritto nel torneo, poi il nome della competizione; per tornei ambigui ("Serie B") si guardano anche le squadre. */
+const COUNTRY_FLAGS=[[/brasil|brazil|brasile|brasileir|brasiler|paulista|carioca|mineiro|gaucho|baiano|pernambucano|cearense/i,'🇧🇷'],[/argentin/i,'🇦🇷'],[/uruguay|urugua/i,'🇺🇾'],[/paraguay/i,'🇵🇾'],[/chile|cile/i,'🇨🇱'],[/colombi/i,'🇨🇴'],[/peru|perù/i,'🇵🇪'],[/ecuador/i,'🇪🇨'],[/bolivi/i,'🇧🇴'],[/venezuel/i,'🇻🇪'],[/messic|mexic|liga mx/i,'🇲🇽'],[/\busa\b|stati uniti|united states|\bmls\b|usl/i,'🇺🇸'],[/canad/i,'🇨🇦'],[/giappon|japan|j-?league|j1|j2/i,'🇯🇵'],[/corea|korea|k-?league/i,'🇰🇷'],[/cina|china|chinese/i,'🇨🇳'],[/australi|a-league/i,'🇦🇺'],[/arabia|saudi/i,'🇸🇦'],[/scozi|scotland|scottish/i,'🇬🇧'],[/galles|wales|welsh/i,'🇬🇧'],[/irlanda del nord|northern ireland/i,'🇬🇧'],[/irland|ireland/i,'🇮🇪'],[/ingh|england|english|inglese/i,'🇬🇧'],[/spagn|spain|españa|espana|spanish/i,'🇪🇸'],[/german|germani|tedesc|deutsch/i,'🇩🇪'],[/franc|french/i,'🇫🇷'],[/portog|portugal/i,'🇵🇹'],[/oland|netherland|dutch|paesi bassi/i,'🇳🇱'],[/belgi/i,'🇧🇪'],[/svizzer|switzerland|swiss/i,'🇨🇭'],[/austri/i,'🇦🇹'],[/turch|turkey|türkiye|turkiye/i,'🇹🇷'],[/grecia|greece|greek/i,'🇬🇷'],[/danimarc|denmark|danish/i,'🇩🇰'],[/svezi|sweden|swedish/i,'🇸🇪'],[/norveg|norway/i,'🇳🇴'],[/finland/i,'🇫🇮'],[/polon|poland|polish/i,'🇵🇱'],[/cechi|czech/i,'🇨🇿'],[/croazi|croatia/i,'🇭🇷'],[/serbi/i,'🇷🇸'],[/romani/i,'🇷🇴'],[/ungheri|hungar/i,'🇭🇺'],[/ucrain|ukrain/i,'🇺🇦'],[/russi/i,'🇷🇺'],[/slovenia/i,'🇸🇮'],[/slovacch|slovakia/i,'🇸🇰'],[/bulgari/i,'🇧🇬'],[/israel/i,'🇮🇱'],[/egitt|egypt/i,'🇪🇬'],[/marocc|morocco/i,'🇲🇦'],[/sudafric|south africa/i,'🇿🇦'],[/islanda|iceland/i,'🇮🇸'],[/estonia/i,'🇪🇪'],[/lettonia|latvia/i,'🇱🇻'],[/lituani|lithuania/i,'🇱🇹'],[/cipro|cyprus/i,'🇨🇾'],[/ital/i,'🇮🇹']];
+const COMP_FLAGS=[[/champions|europa league|conference league|uefa|nations league|mondial|world cup|europe|euro 20/i,'🌍'],[/libertadores|sudamericana/i,'🌎'],[/premier league|championship|fa cup|efl|league one|league two|carabao/i,'🇬🇧'],[/bundesliga|dfb|2\. liga/i,'🇩🇪'],[/ligue ?1|ligue ?2|coupe de france/i,'🇫🇷'],[/laliga|la liga|segunda|copa del rey/i,'🇪🇸'],[/eredivisie|eerste divisie/i,'🇳🇱'],[/primeira|liga portugal/i,'🇵🇹'],[/super lig/i,'🇹🇷'],[/jupiler|pro league/i,'🇧🇪'],[/allsvenskan/i,'🇸🇪'],[/eliteserien/i,'🇳🇴'],[/superliga/i,'🇩🇰'],[/ekstraklasa/i,'🇵🇱'],[/brasileir|brasilero/i,'🇧🇷'],[/coppa italia|supercoppa italiana|serie [abcd]\b|primavera/i,'🇮🇹'],[/atp|wta|itf|slam|wimbledon|roland|us open/i,'🎾'],[/nba|euroleague|eurolega/i,'🏀'],[/nfl/i,'🏈'],[/nhl/i,'🏒']];
+const BR_TEAM=/\s(SP|RJ|MG|PR|RS|SC|GO|MT|MS|BA|PE|CE|AL|SE|PB|RN|PI|MA|PA|AM|AP|RR|RO|AC|TO|ES|DF)$|\b(gremio|grêmio|flamengo|fluminense|palmeiras|corinthians|santos|vasco|cruzeiro|atletico mineiro|atlético mineiro|atletico paranaense|athletico|bahia|vitoria|vitória|sport recife|ceara|ceará|goias|goiás|goianiense|coritiba|avai|avaí|chapecoense|juventude|botafogo|clube do remo|remo|paysandu|ponte preta|guarani|criciuma|criciúma|londrina|novorizontino|mirassol|cuiaba|cuiabá|bragantino|amazonas|crb|ituano|operario|operário|vila nova|villa nova|fortaleza|internacional|sao paulo|são paulo|nautico|náutico|tombense|ypiranga|figueirense|abc|america mg|américa mg|brasil de pelotas|confianca|confiança|volta redonda|ferroviaria|ferroviária|botafogo sp|athletic club)\b/i;
+const AR_TEAM=/\b(boca juniors|river plate|racing club|independiente|san lorenzo|estudiantes|velez|vélez|lanus|lanús|newell|rosario central|huracan|huracán|talleres|godoy cruz|banfield|argentinos juniors|gimnasia)\b/i;
 
 /* ---------- helpers ---------- */
 function uid(p){return (p||'rg')+'_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4)}
@@ -27,7 +31,13 @@ function dateShort(iso){let m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||''));
 function toIso(v){let s=String(v||'').trim();let m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);if(m)return m[1]+'-'+pad(m[2])+'-'+pad(m[3]);m=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/.exec(s);if(m){let y=m[3].length===2?'20'+m[3]:m[3];return y+'-'+pad(m[2])+'-'+pad(m[1])}return ''}
 function initials(name){return String(name||'').split(/\s+/).filter(Boolean).slice(0,2).map(s=>s[0]).join('').toUpperCase()||'•'}
 function textOn(hex){let h=String(hex||'#666').replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');let r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return (r*299+g*587+b*114)/1000>150?'#111':'#fff'}
-function leagueFlag(l){l=String(l||'');if(!l.trim())return '🌐';for(const [re,f] of LEAGUE_FLAGS)if(re.test(l))return f;return '🌐'}
+function leagueFlag(l,home,away){l=String(l||'');let teams=[home,away].filter(Boolean).map(String);
+  for(const [re,f] of COUNTRY_FLAGS)if(re.test(l))return f;
+  if(teams.some(t=>BR_TEAM.test(t)))return '🇧🇷';
+  if(teams.some(t=>AR_TEAM.test(t)))return '🇦🇷';
+  if(!l.trim())return '🌐';
+  for(const [re,f] of COMP_FLAGS)if(re.test(l))return f;
+  return '🌐'}
 function sortKey(e){return (e.date||'0000-00-00')+' '+(e.time||'00:00')+' '+String(n(e.createdAt)).padStart(15,'0')}
 
 /* ---------- icone ---------- */
@@ -271,7 +281,7 @@ function betRow(b,seq,maxStake){
     <td class="c-num"><span class="rg-edge"></span><b>${seq||''}</b></td>
     <td class="c-date"><b>${dateShort(b.date)}</b><small>${esc(b.time||'')}</small></td>
     <td class="c-sport"><span class="rg-sport" title="${esc(SPORTS[b.sport][1])}">${SPORTS[b.sport][0]}</span></td>
-    <td class="c-league">${multi?'<span class="rg-dim">—</span>':`<span class="rg-league"><i>${leagueFlag(b.league)}</i>${esc(b.league||'—')}</span>`}</td>
+    <td class="c-league">${multi?'<span class="rg-dim">—</span>':`<span class="rg-league"><i>${leagueFlag(b.league,b.home,b.away)}</i>${esc(b.league||'—')}</span>`}</td>
     <td class="c-event">${ev}</td>
     <td class="c-pick">${pk}</td>
     <td class="c-type"><span class="rg-type ${b.type}">${TYPES[b.type]}</span>${b.freebet?'<span class="rg-fb">FREEBET</span>':''}${n(b.bonus)>0?`<span class="rg-fb bonus">BONUS +${money(b.bonus)}</span>`:''}</td>
@@ -285,7 +295,7 @@ function betRow(b,seq,maxStake){
   </tr>`;
   if(multi&&exp){row+=b.legs.map((l,i)=>`<tr class="rg-row leg st-${STATUS_CLASS[l.status]}">
     <td class="c-num"><span class="rg-legline"></span></td><td class="c-date"><small>${l.date?dateShort(l.date):''} ${esc(l.time||'')}</small></td><td></td>
-    <td class="c-league"><span class="rg-league"><i>${leagueFlag(l.league)}</i>${esc(l.league||'—')}</span></td>
+    <td class="c-league"><span class="rg-league"><i>${leagueFlag(l.league,l.home,l.away)}</i>${esc(l.league||'—')}</span></td>
     <td class="c-event">${eventHtml(l.home,l.away,b.sport,l.league)}</td><td class="c-pick">${pickHtml(l.market,l.pick)}</td><td colspan="2"><small class="rg-dim">selezione ${i+1}</small></td>
     <td class="c-odds"><b>${fmtOdds(l.odds)}</b></td><td></td>
     <td class="c-status" colspan="4"><span class="rg-legst">${['open','win','loss','void'].map(s=>`<button type="button" class="${l.status===s?'on '+STATUS_CLASS[s]:''}" data-rg="leg" data-id="${b.id}" data-i="${i}" data-s="${s}">${s==='open'?'In corso':STATUS[s]}</button>`).join('')}</span></td>
@@ -723,18 +733,20 @@ function renderImporter(){
     <div class="rg-modal-foot"><button type="button" class="rg-btn ghost" data-m="imp-close">← Torna alla bet</button>${actions}</div>`,true);
   if(imp.mode==='paste'&&!nL)setTimeout(()=>{let t=document.querySelector('#rgOverlay .rg-imp-raw');if(t&&document.activeElement!==t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}},0);
 }
-function legFromImp(l){return{home:l.home,away:l.away,league:l.league||'',market:l.market||'',pick:l.pick||'',odds:String(num(l.odds)||''),status:'open',date:l.date||modal.draft.date,time:l.time||''}}
+/* "Serie B" senza paese ma con squadre brasiliane/argentine -> aggiunge il paese al torneo */
+function fixLeague(league,home,away){league=String(league||'').trim();if(!league||COUNTRY_FLAGS.some(([re])=>re.test(league)))return league;let t=[home,away].filter(Boolean);if(t.some(x=>BR_TEAM.test(x)))return 'Brasile - '+league;if(t.some(x=>AR_TEAM.test(x)))return 'Argentina - '+league;return league}
+function legFromImp(l){return{home:l.home,away:l.away,league:fixLeague(l.league,l.home,l.away),market:l.market||'',pick:l.pick||'',odds:String(num(l.odds)||''),status:'open',date:l.date||modal.draft.date,time:l.time||''}}
 function applyImport(kind){
   let d=modal.draft,imp=modal.imp,legs=imp.legs.filter(l=>l.home&&num(l.odds)>1);
   if(!legs.length){alert('Nessuna selezione valida: ogni riga deve avere almeno la squadra di casa e una quota maggiore di 1.');return}
   let stake=num(imp.stake);
-  if(kind==='singola'){let l=legs[0];Object.assign(d,{type:'singola',home:l.home,away:l.away,league:l.league||d.league,market:l.market||'',pick:l.pick||'',odds:String(num(l.odds)),legs:[]});if(l.date)d.date=l.date;if(l.time)d.time=l.time;if(stake>0)d.stake=stake;modal.imp=null;renderBetModal('[data-f="stake"]');return}
+  if(kind==='singola'){let l=legs[0];Object.assign(d,{type:'singola',home:l.home,away:l.away,league:fixLeague(l.league,l.home,l.away)||d.league,market:l.market||'',pick:l.pick||'',odds:String(num(l.odds)),legs:[]});if(l.date)d.date=l.date;if(l.time)d.time=l.time;if(stake>0)d.stake=stake;modal.imp=null;renderBetModal('[data-f="stake"]');return}
   if(kind==='multipla'){d.type=d.type==='sistema'?'sistema':'multipla';d.legs=legs.map(legFromImp);if(stake>0)d.stake=stake;if(num(imp.bonus)>0)d.bonus=String(r2(num(imp.bonus))).replace('.',',');let first=legs.find(l=>l.date);if(first&&first.date)d.date=first.date;modal.imp=null;renderBetModal();return}
   if(kind==='singole'){
     if(!(stake>0)){alert('Inserisci lo stake da usare per ogni singola.');return}
     if(!confirm(`Creare ${legs.length} singole da ${money(stake)} ciascuna (totale ${money(stake*legs.length)}) su ${bookName(d.book)}?`))return;
     let base=Date.now(),tags=String(d.tags||'').split(',').map(s=>s.trim()).filter(Boolean);
-    legs.forEach((l,i)=>data.entries.push(normEntry({id:uid('bet'),kind:'bet',createdAt:base+i,date:l.date||d.date,time:l.time||d.time,sport:d.sport,league:l.league,home:l.home,away:l.away,market:l.market,pick:l.pick,type:'singola',book:d.book,odds:num(l.odds),stake,freebet:d.freebet,status:'open',tags,note:d.note})));
+    legs.forEach((l,i)=>data.entries.push(normEntry({id:uid('bet'),kind:'bet',createdAt:base+i,date:l.date||d.date,time:l.time||d.time,sport:d.sport,league:fixLeague(l.league,l.home,l.away),home:l.home,away:l.away,market:l.market,pick:l.pick,type:'singola',book:d.book,odds:num(l.odds),stake,freebet:d.freebet,status:'open',tags,note:d.note})));
     save();closeModal();
   }
 }
