@@ -270,3 +270,5 @@ html[data-theme="light"] .rg-arrow b{background:#16202b}
 .rg-imp-leg button{height:36px;border-radius:9px;border:1px solid var(--rg-line2);background:var(--rg-panel);color:var(--rg-muted);display:grid;place-items:center;cursor:pointer}.rg-imp-leg button:hover{color:var(--rg-red)}
 .rg-imp-when{grid-column:2/-1;margin-top:-2px;color:var(--rg-faint);font:500 11px 'IBM Plex Mono',monospace}
 @media(max-width:760px){.rg-imp-head{display:none}.rg-imp-leg{grid-template-columns:24px 1fr 1fr 34px;padding-bottom:8px;border-bottom:1px solid var(--rg-line)}.rg-imp-leg .n{grid-row:span 3}.rg-pickrow{flex-direction:column}}
+
+.rg-fb.bonus{color:var(--rg-green)}
