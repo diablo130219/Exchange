@@ -419,7 +419,7 @@ function openModalShell(html,wide){
   let o=document.getElementById('rgOverlay');
   if(!o){o=document.createElement('div');o.id='rgOverlay';o.className='rg-overlay';document.body.appendChild(o);
     o.addEventListener('mousedown',e=>{if(e.target===o)closeModal()});
-    o.addEventListener('click',onModalClick);o.addEventListener('input',onModalInput);o.addEventListener('change',onModalInput);
+    o.addEventListener('click',onModalClick);o.addEventListener('paste',e=>{if(modal&&modal.imp&&e.target.classList&&e.target.classList.contains('rg-imp-raw'))setTimeout(()=>{modal.imp.raw=e.target.value;analyzePaste()},0)});o.addEventListener('input',onModalInput);o.addEventListener('change',onModalInput);
   }
   o.innerHTML=`<div class="rg-modal ${wide?'wide':''}" role="dialog" aria-modal="true">${html}</div>`;
 }
@@ -437,12 +437,13 @@ function openBet(id,dup){
 function blankLeg(){return{home:'',away:'',league:'',market:'1X2',pick:'',odds:'',status:'open',date:todayIso(),time:''}}
 function draftOdds(d){if(d.type==='multipla'&&d.legs.length)return d.legs.reduce((p,l)=>p*(l.status==='void'?1:(num(l.odds)||1)),1);return num(d.odds)||0}
 function renderBetModal(focusSel){
+  if(modal.imp){renderImporter();return}
   let d=modal.draft,edit=!!modal.id,multi=d.type!=='singola';
   let q=draftOdds(d),stake=num(d.stake)||0;
   let pot=d.freebet?stake*(q-1):stake*q;
   let needRet=d.status==='cashout'||(d.type==='sistema'&&d.status==='win');
   let leagues=allLeagues(),markets=allMarkets();
-  let legs=multi?`<div class="rg-legs-ed"><div class="rg-legs-head"><b>Selezioni (${d.legs.length})</b><span><button type="button" class="rg-btn ghost sm" data-m="pick-leg">${ico('book')}Dal Betting classico</button><button type="button" class="rg-btn ghost sm" data-m="add-leg">${ico('plus')}Selezione</button></span></div>
+  let legs=multi?`<div class="rg-legs-ed"><div class="rg-legs-head"><b>Selezioni (${d.legs.length})</b><span><button type="button" class="rg-btn ghost sm accent" data-m="imp-open">📋 Incolla bolletta</button><button type="button" class="rg-btn ghost sm" data-m="pick-leg">${ico('book')}Dal Betting classico</button><button type="button" class="rg-btn ghost sm" data-m="add-leg">${ico('plus')}Selezione</button></span></div>
     ${d.legs.map((l,i)=>`<div class="rg-leg-ed">
       <input placeholder="Casa" value="${esc(l.home)}" data-l="${i}" data-lf="home"><input placeholder="Ospite" value="${esc(l.away)}" data-l="${i}" data-lf="away">
       <input placeholder="Torneo" list="rgLeagues" value="${esc(l.league)}" data-l="${i}" data-lf="league"><input placeholder="Mercato" list="rgMarkets" value="${esc(l.market)}" data-l="${i}" data-lf="market">
@@ -460,7 +461,7 @@ function renderBetModal(focusSel){
       <label>Book<select data-f="book">${bookOptions(d.book,'— nessuno —')}</select></label>
       ${multi?(d.type==='sistema'?`<label>Sistema<input placeholder="es. 2/3, Trixie, Yankee" value="${esc(d.system)}" data-f="system"></label><label>Quota (facolt.)<input inputmode="decimal" value="${esc(d.odds)}" data-f="odds" placeholder="per stat. Edge"></label>`:''):`
       <label class="span2">Torneo / info<input list="rgLeagues" value="${esc(d.league)}" data-f="league" placeholder="es. Serie A, Coppa Italia"></label>
-      <label class="span2 rg-pickbtn"><span>&nbsp;</span><button type="button" class="rg-btn ghost" data-m="pick-single">${ico('book')}Scegli dal Betting classico</button></label>
+      <label class="span2 rg-pickbtn"><span>&nbsp;</span><span class="rg-pickrow"><button type="button" class="rg-btn ghost accent" data-m="imp-open">📋 Incolla bolletta</button><button type="button" class="rg-btn ghost" data-m="pick-single">${ico('book')}Dal Betting classico</button></span></label>
       <label>Casa / Evento<input value="${esc(d.home)}" data-f="home" placeholder="Torino"></label>
       <label>Ospite<input value="${esc(d.away)}" data-f="away" placeholder="Bari"></label>
       <label>Mercato<input list="rgMarkets" value="${esc(d.market)}" data-f="market"></label>
@@ -516,6 +517,9 @@ function openCashout(id,status){
 }
 function onModalInput(e){
   if(!modal)return;let t=e.target,d=modal.draft;
+  if(t.dataset.impfile){if(e.type!=='change')return;let f=t.files&&t.files[0];t.value='';if(!f)return;if(t.dataset.impfile==='ocr')readTicketImage(f);else readTicketSheet(f);return}
+  if(t.dataset.imp&&modal.imp){modal.imp[t.dataset.imp]=t.value;if(t.dataset.imp==='stake'){let q=impQuota(modal.imp),el=[...document.querySelectorAll('#rgOverlay .rg-imp-sum span b')].pop();if(el)el.textContent=money(q*(num(t.value)||0))}return}
+  if(t.dataset.ir!=null&&modal.imp){let l=modal.imp.legs[Number(t.dataset.ir)];if(l){l[t.dataset.irf]=t.dataset.irf==='odds'?(num(t.value)||t.value):t.value}return}
   if(t.dataset.f){let f=t.dataset.f,v=t.type==='checkbox'?t.checked:t.value;
     if((f==='book'||f==='from'||f==='to')&&v==='__new'){let name=prompt('Nome del nuovo book');if(name&&name.trim()){let b={id:uid('bk'),name:name.trim(),color:'#5b6b7f',start:0};data.books.push(b);save();v=b.id}else v=d[f]||'';d[f]=v;rerenderModal();return}
     d[f]=v;
@@ -532,6 +536,12 @@ function fromPicker(m){let q=num(m.quotaIngresso);return{home:m.casa||'',away:m.
 function onModalClick(e){
   let b=e.target.closest('[data-m]');if(!b||!modal)return;let a=b.dataset.m,d=modal.draft;
   if(a==='close'){closeModal();return}
+  if(a==='imp-open'){modal.imp={mode:'paste',raw:'',legs:[],stake:num(d.stake)||'',potential:0,error:'',loading:false,progress:0,fileName:''};renderBetModal();return}
+  if(a==='imp-close'){if(modal.imp&&modal.imp.loading)return;modal.imp=null;renderBetModal();return}
+  if(a==='imp-tab'){if(modal.imp.loading)return;modal.imp.mode=b.dataset.v;modal.imp.error='';renderBetModal();return}
+  if(a==='imp-parse'){analyzePaste();return}
+  if(a==='imp-del'){modal.imp.legs.splice(Number(b.dataset.i),1);renderBetModal();return}
+  if(a==='imp-apply'){applyImport(b.dataset.v);return}
   if(a==='type'){d.type=b.dataset.v;if(d.type!=='singola'&&d.legs.length<2){if(d.home||d.away)d.legs=[{home:d.home,away:d.away,league:d.league,market:d.market,pick:d.pick,odds:d.odds,status:'open',date:d.date,time:d.time},blankLeg()];else d.legs=[blankLeg(),blankLeg()]}renderBetModal();return}
   if(a==='add-leg'){d.legs.push(blankLeg());renderBetModal(`[data-l="${d.legs.length-1}"][data-lf="home"]`);return}
   if(a==='del-leg'){d.legs.splice(Number(b.dataset.i),1);renderBetModal();return}
@@ -556,6 +566,174 @@ function commitModal(){
   return false;
 }
 function upsert(e){let i=data.entries.findIndex(x=>x.id===e.id);if(i>=0)data.entries[i]=e;else data.entries.push(e);save()}
+
+/* ---------- IMPORT BOLLETTA (copia/incolla · Excel/CSV · screenshot GoldBet) ---------- */
+function cleanCell(v){return String(v==null?'':v).replace(/<br\s*\/?\s*>/gi,' ').replace(/\*\*/g,'').replace(/ /g,' ').replace(/\s+/g,' ').trim()}
+function parseWhen(s){s=cleanCell(s);let time='',date='';let tm=s.match(/(\d{1,2})[:.](\d{2})(?!\d)/);if(tm&&Number(tm[1])<24)time=pad(tm[1])+':'+tm[2];let dm=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(dm)date=dm[1]+'-'+pad(dm[2])+'-'+pad(dm[3]);else{let mn=s.match(/(\d{1,2})[\s\/.-]+(gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic)[a-z]*\.?(?:[\s\/.-]+(\d{2,4}))?/i);if(mn){let mi='genfebmaraprmaggiulugagosetottnovdic'.indexOf(mn[2].toLowerCase())/3+1,y=mn[3]?(mn[3].length===2?'20'+mn[3]:mn[3]):String(new Date().getFullYear());date=y+'-'+pad(mi)+'-'+pad(mn[1])}else dm=s.match(/(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?(?!\d|:)/);if(!date&&dm&&!(tm&&dm[0].includes(tm[0]))){let y=dm[3]?(dm[3].length===2?'20'+dm[3]:dm[3]):String(new Date().getFullYear());date=y+'-'+pad(dm[2])+'-'+pad(dm[1])}}return{date,time}}
+function isWhenCell(c){return c.length<26&&(/^\d{1,2}[\s\/.-]+(gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic)/i.test(c)||/\d{1,2}:\d{2}/.test(c)||/^\d{1,2}[\/.-]\d{1,2}([\/.-]\d{2,4})?$/.test(c)||/^\d{4}-\d{2}-\d{2}/.test(c))&&!/[a-z]{4,}/i.test(c.replace(/(gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic)[a-z]*/ig,''))}
+function oddOf(c){let m=String(c||'').trim().match(/^@?\s*(\d{1,3}[.,]\d{1,3})$/);if(!m)return NaN;let q=num(m[1]);return q>1&&q<1000?q:NaN}
+function splitMarket(m){m=cleanCell(m);let i=m.lastIndexOf(':');if(i>0&&i<m.length-1)return{market:m.slice(0,i).trim(),pick:m.slice(i+1).trim()};return{market:'',pick:m}}
+const TEAM_SEP=/\s+(?:-|–|—|vs\.?|v\.?)\s+/i;
+function parseCells(cells){
+  cells=cells.map(cleanCell).filter(c=>c&&!/^(si|sì|no|-|—)$/i.test(c));
+  let oi=-1,odds=NaN;for(let i=cells.length-1;i>=0;i--){let q=oddOf(cells[i]);if(q>1){oi=i;odds=q;break}}
+  let rest=cells.filter((_,i)=>i!==oi);
+  if(!(odds>1)){/* quota attaccata al mercato: "Over 2.5 1.85" */for(let i=rest.length-1;i>=0;i--){let mm=rest[i].match(/(?:^|\s|@)(\d{1,3}[.,]\d{2})\s*$/);if(mm){let q=num(mm[1]);if(q>1&&q<1000){odds=q;rest[i]=rest[i].slice(0,mm.index).trim();if(!rest[i])rest.splice(i,1);break}}}}
+  if(!(odds>1))return null;
+  let date='',time='';rest=rest.filter(c=>{if(isWhenCell(c)){let w=parseWhen(c);date=date||w.date;time=time||w.time;return false}return true});
+  let league='',home='',away='',mk=[];
+  const leagueLike=c=>/^(calcio|tennis|basket|volley|hockey|rugby)\s*[-–]/i.test(c)||gbLooksLeague(c);
+  let ti=rest.findIndex(c=>TEAM_SEP.test(c)&&c.split(TEAM_SEP).length===2&&!leagueLike(c));
+  if(ti>=0){[home,away]=rest[ti].split(TEAM_SEP).map(cleanCell);league=rest.slice(0,ti).join(' ');mk=rest.slice(ti+1)}
+  else if(rest.length>=4&&(leagueLike(rest[0])||rest.length>=5||!gbLooksMarket(rest[2]))){league=rest[0];home=rest[1];away=rest[2];mk=rest.slice(3)}
+  else if(rest.length>=4){home=rest[0];away=rest[1];mk=rest.slice(2)}
+  else if(rest.length===3){home=rest[0];away=rest[1];mk=[rest[2]]}
+  else return null;
+  league=league.replace(/^calcio\s*[-–]\s*/i,'').trim();
+  let market='',pick='';if(mk.length>=2){market=mk.slice(0,-1).join(' ');pick=mk[mk.length-1]}else if(mk.length===1){let s=splitMarket(mk[0]);market=s.market;pick=s.pick}
+  if(!home||!(odds>1))return null;
+  return{league,home,away,market,pick,odds,date,time};
+}
+function parseTableText(raw){
+  let out=[];
+  String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean).forEach(line=>{
+    if(/^\|?\s*:?-{2,}/.test(line))return;
+    let cells=null;
+    if(line.includes('|')){cells=line.split('|');if(!cleanCell(cells[0]))cells.shift();if(cells.length&&!cleanCell(cells[cells.length-1]))cells.pop()}
+    else if(line.includes('\t'))cells=line.split('\t');else if(line.includes(';'))cells=line.split(';');else if(/\S\s{2,}\S/.test(line))cells=line.split(/\s{2,}/);
+    else{/* riga unica: "Torino - Bari 1X2: 1 @ 2.00" */let mm=line.match(/^(.*?\S)\s+(?:-|–|vs\.?)\s+(.*?)\s+@?\s*(\d{1,3}[.,]\d{2})\s*$/i);if(mm){let mid=mm[2].split(/\s+/);let away=[],market=[];/* l'ospite finisce dove inizia il mercato */let mi=mid.findIndex(w=>/^(1|x|2|1x|x2|12|over|under|gg|ng|goal|nogoal|o|u|dc|esito|segno|combo|multigol|dnb|handicap|hnd|ris|pari|dispari|1x2|u\/o|gg\/ng|o\/u|\d[.,]5)$/i.test(w)||/[:]/.test(w));if(mi<=0)mi=mid.length;away=mid.slice(0,mi);market=mid.slice(mi);let s=splitMarket(market.join(' '));out.push({league:'',home:cleanCell(mm[1]),away:away.join(' '),market:s.market,pick:s.pick,odds:num(mm[3]),date:'',time:''})}return}
+    let lower=cells.map(c=>cleanCell(c).toLowerCase());if(lower.includes('casa')&&lower.includes('ospite'))return;
+    let r=parseCells(cells);if(r)out.push(r);
+  });
+  return out;
+}
+/* --- testo copiato da ticket (GoldBet e simili: squadre su righe separate, mercato, quota) --- */
+function gbCleanLine(v){return String(v||'').replace(/[|]/g,' ').replace(/\s+/g,' ').trim()}
+function gbMoney(v){let m=String(v||'').replace(/\./g,'').replace(',','.').match(/(\d+(?:\.\d{1,2})?)/);return m?Number(m[1]):NaN}
+function gbLooksNoise(line){let u=line.toUpperCase();return !line||u==='MULTIPLA'||u==='SINGOLA'||u.includes('GOLDBET')||u.includes('INFORMAZIONI SUL BIGLIETTO')||u.startsWith('ID:')||u.startsWith('ID ADM')||u.includes('VAI ALL')||u.includes('IN CORSO')||u.startsWith('DATA:')||u.startsWith('IMPORTO')||u.startsWith('VINCITA POTENZIALE')||u.startsWith('BONUS')||u.startsWith('VINCITA ')||u.startsWith('QUOTA TOTALE')||u.startsWith('PUNTATA')||/^\d{1,2}[-\/]\w+[-\/]\d{4}/i.test(line)||/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(line)}
+function gbLooksLeague(line){let u=line.toUpperCase();return /LIGA|LEAGUE|MLS|SERIE|DIVISION|CONFERENCE|PREMIER|BUNDES|CHAMPIONSHIP|COPPA|CUP|LIGUE|EREDIVISIE|PRVA|SUPER LIGA|NATIONAL|PRIMERA|CALCIO -/.test(u)&&line.length<70&&!gbLooksMarket(line)}
+function gbLooksMarket(line){let u=line.toUpperCase();return /COMBO|OVER|UNDER|SEGNO|GOAL|NO GOAL|DOPPIA CHANCE|\b1X\b|\bX2\b|\b12\b|ESITO|MULTIGOL|PARI\/?DISPARI|1X2|U\/O|GG\/NG|\bGG\b|\bNG\b|HANDICAP|DRAW NO BET|\bDNB\b|RISULTATO ESATTO|PARZIALE|TESTA A TESTA|MARCATORE|T\/T|1 ?X ?2/.test(u)}
+function gbExtractOdd(line){let a=String(line||'').match(/(?:^|\s|@)(\d{1,3}[\.,]\d{2})(?=\s|$|[^\d])/g);if(!a||!a.length)return NaN;let raw=a[a.length-1].match(/\d{1,3}[\.,]\d{2}/);return raw?Number(raw[0].replace(',','.')):NaN}
+function gbStripOdd(line){return gbCleanLine(String(line||'').replace(/(?:\s|@)\d{1,3}[\.,]\d{2}(?:\s*\[?@?\]?)?\s*$/,''))}
+function gbCleanMarket(line){return gbStripOdd(line).replace(/\s*:\s*(?:SI|S1|51|§1)\b/i,'').replace(/\s+(?:SI|S1|51|§1)\s*$/i,'').replace(/\s*\[@?\s*$/,'').replace(/0\s*52/gi,'0,5 2°T').replace(/0\s*5\s*2[°º]?\s*T/gi,'0,5 2°T').replace(/0\s*5\s*1[°º]?\s*T/gi,'0,5 1°T').trim()}
+function gbMergeLines(text){let src=String(text||'').replace(/\r/g,'').split('\n').map(gbCleanLine).filter(Boolean),out=[];for(let i=0;i<src.length;i++){let l=src[i];if(gbLooksMarket(l)&&!(gbExtractOdd(l)>1)&&i+1<src.length&&gbExtractOdd(src[i+1])>1&&!gbLooksMarket(src[i+1])){l=gbCleanLine(l+' '+src[i+1]);i++}else if(gbLooksMarket(l)&&!(gbExtractOdd(l)>1)&&i+2<src.length&&src[i+1].length<=24&&!(gbExtractOdd(src[i+1])>1)&&!TEAM_SEP.test(src[i+1])&&/^@?\s*\d{1,3}[.,]\d{2}$/.test(src[i+2])){l=gbCleanLine(l+': '+src[i+1]+' '+src[i+2]);i+=2}else if(gbLooksMarket(l)&&!(gbExtractOdd(l)>1)&&i+1<src.length&&gbLooksMarket(src[i+1])&&i+2<src.length&&/^@?\s*\d{1,3}[.,]\d{2}$/.test(src[i+2])){l=gbCleanLine(l+': '+src[i+1]+' '+src[i+2]);i+=2}out.push(l)}return out}
+function gbCandidateTeams(lines,i){let prev=[],league='',when='';for(let j=i-1;j>=0&&prev.length<3;j--){let x=lines[j];if(gbLooksMarket(x)||(gbExtractOdd(x)>1&&!TEAM_SEP.test(x)))break;if(gbLooksLeague(x)){league=league||x;continue}if(isWhenCell(x)||/^\d{1,2}[-\/]\w+/i.test(x)){when=when||x;continue}if(gbLooksNoise(x))continue;prev.unshift(x);if(TEAM_SEP.test(x))break}
+  let home='',away='';let joined=prev.find(x=>TEAM_SEP.test(x));
+  if(joined){[home,away]=joined.split(TEAM_SEP)}
+  else if(prev.length>=2){home=prev[prev.length-2];away=prev[prev.length-1]}
+  else if(prev.length===1){home=prev[0]}
+  let w=parseWhen(when);
+  return{home:gbCleanLine(home),away:gbCleanLine(away),league:gbCleanLine(league).replace(/^calcio\s*[-–]\s*/i,''),date:w.date,time:w.time}
+}
+function ticketAmounts(text){let stake=NaN,potential=NaN;String(text||'').split(/\r?\n/).forEach(l=>{let m=l.match(/(?:IMPORTO(?: GIOCATO| SCOMMESSO)?|PUNTATA|STAKE|IMPORTO TOTALE)[^\d]{0,15}(\d+[\.,]\d{1,2}|\d+)/i);if(m&&!(stake>=0))stake=gbMoney(m[1]);m=l.match(/(?:VINCITA POTENZIALE|POSSIBILE VINCITA|VINCITA MAX|VINCITA)[^\d]{0,15}(\d[\d\.]*,\d{1,2}|\d+\.\d{1,2}|\d+)/i);if(m&&!(potential>=0))potential=gbMoney(m[1])});return{stake,potential}}
+function parseGoldBetText(raw){
+  let text=String(raw||''),lines=gbMergeLines(text),legs=[];
+  for(let i=0;i<lines.length;i++){
+    let line=lines[i];if(!gbLooksMarket(line))continue;
+    let odd=gbExtractOdd(line);if(!(odd>1)){for(let j=i+1;j<Math.min(lines.length,i+4);j++){let x=gbExtractOdd(lines[j]);if(x>1){odd=x;break}if(gbLooksMarket(lines[j]))break}}
+    let t=gbCandidateTeams(lines,i),s=splitMarket(gbCleanMarket(line)||'Giocata');
+    if(t.home&&odd>1)legs.push({league:t.league,home:t.home,away:t.away,market:s.market,pick:s.pick,odds:odd,date:t.date,time:t.time});
+  }
+  let seen=new Set();legs=legs.filter(l=>{let k=(l.home+'|'+l.away+'|'+l.odds).toLowerCase().replace(/[^a-z0-9|.]/g,'');if(seen.has(k))return false;seen.add(k);return true});
+  let a=ticketAmounts(text);
+  return{stake:a.stake,potential:a.potential,legs,raw:text};
+}
+function parseTicket(raw){let t=parseTableText(raw),a=ticketAmounts(raw);if(t.length)return{legs:t,stake:a.stake,potential:a.potential};let g=parseGoldBetText(raw);return{legs:g.legs,stake:g.stake,potential:g.potential}}
+/* --- Excel / CSV --- */
+function normHeader(v){return cleanCell(v).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+function parseSheetRows(rows){
+  rows=Array.isArray(rows)?rows:[];if(!rows.length)return[];
+  const tests={league:/^(campionato|lega|league|competizione|torneo|sport campionato)$/,home:/^(casa|squadra casa|home|home team)$/,away:/^(ospite|squadra ospite|trasferta|away|away team)$/,event:/^(evento|partita|match|incontro)$/,when:/^(data ora|data e ora|orario|date time|datetime)$/,date:/^(data|date|giorno)$/,time:/^(ora|time)$/,market:/^(tipo giocata|giocata|mercato|market|bet|tipo scommessa|scommessa)$/,pick:/^(pronostico|esito|selezione|segno|pick)$/,odds:/^(quota|quote|odd|odds|quota ingresso)$/};
+  let head=-1,map={};
+  for(let r=0;r<Math.min(rows.length,12);r++){let hs=(rows[r]||[]).map(normHeader),m={};for(let i=0;i<hs.length;i++)for(const k of Object.keys(tests))if(m[k]==null&&tests[k].test(hs[i]))m[k]=i;if((m.home!=null||m.event!=null)&&m.odds!=null){head=r;map=m;break}}
+  let out=[];
+  if(head<0){rows.forEach(r=>{let x=parseCells((r||[]).map(String));if(x)out.push(x)});return out}
+  for(let r=head+1;r<rows.length;r++){
+    let row=(rows[r]||[]).map(cleanCell);if(!row.some(Boolean))continue;
+    let g=k=>map[k]!=null?cleanCell(row[map[k]]):'';
+    let home=g('home'),away=g('away');if(!home&&g('event')){let p=g('event').split(TEAM_SEP);home=cleanCell(p[0]);away=cleanCell(p.slice(1).join(' - '))}
+    let odds=num(g('odds'));let mk=g('market'),pk=g('pick');if(!pk){let s=splitMarket(mk);mk=s.market;pk=s.pick}
+    let w=parseWhen(g('when')||[g('date'),g('time')].join(' '));if(!w.date&&g('date'))w.date=toIso(g('date'));
+    if(home&&odds>1)out.push({league:g('league').replace(/^calcio\s*[-–]\s*/i,''),home,away,market:mk,pick:pk,odds,date:w.date,time:w.time||g('time')});
+  }
+  return out;
+}
+/* --- OCR screenshot (GoldBet) --- */
+async function gbImageBitmap(file){if(window.createImageBitmap)return await createImageBitmap(file);return await new Promise((resolve,reject)=>{let img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{URL.revokeObjectURL(u);resolve(img)};img.onerror=reject;img.src=u})}
+function gbCanvasFromImage(img,sy,sh,scale){scale=scale||2.2;let w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;sy=Math.max(0,Math.min(h-1,Math.round(sy||0)));sh=Math.max(1,Math.min(h-sy,Math.round(sh||h)));let cw=Math.round(w*scale),ch=Math.round(sh*scale),c=document.createElement('canvas');c.width=cw;c.height=ch;let ctx=c.getContext('2d',{willReadFrequently:true});ctx.fillStyle='#fff';ctx.fillRect(0,0,cw,ch);ctx.drawImage(img,0,sy,w,sh,0,0,cw,ch);let id=ctx.getImageData(0,0,cw,ch),d=id.data;for(let i=0;i<d.length;i+=4){let y=.299*d[i]+.587*d[i+1]+.114*d[i+2];let v=y<175?0:y>242?255:Math.max(0,Math.min(255,(y-175)*3.8));d[i]=d[i+1]=d[i+2]=v}ctx.putImageData(id,0,0);return c}
+async function gbPrepareCanvas(file,mode){let img=await gbImageBitmap(file),w=img.width||img.naturalWidth,h=img.height||img.naturalHeight,sy=0,sh=h;if(mode==='body'){sy=Math.floor(h*.28);sh=Math.floor(h*.67)}else if(mode==='lower'){sy=Math.floor(h*.40);sh=Math.floor(h*.55)}let scale=Math.min(2.4,Math.max(1.45,1850/w)),c=gbCanvasFromImage(img,sy,sh,scale);if(img.close)try{img.close()}catch(_){}return c}
+async function gbDetectBlocks(file){let img=await gbImageBitmap(file),w=img.width||img.naturalWidth,h=img.height||img.naturalHeight,c=document.createElement('canvas');c.width=w;c.height=h;let ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,w,h);let data=ctx.getImageData(0,0,w,h).data,from=Math.floor(h*.27),to=Math.floor(h*.93),stepX=Math.max(2,Math.floor(w/500)),rows=[];for(let y=from;y<to;y++){let grey=0,total=0;for(let x=Math.floor(w*.02);x<Math.floor(w*.98);x+=stepX){let i=(y*w+x)*4,r=data[i],g=data[i+1],b=data[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b);if(mx<246&&mn>170&&(mx-mn)<22)grey++;total++}if(total&&grey/total>.42)rows.push(y)}let runs=[];for(let y of rows){let last=runs[runs.length-1];if(last&&y<=last[1]+2)last[1]=y;else runs.push([y,y])}runs=runs.filter(r=>r[1]-r[0]>=4);let starts=[];for(let r of runs){let y=r[0];if(!starts.length||y-starts[starts.length-1]>Math.max(28,h*.018))starts.push(y)}let blocks=[];for(let i=0;i<starts.length;i++){let y0=Math.max(from,starts[i]-3),y1=i+1<starts.length?starts[i+1]-3:Math.min(to,Math.floor(h*.90));if(y1-y0>Math.max(55,h*.035)&&y1-y0<Math.max(260,h*.18))blocks.push([y0,y1])}if(img.close)try{img.close()}catch(_){}return blocks}
+async function gbPrepareBlockCanvas(file,range){let img=await gbImageBitmap(file),w=img.width||img.naturalWidth,scale=Math.min(3.0,Math.max(1.8,2200/w)),c=gbCanvasFromImage(img,range[0],range[1]-range[0],scale);if(img.close)try{img.close()}catch(_){}return c}
+function mergeLegs(list){let out=[],norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');list.forEach(l=>{let hit=out.find(x=>(norm(x.home)===norm(l.home)&&norm(x.away)===norm(l.away))||(norm(x.home)===norm(l.home)&&Math.abs(x.odds-l.odds)<.001));if(!hit)out.push(l);else if(((l.market||'')+(l.pick||'')).length>((hit.market||'')+(hit.pick||'')).length)Object.assign(hit,l)});return out}
+async function readTicketImage(file){
+  let imp=modal&&modal.imp;if(!imp||!file)return;
+  imp.loading=true;imp.error='';imp.progress=.02;imp.fileName=file.name||'screenshot';imp.legs=[];renderBetModal();
+  const prog=(p,label)=>{imp.progress=p;let bar=document.querySelector('#rgOverlay .rg-imp-progress i'),txt=document.querySelector('#rgOverlay .rg-imp-progress b');if(bar)bar.style.width=Math.max(4,Math.round(p*100))+'%';if(txt)txt.textContent=(label||'Lettura ticket…')+' '+Math.round(p*100)+'%'};
+  try{
+    if(!window.Tesseract||!window.Tesseract.recognize)throw new Error('Motore OCR non disponibile. Controlla la connessione e riprova.');
+    let parsed=[],amounts={stake:NaN,potential:NaN};
+    let head=await window.Tesseract.recognize(await gbPrepareCanvas(file,'full'),'eng',{tessedit_pageseg_mode:'3',preserve_interword_spaces:'1',logger:m=>{if(m&&m.status==='recognizing text'&&Number.isFinite(m.progress))prog(.02+m.progress*.18,'Lettura ticket…')}});
+    let ht=head&&head.data&&head.data.text||'';imp.raw=ht;let p0=parseTicket(ht);parsed.push(...p0.legs);amounts=ticketAmounts(ht);
+    let blocks=await gbDetectBlocks(file);
+    if(blocks.length){for(let bi=0;bi<blocks.length;bi++){let base=.20+(bi/blocks.length)*.76,span=.76/blocks.length;let res=await window.Tesseract.recognize(await gbPrepareBlockCanvas(file,blocks[bi]),'eng',{tessedit_pageseg_mode:'6',preserve_interword_spaces:'1',logger:m=>{if(m&&m.status==='recognizing text'&&Number.isFinite(m.progress))prog(Math.min(.97,base+m.progress*span),'Partita '+(bi+1)+'/'+blocks.length+'…')}});parsed.push(...parseGoldBetText(res&&res.data&&res.data.text||'').legs)}}
+    else{for(const mode of ['body','lower']){let res=await window.Tesseract.recognize(await gbPrepareCanvas(file,mode),'eng',{tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});parsed.push(...parseGoldBetText(res&&res.data&&res.data.text||'').legs)}}
+    imp.legs=mergeLegs(parsed);if(amounts.stake>0)imp.stake=amounts.stake;if(amounts.potential>0)imp.potential=amounts.potential;
+    if(!imp.legs.length)imp.error='Non sono riuscita a riconoscere le selezioni. Prova con uno screenshot completo e nitido, oppure usa Copia/Incolla.';
+    else if(blocks.length&&imp.legs.length<blocks.length)imp.error='Ho visto '+blocks.length+' blocchi partita ma ne ho letti '+imp.legs.length+': controlla le righe prima di importare.';
+  }catch(err){imp.error=err&&err.message?err.message:'Errore durante la lettura dello screenshot.'}
+  finally{imp.loading=false;imp.progress=1;if(modal&&modal.imp===imp)renderBetModal()}
+}
+async function readTicketSheet(file){
+  let imp=modal&&modal.imp;if(!imp||!file)return;imp.fileName=file.name||'file';imp.error='';
+  try{let ext=(file.name||'').toLowerCase();
+    if(!window.XLSX||/\.(csv|tsv|txt)$/.test(ext)){let raw=await file.text();imp.legs=parseTableText(raw);let a=ticketAmounts(raw);if(a.stake>0)imp.stake=a.stake}
+    else{let wb=window.XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:false}),name=wb.SheetNames&&wb.SheetNames[0];if(!name)throw new Error('Il file non contiene fogli leggibili.');imp.legs=parseSheetRows(window.XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:'',raw:false,blankrows:false,dateNF:'dd/mm/yyyy'}))}
+    if(!imp.legs.length)imp.error='Nessuna riga valida trovata. Servono almeno Casa/Ospite (o Evento) e Quota.';
+  }catch(err){imp.error=(err&&err.message)||'Impossibile leggere il file.'}
+  renderBetModal();
+}
+function analyzePaste(){let imp=modal.imp,r=parseTicket(imp.raw);imp.legs=r.legs;if(r.stake>0)imp.stake=r.stake;if(r.potential>0)imp.potential=r.potential;imp.error=imp.legs.length?'':'Nessuna selezione riconosciuta. Ogni riga deve avere almeno squadre e quota (es. "Torino - Bari | 1X2 | 1 | 2,00").';renderBetModal()}
+function impQuota(imp){return imp.legs.reduce((p,l)=>p*(num(l.odds)||1),1)}
+function renderImporter(){
+  let d=modal.draft,imp=modal.imp,q=impQuota(imp),stake=num(imp.stake)||0,nL=imp.legs.length;
+  let tab=k=>`<button type="button" class="${imp.mode===k?'on':''}" data-m="imp-tab" data-v="${k}">${k==='paste'?'Copia / incolla':k==='file'?'Excel / CSV':'Screenshot GoldBet'}</button>`;
+  let input=imp.mode==='paste'?`<p class="rg-hint">Incolla la bolletta copiata dal sito del book, una tabella Excel o righe separate da <b>|</b>, tab o <b>;</b>. Riconosce squadre, torneo, data/ora, mercato, pronostico, quota e (se c'è) l'importo giocato.</p>
+      <textarea class="rg-imp-raw" data-imp="raw" placeholder="| Calcio - Serie A | Torino | Bari | 20:45 - 05/10 | 1X2: 1 | 2,00 |&#10;Empoli - Frosinone | Esito finale: X | 3,00&#10;&#10;oppure incolla direttamente il testo del ticket (es. GoldBet)">${esc(imp.raw)}</textarea>
+      <div class="rg-imp-row"><button type="button" class="rg-btn" data-m="imp-parse">${ico('search')}Analizza bolletta</button><small>Si analizza anche da sola quando incolli.</small></div>`
+    :imp.mode==='file'?`<p class="rg-hint">Legge il primo foglio di un file Excel/CSV con colonne tipo Campionato, Casa, Ospite (o Evento), Data/Ora, Giocata/Mercato, Pronostico, Quota.</p><div class="rg-imp-row"><label class="rg-btn">${ico('up')}Scegli file<input type="file" accept=".xlsx,.xls,.csv,.tsv,.txt" data-impfile="sheet" hidden></label><small>${esc(imp.fileName||'XLSX · XLS · CSV')}</small></div>`
+    :`<p class="rg-hint">Carica lo screenshot completo del ticket GoldBet: viene diviso in blocchi partita e letto con l'OCR (squadre, giocata, quota, importo).</p><div class="rg-imp-row"><label class="rg-btn">${ico('up')}Scegli immagine<input type="file" accept="image/png,image/jpeg,image/webp" data-impfile="ocr" hidden></label><small>${esc(imp.fileName||'PNG · JPG · WEBP')}</small></div>${imp.loading?`<div class="rg-imp-progress"><span><i style="width:${Math.max(4,Math.round(imp.progress*100))}%"></i></span><b>Lettura ticket… ${Math.round(imp.progress*100)}%</b></div>`:''}`;
+  let rows=nL?`<div class="rg-imp-res">
+      <div class="rg-imp-sum"><span>Selezioni trovate <b>${nL}</b></span><span>Quota ${nL>1?'totale':''} <b>${q.toFixed(2)}</b></span>
+        <label>${nL>1?'Importo bolletta / stake singola':'Stake'} €<input inputmode="decimal" data-imp="stake" value="${esc(String(imp.stake).replace('.',','))}"></label>
+        <span>Vincita pot. multipla <b>${money(q*stake)}</b></span></div>
+      <div class="rg-imp-head"><span>#</span><span>Casa</span><span>Ospite</span><span>Torneo</span><span>Mercato</span><span>Pronostico</span><span>Quota</span><span></span></div>
+      ${imp.legs.map((l,i)=>`<div class="rg-imp-leg"><span class="n">${i+1}</span>
+        <input value="${esc(l.home)}" data-ir="${i}" data-irf="home" placeholder="Casa"><input value="${esc(l.away)}" data-ir="${i}" data-irf="away" placeholder="Ospite"><input value="${esc(l.league)}" data-ir="${i}" data-irf="league" placeholder="Torneo"><input value="${esc(l.market)}" data-ir="${i}" data-irf="market" placeholder="Mercato"><input value="${esc(l.pick)}" data-ir="${i}" data-irf="pick" placeholder="Pronostico"><input class="q" inputmode="decimal" value="${esc(String(l.odds).replace('.',','))}" data-ir="${i}" data-irf="odds">
+        <button type="button" data-m="imp-del" data-i="${i}" title="Rimuovi">${ico('x')}</button>
+        ${l.date||l.time?`<small class="rg-imp-when">${l.date?dateShort(l.date):''} ${esc(l.time||'')}</small>`:''}</div>`).join('')}
+    </div>`:'';
+  let actions=nL===1?`<button type="button" class="rg-btn primary" data-m="imp-apply" data-v="singola">${ico('check')}Usa come singola</button>`
+    :nL>1?`<button type="button" class="rg-btn" data-m="imp-apply" data-v="singole" title="Crea una singola per ogni riga, tutte con lo stesso stake">Crea ${nL} singole</button><button type="button" class="rg-btn primary" data-m="imp-apply" data-v="multipla">${ico('check')}Importa come multipla</button>`:'';
+  openModalShell(`<div class="rg-modal-head"><div><small>${d.type==='singola'?'SINGOLA':d.type==='multipla'?'MULTIPLA':'SISTEMA'} · IMPORTA BOLLETTA</small><h3>Importa la bolletta giocata</h3></div><button type="button" class="rg-x" data-m="imp-close" title="Torna alla bet">${ico('x')}</button></div>
+    <div class="rg-modal-body"><div class="rg-seg big">${tab('paste')}${tab('file')}${tab('ocr')}</div>${input}${imp.error?`<div class="rg-imp-err">${esc(imp.error)}</div>`:''}${rows}</div>
+    <div class="rg-modal-foot"><button type="button" class="rg-btn ghost" data-m="imp-close">← Torna alla bet</button>${actions}</div>`,true);
+  if(imp.mode==='paste'&&!nL)setTimeout(()=>{let t=document.querySelector('#rgOverlay .rg-imp-raw');if(t&&document.activeElement!==t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}},0);
+}
+function legFromImp(l){return{home:l.home,away:l.away,league:l.league||'',market:l.market||'',pick:l.pick||'',odds:String(num(l.odds)||''),status:'open',date:l.date||modal.draft.date,time:l.time||''}}
+function applyImport(kind){
+  let d=modal.draft,imp=modal.imp,legs=imp.legs.filter(l=>l.home&&num(l.odds)>1);
+  if(!legs.length){alert('Nessuna selezione valida: ogni riga deve avere almeno la squadra di casa e una quota maggiore di 1.');return}
+  let stake=num(imp.stake);
+  if(kind==='singola'){let l=legs[0];Object.assign(d,{type:'singola',home:l.home,away:l.away,league:l.league||d.league,market:l.market||'',pick:l.pick||'',odds:String(num(l.odds)),legs:[]});if(l.date)d.date=l.date;if(l.time)d.time=l.time;if(stake>0)d.stake=stake;modal.imp=null;renderBetModal('[data-f="stake"]');return}
+  if(kind==='multipla'){d.type=d.type==='sistema'?'sistema':'multipla';d.legs=legs.map(legFromImp);if(stake>0)d.stake=stake;let first=legs.find(l=>l.date);if(first&&first.date)d.date=first.date;modal.imp=null;renderBetModal();return}
+  if(kind==='singole'){
+    if(!(stake>0)){alert('Inserisci lo stake da usare per ogni singola.');return}
+    if(!confirm(`Creare ${legs.length} singole da ${money(stake)} ciascuna (totale ${money(stake*legs.length)}) su ${bookName(d.book)}?`))return;
+    let base=Date.now(),tags=String(d.tags||'').split(',').map(s=>s.trim()).filter(Boolean);
+    legs.forEach((l,i)=>data.entries.push(normEntry({id:uid('bet'),kind:'bet',createdAt:base+i,date:l.date||d.date,time:l.time||d.time,sport:d.sport,league:l.league,home:l.home,away:l.away,market:l.market,pick:l.pick,type:'singola',book:d.book,odds:num(l.odds),stake,freebet:d.freebet,status:'open',tags,note:d.note})));
+    save();closeModal();
+  }
+}
 
 /* ---------- CSV / backup ---------- */
 const CSV_COLS=['tipo_riga','data','ora','sport','torneo','casa','ospite','mercato','pronostico','tipo','sistema','book','quota','stake','freebet','esito','rientro','pl','tag','note','selezioni','da_book','a_book','importo'];
