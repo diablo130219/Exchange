@@ -908,7 +908,7 @@ app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
 });
 
 // ---------- Money Management sincronizzato (Supabase/Postgres) ----------
-const MONEY_STATE_SECTIONS = new Set(['money', 'kelly']);
+const MONEY_STATE_SECTIONS = new Set(['money', 'kelly', 'registro']);
 function moneyStateSection(req, res) {
   const section = String(req.params.section || '').toLowerCase();
   if (!MONEY_STATE_SECTIONS.has(section)) {

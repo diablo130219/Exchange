@@ -180,8 +180,8 @@
       sub.textContent='CASSA, SESSIONI, OPERAZIONI, DISCIPLINA E PERFORMANCE';
       toolbar.style.display='none';
     }else if(currentView==='money'){
-      title.textContent='MONEY MANAGEMENT';
-      sub.textContent='MASANIELLO · ROSERPINA · KELLY · MARTINGALA · MULTIPLA';
+      title.textContent='REGISTRO SCOMMESSE';
+      sub.textContent='SINGOLE, MULTIPLE, SISTEMI, MOVIMENTI E TRASFERIMENTI TRA BOOK';
       toolbar.style.display='none';
     }else{
       title.textContent='PARTITE TERMINATE';
@@ -665,9 +665,9 @@
         try{window.EasyBetMoney.render()}catch(err){console.error('EasyBet Money render:',err)}
       }else if(!window.__easyBetMoneyFallbackLoading){
         window.__easyBetMoneyFallbackLoading=true;
-        var sc=document.createElement('script');sc.src='/money.js?v=112-fallback';sc.onload=function(){window.__easyBetMoneyFallbackLoading=false;if(window.EasyBetMoney&&window.EasyBetMoney.render)window.EasyBetMoney.render()};sc.onerror=function(){window.__easyBetMoneyFallbackLoading=false};document.head.appendChild(sc);
+        var sc=document.createElement('script');sc.src='/registro.js?v=120-fallback';sc.onload=function(){window.__easyBetMoneyFallbackLoading=false;if(window.EasyBetMoney&&window.EasyBetMoney.render)window.EasyBetMoney.render()};sc.onerror=function(){window.__easyBetMoneyFallbackLoading=false};document.head.appendChild(sc);
       }
-      var moneyNote=document.getElementById('refreshNote');if(moneyNote)moneyNote.textContent='Money Management';
+      var moneyNote=document.getElementById('refreshNote');if(moneyNote)moneyNote.textContent='Registro scommesse';
       return;
     }
     var exb=document.getElementById('exchangeBoard');if(exb)exb.classList.remove('show');
@@ -727,7 +727,7 @@
     if(loadInProgress)return;
     loadInProgress=true;
     var note=document.getElementById('refreshNote');
-    if(note)note.textContent=currentView==='money'?'Money Management':(hasLoadedOnce?'aggiornamento…':'caricamento…');
+    if(note)note.textContent=currentView==='money'?'Registro scommesse':(hasLoadedOnce?'aggiornamento…':'caricamento…');
     /* Money Management non dipende dal feed partite: renderizzalo subito e sincronizza il resto in background. */
     if(currentView==='money'){
       try{render()}catch(err){console.error('EasyBet Money immediate render:',err)}
