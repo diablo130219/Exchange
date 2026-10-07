@@ -299,3 +299,42 @@ html[data-theme="dark"] .masaniello-board .ms-cash-manager-head .ms-btn{backgrou
 @media(max-width:1180px){
   .masaniello-board.show{width:100%!important;max-width:100%!important}
 }
+
+/* STEP118 · Masaniello operativo nello stile Kelly */
+.masaniello-board .ms-kelly-builder{display:grid;grid-template-columns:1.35fr .65fr;gap:14px;margin-bottom:14px}
+.masaniello-board .ms-kelly-add,.masaniello-board .ms-kelly-summary,.masaniello-board .ms-kelly-open,.masaniello-board .ms-kelly-history{margin-bottom:0}
+.masaniello-board .ms-card-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.masaniello-board .ms-card-title h3{margin:0}
+.masaniello-board .ms-kelly-add-fields{display:grid;grid-template-columns:1.7fr 1.25fr .55fr;gap:10px;margin-top:13px}
+.masaniello-board .ms-kelly-main-actions{margin-top:12px}
+.masaniello-board .ms-kelly-note{margin-top:12px;padding:11px 13px;border-radius:11px;background:rgba(213,169,50,.08);border:1px solid rgba(213,169,50,.18);font-size:11px;line-height:1.5;opacity:.78}
+.masaniello-board .ms-kelly-stake{margin:12px 0;padding:16px;border-radius:14px;background:rgba(213,169,50,.10);border:1px solid rgba(213,169,50,.28)}
+.masaniello-board .ms-kelly-stake small{display:block;font-size:9px;font-weight:900;letter-spacing:.08em;opacity:.65}
+.masaniello-board .ms-kelly-stake b{display:block;margin-top:4px;font-size:27px}
+.masaniello-board .ms-kelly-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.masaniello-board .ms-kelly-summary-grid span{padding:10px 11px;border-radius:11px;background:rgba(255,255,255,.04);border:1px solid rgba(213,169,50,.12)}
+.masaniello-board .ms-kelly-summary-grid small{display:block;font-size:9px;font-weight:900;opacity:.62}
+.masaniello-board .ms-kelly-summary-grid b{display:block;margin-top:3px;font-size:15px}
+.masaniello-board .ms-kelly-stop{width:100%;margin-top:10px}
+.masaniello-board .ms-kelly-open{margin-bottom:14px}
+.masaniello-board .ms-kelly-open-total{font-size:11px;font-weight:900;opacity:.65}
+.masaniello-board .ms-kelly-ticket-list{display:grid;gap:11px;margin-top:13px}
+.masaniello-board .ms-kelly-ticket{padding:14px;border:1px solid rgba(213,169,50,.16);border-radius:15px;background:rgba(255,255,255,.025)}
+.masaniello-board .ms-kelly-ticket-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.masaniello-board .ms-kelly-ticket-top small{display:block;font-size:9px;font-weight:900;letter-spacing:.12em;color:#d8aa32}
+.masaniello-board .ms-kelly-ticket h4{margin:4px 0 0;font-size:16px;line-height:1.25}
+.masaniello-board .ms-kelly-market{display:inline-flex;margin-top:7px;padding:6px 9px;border-radius:9px;background:rgba(213,169,50,.11);border:1px solid rgba(213,169,50,.20);font-size:10px;font-weight:900}
+.masaniello-board .ms-kelly-odds{font-size:17px;font-weight:900;white-space:nowrap}
+.masaniello-board .ms-kelly-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.masaniello-board .ms-kelly-metrics span{padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.04);font-size:10px;opacity:.8}
+.masaniello-board .ms-kelly-metrics b{display:block;margin-top:3px;font-size:14px;opacity:1}
+.masaniello-board .ms-kelly-ticket-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.masaniello-board .ms-kelly-ticket-actions button{border:1px solid rgba(213,169,50,.25);background:rgba(255,255,255,.05);color:inherit;border-radius:10px;padding:9px 12px;font-size:11px;font-weight:900;cursor:pointer}
+.masaniello-board .ms-kelly-ticket-actions button.green{background:rgba(34,160,91,.14);border-color:rgba(34,160,91,.42);color:#187143}
+.masaniello-board .ms-kelly-ticket-actions button.red{background:rgba(210,63,63,.13);border-color:rgba(210,63,63,.38);color:#ad3035}
+.masaniello-board .ms-kelly-ticket-actions button.ghost{opacity:.72}
+.masaniello-board .ms-kelly-empty{padding:28px 18px;text-align:center;opacity:.6;font-size:13px}
+html[data-theme="light"] .masaniello-board .ms-kelly-ticket,html[data-theme="light"] .masaniello-board .ms-kelly-summary-grid span{background:#fffaf0}
+html[data-theme="dark"] .masaniello-board .ms-kelly-ticket,html[data-theme="dark"] .masaniello-board .ms-kelly-summary-grid span{background:rgba(255,255,255,.035)}
+@media(max-width:900px){.masaniello-board .ms-kelly-builder{grid-template-columns:1fr}.masaniello-board .ms-kelly-add-fields{grid-template-columns:1fr 1fr}.masaniello-board .ms-kelly-metrics{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.masaniello-board .ms-kelly-add-fields,.masaniello-board .ms-kelly-metrics,.masaniello-board .ms-kelly-summary-grid{grid-template-columns:1fr}.masaniello-board .ms-card-title{align-items:flex-start;flex-direction:column}.masaniello-board .ms-card-title .ms-btn{width:100%}.masaniello-board .ms-kelly-ticket-top{flex-direction:column}.masaniello-board .ms-kelly-ticket-actions button{flex:1}.masaniello-board .ms-kelly-odds{align-self:flex-start}}
