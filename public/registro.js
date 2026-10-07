@@ -31,6 +31,9 @@ function dateShort(iso){let m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||''));
 function toIso(v){let s=String(v||'').trim();let m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);if(m)return m[1]+'-'+pad(m[2])+'-'+pad(m[3]);m=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/.exec(s);if(m){let y=m[3].length===2?'20'+m[3]:m[3];return y+'-'+pad(m[2])+'-'+pad(m[1])}return ''}
 function initials(name){return String(name||'').split(/\s+/).filter(Boolean).slice(0,2).map(s=>s[0]).join('').toUpperCase()||'•'}
 function textOn(hex){let h=String(hex||'#666').replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');let r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return (r*299+g*587+b*114)/1000>150?'#111':'#fff'}
+function leagueHtml(l,home,away){l=String(l||'').trim();let f=leagueFlag(l,home,away);if(!l)return `<span class="rg-league"><i>${f}</i><span class="rg-dim">—</span></span>`;
+  let parts=l.split(/\s+[-–]\s+/),top='',main=l;if(parts.length>=2){top=parts[0];main=parts.slice(1).join(' - ')}
+  return `<span class="rg-league" title="${esc(l)}"><i>${f}</i><span class="rg-lg-txt">${top?`<small>${esc(top)}</small>`:''}<b>${esc(main)}</b></span></span>`}
 function leagueFlag(l,home,away){l=String(l||'');let teams=[home,away].filter(Boolean).map(String);
   for(const [re,f] of COUNTRY_FLAGS)if(re.test(l))return f;
   if(teams.some(t=>BR_TEAM.test(t)))return '🇧🇷';
@@ -281,7 +284,7 @@ function betRow(b,seq,maxStake){
     <td class="c-num"><span class="rg-edge"></span><b>${seq||''}</b></td>
     <td class="c-date"><b>${dateShort(b.date)}</b><small>${esc(b.time||'')}</small></td>
     <td class="c-sport"><span class="rg-sport" title="${esc(SPORTS[b.sport][1])}">${SPORTS[b.sport][0]}</span></td>
-    <td class="c-league">${multi?'<span class="rg-dim">—</span>':`<span class="rg-league"><i>${leagueFlag(b.league,b.home,b.away)}</i>${esc(b.league||'—')}</span>`}</td>
+    <td class="c-league">${multi?'<span class="rg-dim">—</span>':leagueHtml(b.league,b.home,b.away)}</td>
     <td class="c-event">${ev}</td>
     <td class="c-pick">${pk}</td>
     <td class="c-type"><span class="rg-type ${b.type}">${TYPES[b.type]}</span>${b.freebet?'<span class="rg-fb">FREEBET</span>':''}${n(b.bonus)>0?`<span class="rg-fb bonus">BONUS +${money(b.bonus)}</span>`:''}</td>
@@ -295,7 +298,7 @@ function betRow(b,seq,maxStake){
   </tr>`;
   if(multi&&exp){row+=b.legs.map((l,i)=>`<tr class="rg-row leg st-${STATUS_CLASS[l.status]}">
     <td class="c-num"><span class="rg-legline"></span></td><td class="c-date"><small>${l.date?dateShort(l.date):''} ${esc(l.time||'')}</small></td><td></td>
-    <td class="c-league"><span class="rg-league"><i>${leagueFlag(l.league,l.home,l.away)}</i>${esc(l.league||'—')}</span></td>
+    <td class="c-league">${leagueHtml(l.league,l.home,l.away)}</td>
     <td class="c-event">${eventHtml(l.home,l.away,b.sport,l.league)}</td><td class="c-pick">${pickHtml(l.market,l.pick)}</td><td colspan="2"><small class="rg-dim">selezione ${i+1}</small></td>
     <td class="c-odds"><b>${fmtOdds(l.odds)}</b></td><td></td>
     <td class="c-status" colspan="4"><span class="rg-legst">${['open','win','loss','void'].map(s=>`<button type="button" class="${l.status===s?'on '+STATUS_CLASS[s]:''}" data-rg="leg" data-id="${b.id}" data-i="${i}" data-s="${s}">${s==='open'?'In corso':STATUS[s]}</button>`).join('')}</span></td>

@@ -136,7 +136,10 @@ body.rg-noscroll{overflow:hidden}
 .st-win .rg-edge{background:var(--rg-green)}.st-loss .rg-edge{background:var(--rg-red)}.st-void .rg-edge{background:var(--rg-faint)}.st-co .rg-edge{background:var(--rg-blue)}
 .c-date b{display:block;font:700 15px 'IBM Plex Mono',monospace}.c-date small{display:block;color:var(--rg-muted);font:500 12px 'IBM Plex Mono',monospace;margin-top:2px}
 .rg-sport{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--rg-panel2);border:1px solid var(--rg-line2);font-size:17px}
-.rg-league{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.rg-league{display:inline-flex;align-items:center;gap:8px;font-size:14px}
+.rg-lg-txt{display:flex;flex-direction:column;line-height:1.2;white-space:normal;min-width:120px;max-width:230px}
+.rg-lg-txt small{font-size:11px;font-weight:600;color:var(--rg-muted);text-transform:uppercase;letter-spacing:.04em}
+.rg-lg-txt b{font-weight:700}
 .rg-league i{font-style:normal;font-size:18px}
 .rg-ev{display:inline-flex;align-items:center;gap:7px;font-size:14.5px}
 .rg-ev b{font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis}
