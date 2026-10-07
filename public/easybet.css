@@ -2768,3 +2768,11 @@ html[data-theme="dark"] .mm-multi-archive-banner.win{color:#76d9a1}
 html[data-theme="dark"] .mm-multi-archive-banner.loss{color:#f09292}
 html[data-theme="dark"] .mm-multi-archive-banner.void{color:#d0d0d0}
 @media(max-width:560px){.mm-multi-archive-banner{align-items:flex-start;flex-direction:column}.mm-multi-tab{min-width:165px}}
+
+/* STEP116 · storico multiple semplice + date italiane */
+.mm-multi-simple-history .mm-multi-history-simple{align-items:center}
+.mm-multi-history-simple .mm-history-right{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.mm-multi-history-simple .mm-history-eventbox{min-width:0}
+.mm-multi-history-simple .mm-history-plain{font-size:15px;font-weight:900}
+.mm-multi-history-simple .mm-history-meta{margin-top:4px;font-size:11px;opacity:.65}
+@media(max-width:560px){.mm-multi-history-simple{align-items:flex-start}.mm-multi-history-simple .mm-history-right{width:100%;justify-content:space-between}}
