@@ -893,7 +893,7 @@ app.post('/api/exchange/link-match', requireSameSiteAdmin, async (req,res)=>{
       else{ const dd=getDay(day),used={}; dd.sessions.forEach((v,i)=>{if(v!=null)used[i]=1}); st.ops.forEach(o=>{if(o.day===day)used[Number(o.slot)||0]=1}); slot=null; for(let i=0;i<10;i++){ if(!used[i]){slot=i;break;} } if(slot==null) slot=9; }
       op={uid:'op_'+crypto.randomBytes(5).toString('hex'),ref}; st.ops.push(op);
     }
-    Object.assign(op,{day,slot,event,league:m.campionato||'',market:DIARIO_MARKETS[strategy]||String(b.market||m.tipo_giocata||''),strategy,side:['Punta','Banca','Trading'].includes(b.side)?b.side:'Punta',
+    Object.assign(op,{day,slot,event,league:m.campionato||'',market:DIARIO_MARKETS[strategy]||String(b.market||m.tipo_giocata||''),strategy,playType:String(b.playType||op.playType||m.tipo_giocata||'').trim(),side:['Punta','Banca','Trading'].includes(b.side)?b.side:'Punta',
       oddsIn:num(b.oddsIn)||Number(op.oddsIn)||0,oddsOut:num(b.oddsOut)||Number(op.oddsOut)||0,stake:Math.abs(num(b.stake))||Number(op.stake)||0,minute:String(b.minute||op.minute||''),profit:Math.round((isOpen?(Number(op.profit)||0):profit)*100)/100,note:(isOpen&&!(Number(op.profit)))?'APERTA · ingresso dal Live Analyzer':'da partita EasyBet · '+(m.esito_manuale||'')});
     const dd=getDay(day); while(dd.sessions.length<=slot) dd.sessions.push(null);
     const tot=st.ops.filter(o=>o.day===day&&Number(o.slot)===slot).reduce((a,o)=>a+(Number(o.profit)||0),0);

@@ -300,3 +300,12 @@ html[data-theme="dark"] .exchange-board .ex-import-summary b.neg{
 
 /* Diario: tutti gli importi centrati (la 3a colonna era allineata a sinistra) */
 .exchange-board .ex-diary-table td:not(:first-child){text-align:center!important}
+
+/* STEP121 · Diario: partita e tipo giocata visibili nella sessione */
+.ex-diary-session-cell{min-width:150px;vertical-align:top}
+.ex-diary-session-info{display:grid;gap:5px;margin-top:6px;min-width:138px}
+.ex-diary-session-op{padding:6px 7px;border-radius:8px;background:rgba(213,169,50,.09);border:1px solid rgba(213,169,50,.20);line-height:1.15;text-align:left}
+.ex-diary-session-op b{display:block;font-size:9px;white-space:normal;color:inherit}
+.ex-diary-session-op span{display:block;margin-top:3px;font-size:8px;font-weight:800;color:#b68512;white-space:normal}
+html[data-theme="dark"] .ex-diary-session-op{background:rgba(213,169,50,.08);border-color:rgba(213,169,50,.24)}
+@media(max-width:900px){.ex-diary-session-cell{min-width:135px}.ex-diary-session-info{min-width:123px}}

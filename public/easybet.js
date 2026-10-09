@@ -1041,7 +1041,7 @@
       var v=function(id){return String((w.querySelector('#'+id)||{}).value||'').trim().replace(',','.')},err=w.querySelector('#leErr');
       if(!(Number(v('leOdd'))>1)){err.textContent='Inserisci la quota di entrata.';return}
       err.textContent='Salvataggio…';
-      fetch('/api/exchange/link-match',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({matchId:m.id,open:true,strategy:v('leSys'),side:v('leSide'),oddsIn:v('leOdd'),stake:v('leStake'),minute:v('leMin')})})
+      fetch('/api/exchange/link-match',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({matchId:m.id,open:true,strategy:v('leSys'),playType:name,market:name,side:v('leSide'),oddsIn:v('leOdd'),stake:v('leStake'),minute:v('leMin')})})
         .then(function(r){return r.json().catch(function(){return {}}).then(function(d){if(r.status===401||r.status===403)throw new Error('Per registrare nel Diario accedi come admin (pulsante «Accedi» in alto).');if(!r.ok)throw new Error(d.error||'Errore');return d})})
         .then(function(d){err.className='la-entry-ok';err.textContent='✓ Ingresso registrato: '+(d.period||'')+' · sessione '+d.slot+'.';setTimeout(function(){w.remove()},1600)})
         .catch(function(e2){err.className='la-entry-err';err.textContent=e2.message||'Errore'})});
