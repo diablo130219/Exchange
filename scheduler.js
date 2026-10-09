@@ -39,9 +39,12 @@ async function checkClassicDaily(now) {
   const { rows } = await pool.query(`SELECT * FROM matches WHERE COALESCE(betting_area,'live')='classic' ORDER BY start_at ASC`);
   // Nel Betting classico il toggle "su Telegram" decide quali partite
   // includere nel riepilogo unico delle 07:30.
-  const todays = rows.filter(m => romeParts(Number(m.start_at)).key === rp.key && m.bot_enabled === true);
+  // Considera attive tutte le partite Betting classico tranne quelle esplicitamente disattivate.
+  // Importante: se alle 07:30 non ci sono ancora partite, NON marchiamo la giornata come inviata.
+  // In questo modo, se il CSV viene importato poco dopo o il server si riavvia, il riepilogo puo' ancora partire.
+  const todays = rows.filter(m => romeParts(Number(m.start_at)).key === rp.key && m.bot_enabled !== false);
   if (!todays.length) {
-    await pool.query('INSERT INTO classic_daily_notifications(date_key,sent_at) VALUES($1,$2) ON CONFLICT(date_key) DO NOTHING',[rp.key,now]);
+    console.log(`Riepilogo Betting classico ${rp.key}: nessuna partita abilitata trovata, nessun invio marcato.`);
     return;
   }
   const sent = await broadcastClassicDaily(todays, romeDateLabel(now));
@@ -55,7 +58,9 @@ async function checkOnce() {
   const now = Date.now();
   await checkClassicDaily(now);
   // notify_minutes varies per match, so fetch all not-yet-notified matches and filter precisely in JS.
-  const { rows: pending } = await pool.query(`SELECT * FROM matches WHERE notified = false AND bot_enabled = true AND COALESCE(betting_area,'live') <> 'classic' ORDER BY start_at ASC`);
+  // Exchange Live: solo area LIVE, sempre 10 minuti prima. Il Betting classico viene gestito
+  // esclusivamente dal riepilogo giornaliero delle 07:30 e non entra mai in questo flusso.
+  const { rows: pending } = await pool.query(`SELECT * FROM matches WHERE notified = false AND bot_enabled = true AND COALESCE(betting_area,'live') = 'live' ORDER BY start_at ASC`);
   for (const m of pending) {
     const startAt = Number(m.start_at);
     const dueAt = startAt - (FIXED_NOTIFY_MINUTES * 60000);
