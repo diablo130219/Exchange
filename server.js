@@ -1534,10 +1534,16 @@ app.post('/api/matches/:id/lifecycle', requireSameSiteAdmin, async (req, res) =>
               (m.quota_ingresso ? '💶 Quota pre-match ' + escapeHtmlLite(m.quota_ingresso) + '\n' : '') +
               '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
               (Number.isFinite(score) ? '\n🎯 <b>' + Math.round(score) + '/100</b>' : '');
-            const sentTo = await telegram.broadcast(text);
-            await pool.query('UPDATE matches SET live_alert_sent = true, live_last_notified_at = $2 WHERE id = $1', [id, now]);
-            rows[0].live_alert_sent = true;
-            res.locals.tgStatus = sentTo > 0 ? 'sent' : 'no_subscribers';
+            const delivery = await telegram.broadcastDetailed(text);
+            if (delivery.sent > 0) {
+              await pool.query('UPDATE matches SET live_alert_sent = true, live_last_notified_at = $2 WHERE id = $1', [id, now]);
+              rows[0].live_alert_sent = true;
+              res.locals.tgStatus = 'sent';
+            } else {
+              // Keep the match eligible for a later retry when Telegram rejected the message.
+              res.locals.tgStatus = delivery.total === 0 ? 'no_subscribers' : 'error';
+              console.warn('Telegram signal non consegnato:', { matchId: id, total: delivery.total, failed: delivery.failed });
+            }
           } catch (e) { console.error('telegram signal:', e.message); res.locals.tgStatus = 'error'; }
         }
       }
@@ -2677,12 +2683,13 @@ async function liveAutoScanOnce() {
       const summary = (sig.reason || '') + (sig.missing && sig.missing.length && !isGreen ? ' · Manca: ' + sig.missing.slice(0, 2).join(' · ') : '');
       await pool.query('UPDATE matches SET live_last_level=$2, live_last_summary=$3, live_last_updated=$4, live_last_score=$5, live_started_at=COALESCE(live_started_at,$4) WHERE id=$1',
         [m.id, level, summary.slice(0, 300), now, sig.score100 == null ? null : sig.score100]);
-      if (!isGreen || m.signal_first_at || m.live_alert_sent) continue;
+      if (!isGreen || m.live_alert_sent || m.bot_enabled === false || !telegram.isConfigured) continue;
       const sp = scorePairFromAny(score);
       const snap = { minute: typeof minute === 'number' ? minute : 45, scoreHome: sp[0], scoreAway: sp[1], xg: stats.xg, sot: stats.sot, shots: stats.shots, chances: stats.big, boxshots: stats.boxshots, touches: stats.touches, source: 'autoscan' };
       const upd = await pool.query(`UPDATE matches SET signal_first_at=COALESCE(signal_first_at,$2), signal_first_level=COALESCE(signal_first_level,'verde'), signal_first_score=COALESCE(signal_first_score,$3) WHERE id=$1 AND signal_first_at IS NULL RETURNING *`, [m.id, now, sig.score100 == null ? null : sig.score100]);
-      if (!upd.rows[0]) continue;
-      try { await saveSignalSnapshot(upd.rows[0], { level: 'verde', score100: sig.score100, summary: sig.reason || '' }, snap, 'autoscan', now); } catch (_) {}
+      if (upd.rows[0]) {
+        try { await saveSignalSnapshot(upd.rows[0], { level: 'verde', score100: sig.score100, summary: sig.reason || '' }, snap, 'autoscan', now); } catch (_) {}
+      }
       if (m.bot_enabled !== false && telegram.isConfigured) {
         const minTxt = minute === 'HT' ? 'HT' : (minute == null ? 'N/D' : Math.round(minute) + "'");
         const tot = p => (p && p[0] != null && p[1] != null) ? Number(p[0]) + Number(p[1]) : null;
@@ -2696,9 +2703,13 @@ async function liveAutoScanOnce() {
           '✅ ' + telegram.strategyRuleLine(m.tipo_giocata) +
           (sig.score100 != null && !htReady ? '\n🎯 <b>' + sig.score100 + '/100</b>' : '');
         try {
-          await telegram.broadcast(text);
-          await pool.query('UPDATE matches SET live_alert_sent=true, live_last_notified_at=$2 WHERE id=$1', [m.id, now]);
-          alerts++;
+          const delivery = await telegram.broadcastDetailed(text);
+          if (delivery.sent > 0) {
+            await pool.query('UPDATE matches SET live_alert_sent=true, live_last_notified_at=$2 WHERE id=$1', [m.id, now]);
+            alerts++;
+          } else {
+            console.warn('Autoscan Telegram non consegnato; verrà ritentato:', { matchId: m.id, total: delivery.total, failed: delivery.failed });
+          }
         } catch (e) { console.error('autoscan telegram:', e.message); }
       }
     }
