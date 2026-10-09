@@ -1120,6 +1120,8 @@
       function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++)if(k===names[j])return num(d[ks[i]])}return null}
       function avg(a,b){var v=[a,b].filter(function(x){return x!=null});return v.length?v.reduce(function(x,y){return x+y},0)/v.length:null}
       var h25=e.home2570Pct!=null?num(e.home2570Pct):find(['home gol 25 70']),a25=e.away2570Pct!=null?num(e.away2570Pct):find(['osp gol 25 70','ospite gol 25 70']);
+      var o15ft=e.over15FtPct!=null?num(e.over15FtPct):find(['over 1 5 ft','over 1 5 full time','percentuale over 1 5 ft']);
+      if(o15ft!=null)return {title:'OVER 1.5 FT',main:[['Media di presa',o15ft,'media']],sub:[]};
       if(e.type==='o15_2570'||h25!=null||a25!=null){
         var h00=e.home00at70Pct!=null?num(e.home00at70Pct):find(['home 0 0 al 70']),a00=e.away00at70Pct!=null?num(e.away00at70Pct):find(['osp 0 0 al 70','ospite 0 0 al 70']);
         return {title:'GOL 25–70 · EXCH O1.5',main:[['Media di presa',avg(h25,a25),'media']],sub:[]};
@@ -1263,8 +1265,9 @@
       var iHome1545=idx('home gol 15 445','home gol 15 45');
       var iAway1545=idx('osp gol 15 45','ospite gol 15 45','away gol 15 45');
       var iH2570=idx('home gol 25 70'), iA2570=idx('osp gol 25 70','ospite gol 25 70');
+      var iO15Pct=idx('over 1 5 ft','percentuale over 1 5 ft');
       var iH00=idx('home 0 0 al 70'), iA00=idx('osp 0 0 al 70','ospite 0 0 al 70');
-      var isO15=iH2570>=0||iA2570>=0;
+      var isO15=iH2570>=0||iA2570>=0||iO15Pct>=0;
       var isO05=iOverHome>=0||iOverAway>=0||iHome1545>=0||iAway1545>=0;
       // Riconoscimento dal nome del file per i CSV senza statistiche (Banca X, Under 0.5 HT, Segno 1 / Favorito HT).
       var fn=String(fileName||'').toLowerCase().replace(/\.csv$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ');
@@ -1304,6 +1307,7 @@
           type:'o15_2570',
           home2570Pct:iH2570>=0?parsePct(vals[iH2570]):null,
           away2570Pct:iA2570>=0?parsePct(vals[iA2570]):null,
+          over15FtPct:iO15Pct>=0?parsePct(vals[iO15Pct]):null,
           home00at70Pct:iH00>=0?parsePct(vals[iH00]):null,
           away00at70Pct:iA00>=0?parsePct(vals[iA00]):null
         }:{
