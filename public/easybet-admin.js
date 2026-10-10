@@ -1181,6 +1181,10 @@
       function nk(k){return String(k||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
       function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++){var want=names[j];if(k===want||want.split(' ').every(function(w){return k.indexOf(w)>=0;}))return num(d[ks[i]])}}return null}
       function avg(a,b){var v=[a,b].filter(function(x){return x!=null});return v.length?v.reduce(function(x,y){return x+y},0)/v.length:null}
+      var o15ft=e.over15FtPct!=null?num(e.over15FtPct):find(['over 1 5 ft','over 1 5','o1 5 ft']);
+      if(e.type==='o15_generic'||o15ft!=null){
+        if(o15ft!=null)return {title:'OVER 1.5 FT',main:[['Presa',o15ft]],sub:[]};
+      }
       var h25=e.home2570Pct!=null?num(e.home2570Pct):find(['home gol 25 70','casa gol 25 70','home goal 25 70','casa 25 70']),a25=e.away2570Pct!=null?num(e.away2570Pct):find(['osp gol 25 70','ospite gol 25 70','away gol 25 70','trasf gol 25 70','trasferta gol 25 70','away 25 70']);
       if(e.type==='o15_2570'||h25!=null||a25!=null){
         var h00=e.home00at70Pct!=null?num(e.home00at70Pct):find(['home 0 0 al 70','casa 0 0 al 70','home 0 0 70']),a00=e.away00at70Pct!=null?num(e.away00at70Pct):find(['osp 0 0 al 70','ospite 0 0 al 70','away 0 0 al 70','trasf 0 0 al 70','trasferta 0 0 al 70']);
@@ -1331,7 +1335,11 @@
       var iA2570=idx('osp gol 25 70','ospite gol 25 70'); if(iA2570<0)iA2570=fuzzyHeaderIndex(norm,[['osp','gol','25','70'],['away','gol','25','70'],['trasf','gol','25','70'],['away','25','70']]);
       var iH00=idx('home 0 0 al 70'); if(iH00<0)iH00=fuzzyHeaderIndex(norm,[['home','0','0','70'],['casa','0','0','70']]);
       var iA00=idx('osp 0 0 al 70','ospite 0 0 al 70'); if(iA00<0)iA00=fuzzyHeaderIndex(norm,[['osp','0','0','70'],['away','0','0','70'],['trasf','0','0','70']]);
-      var isO15=iH2570>=0||iA2570>=0;
+      // Percentuale OVER 1.5 FT complessiva, ad esempio header reale: "{% over 1.5 ft}"
+      var iO15Pct=idx('over 1 5 ft','over 1 5','o1 5 ft');
+      if(iO15Pct<0)iO15Pct=fuzzyHeaderIndex(norm,[['over','1','5','ft'],['over','1','5']]);
+      var isO15Detailed=iH2570>=0||iA2570>=0||iH00>=0||iA00>=0;
+      var isO15=isO15Detailed;
       var isO05=iOverHome>=0||iOverAway>=0||iHome1545>=0||iAway1545>=0;
       // Riconoscimento dal nome del file per i CSV senza statistiche (Banca X, Under 0.5 HT, Segno 1 / Favorito HT).
       var fn=String(fileName||'').toLowerCase().replace(/\.(csv|xlsx|xls)$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ');
@@ -1350,7 +1358,6 @@
         favht:{strategy:'Favorito HT',quota:'1.85',stats:false}
       };
       var rowStrategy=KINDS[kind].strategy, rowQuota=KINDS[kind].quota;
-      if (kind==='o15') isO15=true;
       if (iLeague<0 || iDate<0 || iHome<0 || iAway<0) return [];
       var out=[];
       for (var r=1;r<rows.length;r++){
@@ -1368,28 +1375,37 @@
         // Schema definitivo OVER 0.5 HT: salviamo anche una forma normalizzata delle percentuali
         // così le card non dipendono dagli spazi o dalla punteggiatura dei titoli CSV.
         var genericStats=importedGenericStats(headers,vals);
-        original._easybet=!KINDS[kind].stats?{type:'plain',genericStats:genericStats}:isO15?{
-          type:'o15_2570',
-          home2570Pct:iH2570>=0?parsePct(vals[iH2570]):null,
-          away2570Pct:iA2570>=0?parsePct(vals[iA2570]):null,
-          home00at70Pct:iH00>=0?parsePct(vals[iH00]):null,
-          away00at70Pct:iA00>=0?parsePct(vals[iA00]):null,
-          genericStats:genericStats
-        }:{
-          type:'o05ht',
-          over05HomePct:iOverHome>=0?parsePct(vals[iOverHome]):null,
-          over05AwayPct:iOverAway>=0?parsePct(vals[iOverAway]):null,
-          home1545Pct:iHome1545>=0?parsePct(vals[iHome1545]):null,
-          away1545Pct:iAway1545>=0?parsePct(vals[iAway1545]):null,
-          genericStats:genericStats
-        };
+        if(!KINDS[kind].stats){
+          original._easybet={type:'plain',genericStats:genericStats};
+        }else if(kind==='o15'&&isO15Detailed){
+          original._easybet={
+            type:'o15_2570',
+            home2570Pct:iH2570>=0?parsePct(vals[iH2570]):null,
+            away2570Pct:iA2570>=0?parsePct(vals[iA2570]):null,
+            home00at70Pct:iH00>=0?parsePct(vals[iH00]):null,
+            away00at70Pct:iA00>=0?parsePct(vals[iA00]):null,
+            genericStats:genericStats
+          };
+        }else if(kind==='o15'){
+          var o15pct=iO15Pct>=0?parsePct(vals[iO15Pct]):null;
+          original._easybet={type:'o15_generic',over15FtPct:o15pct,presaPct:o15pct,genericStats:genericStats};
+        }else{
+          original._easybet={
+            type:'o05ht',
+            over05HomePct:iOverHome>=0?parsePct(vals[iOverHome]):null,
+            over05AwayPct:iOverAway>=0?parsePct(vals[iOverAway]):null,
+            home1545Pct:iHome1545>=0?parsePct(vals[iHome1545]):null,
+            away1545Pct:iAway1545>=0?parsePct(vals[iAway1545]):null,
+            genericStats:genericStats
+          };
+        }
         out.push({
           data:dt.data, ora:dt.ora,
           campionato:String(vals[iLeague]||'').trim(),
           casa:casa, trasferta:trasferta,
           tipoGiocata:rowStrategy,
           quotaIngresso:rowQuota,
-          importSource:fileName || 'CSV',
+          importSource:fileName || 'Excel/CSV',
           importMatchId:iId>=0 ? String(vals[iId]||'').trim() : '',
           importData:original
         });
