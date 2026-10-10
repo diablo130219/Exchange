@@ -439,8 +439,15 @@
     function nk(k){return String(k||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
     function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++)if(k===names[j])return num(d[ks[i]])}return null}
     function avg(a,b){var v=[a,b].filter(function(x){return x!=null});return v.length?v.reduce(function(x,y){return x+y},0)/v.length:null}
+    // OVER 1.5 FT generico: il CSV reale usa ad esempio l'header "{% over 1.5 ft}".
+    // Questo dato deve avere priorità sul vecchio schema GOL 25-70, anche per record
+    // importati con versioni precedenti che possono avere _easybet.type='o15_2570'.
+    var o15ft=e.over15FtPct!=null?num(e.over15FtPct):find(['over 1 5 ft','over 1 5','o1 5 ft']);
+    if(o15ft!=null){
+      return {title:'OVER 1.5 FT',main:[['Presa',o15ft]],sub:[]};
+    }
     var h25=e.home2570Pct!=null?num(e.home2570Pct):find(['home gol 25 70']),a25=e.away2570Pct!=null?num(e.away2570Pct):find(['osp gol 25 70','ospite gol 25 70']);
-    if(e.type==='o15_2570'||h25!=null||a25!=null){
+    if(h25!=null||a25!=null){
       var h00=e.home00at70Pct!=null?num(e.home00at70Pct):find(['home 0 0 al 70']),a00=e.away00at70Pct!=null?num(e.away00at70Pct):find(['osp 0 0 al 70','ospite 0 0 al 70']);
       return {title:'GOL 25–70 · EXCH O1.5',main:[['Casa',h25],['Trasferta',a25],['Media',avg(h25,a25),'media']],sub:[['0-0 al 70’ casa',h00],['0-0 al 70’ trasf.',a00]]};
     }
