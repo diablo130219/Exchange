@@ -36,9 +36,9 @@
     var outcomeFilters=document.getElementById('outcomeFilters');
     if(outcomeFilters) outcomeFilters.style.display=currentAdminArea==='classic'?'none':'';
     var strategyFilters=document.getElementById('strategyFilters');
-    if(strategyFilters) strategyFilters.style.display=currentAdminArea==='classic'?'flex':'none';
+    if(strategyFilters) strategyFilters.style.display='flex';
     if(currentAdminArea==='classic') currentFilter='tutte';
-    else currentStrategyFilter='tutte';
+    currentStrategyFilter='tutte';
     var importBtnArea=document.getElementById('importBtn');
     if(importBtnArea) importBtnArea.textContent=currentAdminArea==='classic'?'📥 Importa Excel/Excel/CSV classico':'📋 Importa Excel/CSV Exchange';
     try { history.replaceState(null,'',location.pathname+'?area='+currentAdminArea); } catch(e){}
@@ -463,18 +463,18 @@
     }
 
     function matchesStrategyFilter(m){
-      if(currentAdminArea !== 'classic' || currentStrategyFilter === 'tutte') return true;
+      if(currentStrategyFilter === 'tutte') return true;
       return normStrategy(m.tipoGiocata) === currentStrategyFilter;
     }
 
     function refreshStrategyFilterOptions(){
       var sel=document.getElementById('strategyFilterSelect');
       var row=document.getElementById('strategyFilters');
-      if(row) row.style.display=currentAdminArea==='classic'?'flex':'none';
+      if(row) row.style.display='flex';
       if(!sel) return;
       var values=[];
       matches.forEach(function(m){
-        if((m.bettingArea==='classic'?'classic':'live')!=='classic') return;
+        if((m.bettingArea==='classic'?'classic':'live')!==currentAdminArea) return;
         var label=String(m.tipoGiocata||'').trim();
         if(!label) return;
         var key=normStrategy(label);
