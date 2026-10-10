@@ -219,20 +219,10 @@ async function sendPhoto(chatId, photoBuffer, caption, replyMarkup) {
   }
 }
 
-async function broadcastDetailed(text) {
-  const { rows } = await pool.query('SELECT chat_id FROM subscribers');
-  const result = { total: rows.length, sent: 0, failed: 0 };
-  for (const row of rows) {
-    const response = await sendMessage(row.chat_id, text);
-    if (response && response.ok === true) result.sent++;
-    else result.failed++;
-  }
-  return result;
-}
-
 async function broadcast(text) {
-  const result = await broadcastDetailed(text);
-  return result.sent;
+  const { rows } = await pool.query('SELECT chat_id FROM subscribers');
+  for (const row of rows) await sendMessage(row.chat_id, text);
+  return rows.length;
 }
 
 function countryFlag(league) {
@@ -414,4 +404,4 @@ function startPolling() {
 }
 async function stopPolling() { running = false; await releaseLeaderLock(); try { await leaderLoopPromise; } catch (_) {} leaderLoopPromise = null; }
 
-module.exports = { strategyRuleLine, sendMessage, broadcast, broadcastDetailed, broadcastAlert, broadcastClassicDaily, formatClassicDailySummary, createAlertCard, startPolling, stopPolling, isConfigured: !!API_BASE };
+module.exports = { strategyRuleLine, sendMessage, broadcast, broadcastAlert, broadcastClassicDaily, formatClassicDailySummary, createAlertCard, startPolling, stopPolling, isConfigured: !!API_BASE };

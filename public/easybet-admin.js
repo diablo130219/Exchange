@@ -40,7 +40,7 @@
     if(currentAdminArea==='classic') currentFilter='tutte';
     else currentStrategyFilter='tutte';
     var importBtnArea=document.getElementById('importBtn');
-    if(importBtnArea) importBtnArea.textContent=currentAdminArea==='classic'?'📥 Importa CSV classico':'📋 Importa CSV Exchange';
+    if(importBtnArea) importBtnArea.textContent=currentAdminArea==='classic'?'📥 Importa Excel/Excel/CSV classico':'📋 Importa Excel/CSV Exchange';
     try { history.replaceState(null,'',location.pathname+'?area='+currentAdminArea); } catch(e){}
     if(appInited && typeof refreshAdminAreaView === 'function'){ refreshAdminAreaView(); }
   }
@@ -1120,11 +1120,9 @@
       function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++)if(k===names[j])return num(d[ks[i]])}return null}
       function avg(a,b){var v=[a,b].filter(function(x){return x!=null});return v.length?v.reduce(function(x,y){return x+y},0)/v.length:null}
       var h25=e.home2570Pct!=null?num(e.home2570Pct):find(['home gol 25 70']),a25=e.away2570Pct!=null?num(e.away2570Pct):find(['osp gol 25 70','ospite gol 25 70']);
-      var o15ft=e.over15FtPct!=null?num(e.over15FtPct):find(['over 1 5 ft','over 1 5 full time','percentuale over 1 5 ft']);
-      if(o15ft!=null)return {title:'OVER 1.5 FT',main:[['Media di presa',o15ft,'media']],sub:[]};
       if(e.type==='o15_2570'||h25!=null||a25!=null){
         var h00=e.home00at70Pct!=null?num(e.home00at70Pct):find(['home 0 0 al 70']),a00=e.away00at70Pct!=null?num(e.away00at70Pct):find(['osp 0 0 al 70','ospite 0 0 al 70']);
-        return {title:'GOL 25–70 · EXCH O1.5',main:[['Media di presa',avg(h25,a25),'media']],sub:[]};
+        return {title:'GOL 25–70 · EXCH O1.5',main:[['Casa',h25],['Trasferta',a25],['Media',avg(h25,a25),'media']],sub:[['0-0 al 70’ casa',h00],['0-0 al 70’ trasf.',a00]]};
       }
       var h=num(e.over05HomePct),a=num(e.over05AwayPct),h15=num(e.home1545Pct),a15=num(e.away1545Pct);
       if(h!=null||a!=null||h15!=null||a15!=null)return {title:'PRESA ULTIME 5',main:[['Casa',h],['Trasferta',a],['Media',avg(h,a),'media']],sub:[['Gol 15–45 casa',h15],['Gol 15–45 trasf.',a15]]};
@@ -1191,7 +1189,7 @@
     }
 
     function classicTypeFromFileName(fileName){
-      var name=String(fileName||'').trim().replace(/\.csv$/i,'');
+      var name=String(fileName||'').trim().replace(/\.(csv|xlsx|xls)$/i,'');
       // Il nome del file è il tipo di giocata. Rendo solo i separatori tecnici più leggibili.
       name=name.replace(/[_]+/g,' ').replace(/\s+/g,' ').trim();
       return name;
@@ -1235,7 +1233,7 @@
           data:d.display, dataIso:d.iso, ora:t,
           campionato:iLeague>=0?String(vals[iLeague]||'').trim():'',
           casa:casa, trasferta:trasferta, tipoGiocata:tipo, quotaIngresso:quota,
-          importSource:fileName||'CSV classico', importMatchId:iId>=0?String(vals[iId]||'').trim():'', importData:original
+          importSource:fileName||'Excel/CSV classico', importMatchId:iId>=0?String(vals[iId]||'').trim():'', importData:original
         });
       }
       return out;
@@ -1265,12 +1263,11 @@
       var iHome1545=idx('home gol 15 445','home gol 15 45');
       var iAway1545=idx('osp gol 15 45','ospite gol 15 45','away gol 15 45');
       var iH2570=idx('home gol 25 70'), iA2570=idx('osp gol 25 70','ospite gol 25 70');
-      var iO15Pct=idx('over 1 5 ft','percentuale over 1 5 ft');
       var iH00=idx('home 0 0 al 70'), iA00=idx('osp 0 0 al 70','ospite 0 0 al 70');
-      var isO15=iH2570>=0||iA2570>=0||iO15Pct>=0;
+      var isO15=iH2570>=0||iA2570>=0;
       var isO05=iOverHome>=0||iOverAway>=0||iHome1545>=0||iAway1545>=0;
       // Riconoscimento dal nome del file per i CSV senza statistiche (Banca X, Under 0.5 HT, Segno 1 / Favorito HT).
-      var fn=String(fileName||'').toLowerCase().replace(/\.csv$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ');
+      var fn=String(fileName||'').toLowerCase().replace(/\.(csv|xlsx|xls)$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ');
       var fileType='';
       if (/banca( la)? x|lay x/.test(fn)) fileType='layx';
       else if (/under ?0 ?5|under 05/.test(fn)) fileType='under05ht';
@@ -1307,7 +1304,6 @@
           type:'o15_2570',
           home2570Pct:iH2570>=0?parsePct(vals[iH2570]):null,
           away2570Pct:iA2570>=0?parsePct(vals[iA2570]):null,
-          over15FtPct:iO15Pct>=0?parsePct(vals[iO15Pct]):null,
           home00at70Pct:iH00>=0?parsePct(vals[iH00]):null,
           away00at70Pct:iA00>=0?parsePct(vals[iA00]):null
         }:{
@@ -1343,10 +1339,10 @@
 
     function renderImportPreview(){
       var ruleBox=document.getElementById('importRule');
-      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML=currentAdminArea==='classic'?'<span>CSV classico</span><b>—</b><small>Colonne richieste: Data/Ora (oppure Data + Ora), Squadra Casa, Squadra Ospite. Il Tipo Giocata viene preso dal nome del file CSV. Facoltative: Campionato, Quota.</small>':'<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
+      if (!importPending.length){ importPreview.innerHTML = ''; if(ruleBox) ruleBox.innerHTML=currentAdminArea==='classic'?'<span>Excel/CSV classico</span><b>—</b><small>Colonne richieste: Data/Ora (oppure Data + Ora), Squadra Casa, Squadra Ospite. Il Tipo Giocata viene preso dal nome del file. Facoltative: Campionato, Quota.</small>':'<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file Excel/CSV: strategia e quota vengono impostate in base al tipo di file.</small>'; return; }
       var byStrat={};importPending.forEach(function(x){var k=String(x.tipoGiocata||'').toUpperCase()+(x.quotaIngresso?' · '+x.quotaIngresso:'');byStrat[k]=(byStrat[k]||0)+1});var stratKeys=Object.keys(byStrat);var first=importPending[0], isO15=String(first.tipoGiocata||'').toLowerCase().indexOf('1.5')!==-1;
       if(currentAdminArea==='classic'){
-        if(ruleBox) ruleBox.innerHTML='<span>BETTING CLASSICO</span><b>'+importPending.length+' partite</b><span>Tipo giocata</span><b>' + esc(String(first.tipoGiocata||'').toUpperCase()) + '</b><span>Campi</span><b>Data/Ora · Casa · Ospite</b><small>Il tipo di giocata viene assegnato dal nome del CSV; se presente, ogni riga mantiene la propria quota.</small>';
+        if(ruleBox) ruleBox.innerHTML='<span>BETTING CLASSICO</span><b>'+importPending.length+' partite</b><span>Tipo giocata</span><b>' + esc(String(first.tipoGiocata||'').toUpperCase()) + '</b><span>Campi</span><b>Data/Ora · Casa · Ospite</b><small>Il tipo di giocata viene assegnato dal nome del file; se presente, ogni riga mantiene la propria quota.</small>';
       } else if (ruleBox && stratKeys.length>1) ruleBox.innerHTML='<span>Strategie</span><b>'+stratKeys.map(function(k){return esc(k)+' ('+byStrat[k]+')'}).join(' · ')+'</b><small>Più file insieme: ogni partita prende strategia e quota del proprio file.</small>'; else if (ruleBox) ruleBox.innerHTML='<span>Strategia</span><b>'+esc(String(first.tipoGiocata||'').toUpperCase())+'</b><span>Ingresso minimo</span><b>'+esc(first.quotaIngresso||'')+'</b><small>'+({'over 1.5 ft':'File EXCH O1.5 GOL 25-70: ingresso sullo 0-0 tra 20’ e 30’, uscita al primo gol o al 71’.','banca x ht':'File EXCH LAY X HT: all’intervallo sullo 0-0 o 1-1 banca X solo a quota ≤ 2,10 e tieni fino al 90’.','under 0.5 ht':'File EXCH UNDER 0.5 HT: pre-match solo a quota ≥ 2,95 in exchange (≥ 2,85 bookmaker).','favorito ht':'File EXCH FAVORITO HT: all’intervallo in parità punta 1 ≥ 1,75, favorito sotto banca 2 ≤ 2,50.'}[String(first.tipoGiocata||'').toLowerCase()]||'File O0.5 HT PRE+LIVE: ingresso live sullo 0-0 dal 15’. Le quote presenti nel CSV vengono ignorate.')+'</small>';
       function isDup(m){var st=toStartAt(m.data,m.ora);return matches.some(function(x){return Number(x.startAt)===Number(st)&&String(x.tipoGiocata||'').trim().toLowerCase()===String(m.tipoGiocata||'').trim().toLowerCase()&&String(x.casa||'').trim().toLowerCase()===String(m.casa||'').trim().toLowerCase()&&String(x.trasferta||'').trim().toLowerCase()===String(m.trasferta||'').trim().toLowerCase();});}
       var dupCount=importPending.filter(isDup).length;
@@ -1371,13 +1367,13 @@
     function openCsvPicker(){
       var mt=document.getElementById('importModalTitle'), ih=document.getElementById('importHint'), rb=document.getElementById('importRule');
       if(currentAdminArea==='classic'){
-        if(mt) mt.textContent='Importa CSV · Betting classico';
-        if(ih) ih.innerHTML='Il <b>Tipo Giocata</b> viene preso automaticamente dal <b>nome del file CSV</b> (es. <b>OVER 2.5.csv</b> → OVER 2.5). Colonne obbligatorie: <b>Data/Ora</b> (oppure <b>Data</b> + <b>Ora</b>), <b>Squadra Casa</b>, <b>Squadra Ospite</b>. Facoltative: <b>Campionato</b> e <b>Quota</b>.';
-        if(rb) rb.innerHTML='<span>CSV classico</span><b>pronto</b><small>Il nome del file diventa il Tipo Giocata per tutte le righe di quel CSV.</small>';
+        if(mt) mt.textContent='Importa Excel/CSV · Betting classico';
+        if(ih) ih.innerHTML='Il <b>Tipo Giocata</b> viene preso automaticamente dal <b>nome del file</b> (es. <b>OVER 2.5.csv</b> → OVER 2.5). Colonne obbligatorie: <b>Data/Ora</b> (oppure <b>Data</b> + <b>Ora</b>), <b>Squadra Casa</b>, <b>Squadra Ospite</b>. Facoltative: <b>Campionato</b> e <b>Quota</b>.';
+        if(rb) rb.innerHTML='<span>Excel/CSV classico</span><b>pronto</b><small>Il nome del file diventa il Tipo Giocata per tutte le righe di quel CSV.</small>';
       }else{
-        if(mt) mt.textContent='Importa CSV · Exchange Live';
-        if(ih) ih.innerHTML='Formati Exchange riconosciuti automaticamente: <b>Over 0.5 HT</b>, <b>Over 1.5 25-70</b>, Banca X HT, Under 0.5 HT e Favorito HT.';
-        if(rb) rb.innerHTML='<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file CSV: strategia e quota vengono impostate in base al tipo di file.</small>';
+        if(mt) mt.textContent='Importa Excel/CSV · Exchange Live';
+        if(ih) ih.innerHTML='Formati Exchange Excel/CSV riconosciuti automaticamente: <b>Over 0.5 HT</b>, <b>Over 1.5 25-70</b>, Banca X HT, Under 0.5 HT e Favorito HT.';
+        if(rb) rb.innerHTML='<span>Strategia</span><b>—</b><span>Ingresso consigliato</span><b>—</b><small>Scegli un file Excel/CSV: strategia e quota vengono impostate in base al tipo di file.</small>';
       }
       importCsvFile.value='';
       importCsvFile.click();
@@ -1422,6 +1418,36 @@
       });
     }
 
+    function importFileAsText(file){
+      var name=String(file&&file.name||''), lower=name.toLowerCase();
+      var isExcel=/\.(xlsx|xls)$/.test(lower);
+      if(!isExcel){
+        return new Promise(function(resolve){
+          var reader=new FileReader();
+          reader.onload=function(){resolve({name:name,text:String(reader.result||'')});};
+          reader.onerror=function(){resolve({name:name,text:'',error:true});};
+          reader.readAsText(file,'UTF-8');
+        });
+      }
+      return new Promise(function(resolve){
+        if(!window.XLSX){resolve({name:name,text:'',error:true,message:'Lettore Excel non disponibile'});return;}
+        var reader=new FileReader();
+        reader.onload=function(){
+          try{
+            var wb=window.XLSX.read(reader.result,{type:'array',cellDates:true});
+            var sheetName=wb.SheetNames&&wb.SheetNames[0];
+            if(!sheetName) throw new Error('Nessun foglio leggibile');
+            var sheet=wb.Sheets[sheetName];
+            // Converto il primo foglio in CSV con ; così riutilizziamo esattamente lo stesso parser già collaudato.
+            var text=window.XLSX.utils.sheet_to_csv(sheet,{FS:';',RS:'\n',dateNF:'dd/mm/yyyy',blankrows:false});
+            resolve({name:name,text:text});
+          }catch(err){resolve({name:name,text:'',error:true,message:err&&err.message});}
+        };
+        reader.onerror=function(){resolve({name:name,text:'',error:true});};
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
     document.getElementById('importBtn').addEventListener('click', openCsvPicker);
     importChooseBtn.addEventListener('click', openCsvPicker);
     document.getElementById('importCancelBtn').addEventListener('click', closeImportModal);
@@ -1433,11 +1459,9 @@
       importPreview.innerHTML='';
       importFileName.textContent=files.map(function(f){return f.name}).join(', ');
       Promise.all(files.map(function(file){
-        return new Promise(function(resolve){
-          var reader=new FileReader();
-          reader.onload=function(){ resolve({name:file.name, rows:parseImportCsv(reader.result,file.name)}); };
-          reader.onerror=function(){ resolve({name:file.name, rows:[], error:true}); };
-          reader.readAsText(file,'UTF-8');
+        return importFileAsText(file).then(function(r){
+          if(r.error) return {name:r.name,rows:[],error:true,message:r.message||''};
+          return {name:r.name,rows:parseImportCsv(r.text,r.name)};
         });
       })).then(function(results){
         var all=[], bad=[];
@@ -1447,7 +1471,7 @@
         all=all.filter(function(m){var k=[m.data,m.ora,String(m.casa).toLowerCase(),String(m.trasferta).toLowerCase(),String(m.tipoGiocata).toLowerCase()].join('|');if(seen[k])return false;seen[k]=1;return true;});
         importPending=all;
         importBackdrop.classList.add('open');
-        if (bad.length) importErr.textContent=currentAdminArea==='classic'?'File non riconosciuti: '+bad.join(', ')+'. Nel Betting classico servono Data/Ora (oppure Data + Ora), Squadra Casa e Squadra Ospite; il Tipo Giocata viene preso dal nome del CSV.':'File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
+        if (bad.length) importErr.textContent=currentAdminArea==='classic'?'File non riconosciuti: '+bad.join(', ')+'. Nel Betting classico servono Data/Ora (oppure Data + Ora), Squadra Casa e Squadra Ospite; il Tipo Giocata viene preso dal nome del file Excel/CSV.':'File non riconosciuti: '+bad.join(', ')+'. Servono almeno le colonne Campionato, Data/Ora, Squadra Casa e Squadra Ospite.';
         renderImportPreview();
       });
     });
