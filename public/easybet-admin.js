@@ -1137,6 +1137,32 @@
         .replace(/[^a-z0-9]+/g,' ' ).trim();
     }
 
+    function headerHasAll(h, words){
+      h=normalizeHeader(h);return words.every(function(w){return h.indexOf(w)>=0;});
+    }
+    function fuzzyHeaderIndex(headersNorm, groups){
+      for(var g=0;g<groups.length;g++){
+        var words=groups[g];
+        for(var i=0;i<headersNorm.length;i++) if(words.every(function(w){return headersNorm[i].indexOf(w)>=0;})) return i;
+      }
+      return -1;
+    }
+    function importedGenericStats(headers, vals){
+      var out=[], skip=/^(match ?id|id|campionato|lega|league|competizione|data|ora|orario|data ora|dataora|squadra casa|squadra ospite|casa|ospite|trasferta|home|away|quota|quota ingresso|odds|tipo giocata|strategia)$/;
+      for(var i=0;i<headers.length;i++){
+        var label=String(headers[i]||'').trim(), nh=normalizeHeader(label), raw=String(vals[i]==null?'':vals[i]).trim();
+        if(!label||!raw||skip.test(nh)) continue;
+        var statName=/(%|pct|percent|presa|media|gol|goal|over|under|0 0|15 45|25 70|ht|ft|gg|draw|win|vitt|casa|home|away|osp|trasf)/i.test(label);
+        var explicitPct=/%/.test(raw)||/%/.test(label)||/(pct|percent|percentuale|presa)/i.test(label);
+        var n=parseFloat(raw.replace('%','').replace(',','.'));
+        if(!isFinite(n)||(!statName&&!explicitPct)) continue;
+        if(n>=0&&n<=1&&explicitPct) n*=100;
+        if(n<0||n>100) continue;
+        out.push({label:label.replace(/[{}]/g,'').trim(),value:Math.round(n*10)/10});
+      }
+      return out.slice(0,12);
+    }
+
     function parsePct(v){
       var raw=String(v==null?'':v).trim().replace('%','').replace(',','.');
       var n=parseFloat(raw);
@@ -1151,22 +1177,24 @@
     function ebTrendFromImport(d){
       if(!d||typeof d!=='object')return null;
       var e=d._easybet||{};
-      if(e.type==='plain')return null;
-      function num(v){if(v==null||v==='')return null;var n=parseFloat(String(v).replace('%','').replace(',','.'));return isFinite(n)?n:null}
-      function nk(k){return String(k||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
-      function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++)if(k===names[j])return num(d[ks[i]])}return null}
+      function num(v){if(v==null||v==='')return null;var n=parseFloat(String(v).replace('%','').replace(',','.'));if(!isFinite(n))return null;if(n>=0&&n<=1&&String(v).indexOf('%')<0)n*=100;return n}
+      function nk(k){return String(k||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+      function find(names){var ks=Object.keys(d);for(var i=0;i<ks.length;i++){if(ks[i]==='_easybet')continue;var k=nk(ks[i]);for(var j=0;j<names.length;j++){var want=names[j];if(k===want||want.split(' ').every(function(w){return k.indexOf(w)>=0;}))return num(d[ks[i]])}}return null}
       function avg(a,b){var v=[a,b].filter(function(x){return x!=null});return v.length?v.reduce(function(x,y){return x+y},0)/v.length:null}
-      var h25=e.home2570Pct!=null?num(e.home2570Pct):find(['home gol 25 70']),a25=e.away2570Pct!=null?num(e.away2570Pct):find(['osp gol 25 70','ospite gol 25 70']);
+      var h25=e.home2570Pct!=null?num(e.home2570Pct):find(['home gol 25 70','casa gol 25 70','home goal 25 70','casa 25 70']),a25=e.away2570Pct!=null?num(e.away2570Pct):find(['osp gol 25 70','ospite gol 25 70','away gol 25 70','trasf gol 25 70','trasferta gol 25 70','away 25 70']);
       if(e.type==='o15_2570'||h25!=null||a25!=null){
-        var h00=e.home00at70Pct!=null?num(e.home00at70Pct):find(['home 0 0 al 70']),a00=e.away00at70Pct!=null?num(e.away00at70Pct):find(['osp 0 0 al 70','ospite 0 0 al 70']);
-        return {title:'GOL 25–70 · EXCH O1.5',main:[['Casa',h25],['Trasferta',a25],['Media',avg(h25,a25),'media']],sub:[['0-0 al 70’ casa',h00],['0-0 al 70’ trasf.',a00]]};
+        var h00=e.home00at70Pct!=null?num(e.home00at70Pct):find(['home 0 0 al 70','casa 0 0 al 70','home 0 0 70']),a00=e.away00at70Pct!=null?num(e.away00at70Pct):find(['osp 0 0 al 70','ospite 0 0 al 70','away 0 0 al 70','trasf 0 0 al 70','trasferta 0 0 al 70']);
+        if(h25!=null||a25!=null||h00!=null||a00!=null)return {title:'GOL 25–70 · EXCH O1.5',main:[['Casa',h25],['Trasferta',a25],['Media',avg(h25,a25),'media']],sub:[['0-0 al 70’ casa',h00],['0-0 al 70’ trasf.',a00]]};
       }
-      var h=num(e.over05HomePct),a=num(e.over05AwayPct),h15=num(e.home1545Pct),a15=num(e.away1545Pct);
+      var h=e.over05HomePct!=null?num(e.over05HomePct):find(['over 0 5 casa','over 05 casa','home over 0 5','home o05']),a=e.over05AwayPct!=null?num(e.over05AwayPct):find(['over 0 5 trasf','over 0 5 trasferta','away over 0 5','away o05']),h15=e.home1545Pct!=null?num(e.home1545Pct):find(['home gol 15 45','casa gol 15 45']),a15=e.away1545Pct!=null?num(e.away1545Pct):find(['osp gol 15 45','ospite gol 15 45','away gol 15 45','trasf gol 15 45']);
       if(h!=null||a!=null||h15!=null||a15!=null)return {title:'PRESA ULTIME 5',main:[['Casa',h],['Trasferta',a],['Media',avg(h,a),'media']],sub:[['Gol 15–45 casa',h15],['Gol 15–45 trasf.',a15]]};
-      var gen=Object.keys(d).filter(function(k){return /^\{.*\}$/.test(String(k).trim())&&num(d[k])!=null});
-      if(!gen.length)return null;
-      var items=gen.map(function(k){return [String(k).trim().replace(/^\{|\}$/g,''),num(d[k])]});
-      return {title:'STATISTICHE CSV',main:items.slice(0,3),sub:items.slice(3,6)};
+      var generic=Array.isArray(e.genericStats)?e.genericStats:[];
+      if(!generic.length){
+        generic=Object.keys(d).filter(function(k){if(k==='_easybet')return false;var v=num(d[k]);if(v==null||v<0||v>100)return false;return /%|pct|percent|presa|media|gol|goal|over|under|0 0|15 45|25 70|ht|ft|gg|draw|win|vitt/i.test(String(k));}).map(function(k){return {label:String(k).trim().replace(/^\{|\}$/g,''),value:num(d[k])};});
+      }
+      if(!generic.length)return null;
+      var items=generic.slice(0,6).map(function(x){return [x.label,x.value]});
+      return {title:'STATISTICHE IMPORTATE',main:items.slice(0,3),sub:items.slice(3,6)};
     }
     function ebTrendHtml(t,extraClass){
       if(!t)return '';
@@ -1265,7 +1293,7 @@
         if(!d||!t||!casa||!trasferta) continue;
         var quota=iOdds>=0?String(vals[iOdds]||'').trim().replace(',','.') :'';
         var original={}; headers.forEach(function(h,j){original[h]=vals[j]==null?'':String(vals[j]).trim();});
-        original._easybet={type:'classic',tipoGiocataDaFile:tipo,fileName:fileName||''};
+        original._easybet={type:'classic',tipoGiocataDaFile:tipo,fileName:fileName||'',genericStats:importedGenericStats(headers,vals)};
         out.push({
           data:d.display, dataIso:d.iso, ora:t,
           campionato:iLeague>=0?String(vals[iLeague]||'').trim():'',
@@ -1295,12 +1323,14 @@
       var iDate=idx('data ora','dataora','data');
       var iHome=idx('squadra casa','casa','home');
       var iAway=idx('squadra ospite','ospite','away');
-      var iOverHome=idx('over 0 5 casa');
-      var iOverAway=idx('over 0 5 trasf','over 0 5 trasferta');
-      var iHome1545=idx('home gol 15 445','home gol 15 45');
-      var iAway1545=idx('osp gol 15 45','ospite gol 15 45','away gol 15 45');
-      var iH2570=idx('home gol 25 70'), iA2570=idx('osp gol 25 70','ospite gol 25 70');
-      var iH00=idx('home 0 0 al 70'), iA00=idx('osp 0 0 al 70','ospite 0 0 al 70');
+      var iOverHome=idx('over 0 5 casa'); if(iOverHome<0)iOverHome=fuzzyHeaderIndex(norm,[['over','0','5','casa'],['home','over','0','5'],['home','o05']]);
+      var iOverAway=idx('over 0 5 trasf','over 0 5 trasferta'); if(iOverAway<0)iOverAway=fuzzyHeaderIndex(norm,[['over','0','5','trasf'],['away','over','0','5'],['away','o05']]);
+      var iHome1545=idx('home gol 15 445','home gol 15 45'); if(iHome1545<0)iHome1545=fuzzyHeaderIndex(norm,[['home','gol','15','45'],['casa','gol','15','45']]);
+      var iAway1545=idx('osp gol 15 45','ospite gol 15 45','away gol 15 45'); if(iAway1545<0)iAway1545=fuzzyHeaderIndex(norm,[['osp','gol','15','45'],['away','gol','15','45'],['trasf','gol','15','45']]);
+      var iH2570=idx('home gol 25 70'); if(iH2570<0)iH2570=fuzzyHeaderIndex(norm,[['home','gol','25','70'],['casa','gol','25','70'],['home','25','70']]);
+      var iA2570=idx('osp gol 25 70','ospite gol 25 70'); if(iA2570<0)iA2570=fuzzyHeaderIndex(norm,[['osp','gol','25','70'],['away','gol','25','70'],['trasf','gol','25','70'],['away','25','70']]);
+      var iH00=idx('home 0 0 al 70'); if(iH00<0)iH00=fuzzyHeaderIndex(norm,[['home','0','0','70'],['casa','0','0','70']]);
+      var iA00=idx('osp 0 0 al 70','ospite 0 0 al 70'); if(iA00<0)iA00=fuzzyHeaderIndex(norm,[['osp','0','0','70'],['away','0','0','70'],['trasf','0','0','70']]);
       var isO15=iH2570>=0||iA2570>=0;
       var isO05=iOverHome>=0||iOverAway>=0||iHome1545>=0||iAway1545>=0;
       // Riconoscimento dal nome del file per i CSV senza statistiche (Banca X, Under 0.5 HT, Segno 1 / Favorito HT).
@@ -1337,18 +1367,21 @@
         });
         // Schema definitivo OVER 0.5 HT: salviamo anche una forma normalizzata delle percentuali
         // così le card non dipendono dagli spazi o dalla punteggiatura dei titoli CSV.
-        original._easybet=!KINDS[kind].stats?{type:'plain'}:isO15?{
+        var genericStats=importedGenericStats(headers,vals);
+        original._easybet=!KINDS[kind].stats?{type:'plain',genericStats:genericStats}:isO15?{
           type:'o15_2570',
           home2570Pct:iH2570>=0?parsePct(vals[iH2570]):null,
           away2570Pct:iA2570>=0?parsePct(vals[iA2570]):null,
           home00at70Pct:iH00>=0?parsePct(vals[iH00]):null,
-          away00at70Pct:iA00>=0?parsePct(vals[iA00]):null
+          away00at70Pct:iA00>=0?parsePct(vals[iA00]):null,
+          genericStats:genericStats
         }:{
           type:'o05ht',
           over05HomePct:iOverHome>=0?parsePct(vals[iOverHome]):null,
           over05AwayPct:iOverAway>=0?parsePct(vals[iOverAway]):null,
           home1545Pct:iHome1545>=0?parsePct(vals[iHome1545]):null,
-          away1545Pct:iAway1545>=0?parsePct(vals[iAway1545]):null
+          away1545Pct:iAway1545>=0?parsePct(vals[iAway1545]):null,
+          genericStats:genericStats
         };
         out.push({
           data:dt.data, ora:dt.ora,
