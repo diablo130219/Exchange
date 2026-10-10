@@ -583,3 +583,12 @@ html[data-theme="light"] body details.month-section{background:linear-gradient(1
 
 /* STEP109 · fix ricerca giornaliera */
 .grid.date-grid > .card.date-search-hidden{display:none!important}
+
+
+/* STEP124 — Betting classico: percentuale di presa */
+.classic-card .classic-stats-row{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.classic-card .classic-presa-stat{border-color:rgba(195,148,28,.28);background:linear-gradient(180deg,rgba(246,225,158,.30),rgba(255,255,255,.28));min-width:112px}
+.classic-card .classic-presa-icon{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:rgba(207,159,30,.16);color:var(--gold-deep);font-weight:900;font-size:.85rem;flex:0 0 28px}
+.classic-card .classic-presa-value{font-size:1rem!important;font-weight:900!important;color:var(--gold-deep)!important}
+html[data-theme="dark"] .classic-card .classic-presa-stat{background:rgba(214,170,51,.09);border-color:rgba(214,170,51,.26)}
+@media(max-width:720px){.classic-card .classic-stats-row{gap:7px}.classic-card .classic-presa-stat{min-width:96px}}

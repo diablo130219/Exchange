@@ -318,6 +318,42 @@
       return d.toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
     }
 
+    function classicPresaPct(m){
+      var src=(m&&m.importData&&typeof m.importData==='object')?m.importData:{};
+      var eb=(src._easybet&&typeof src._easybet==='object')?src._easybet:{};
+      function num(v){
+        if(v===null||v===undefined||v==='') return null;
+        var x=String(v).trim().replace('%','').replace(',','.');
+        var n=Number(x); return Number.isFinite(n)?n:null;
+      }
+      function normKey(k){return String(k||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9%]+/g,' ').trim();}
+      var explicit=['presaPct','mediaPresaPct','presa','mediaPresa'];
+      for(var i=0;i<explicit.length;i++){
+        var v=num(eb[explicit[i]]); if(v!==null) return Math.max(0,Math.min(100,v));
+      }
+      var keys=Object.keys(src).filter(function(k){return k!=='_easybet';});
+      for(var j=0;j<keys.length;j++){
+        var nk=normKey(keys[j]);
+        if(/media.*presa|presa.*media|percentuale.*presa|presa.*percentuale|^presa ?%?$/.test(nk)){
+          var v=num(src[keys[j]]); if(v!==null) return Math.max(0,Math.min(100,v));
+        }
+      }
+      var vals=[];
+      keys.forEach(function(k){
+        var nk=normKey(k), v=num(src[k]);
+        if(v===null||v<0||v>100) return;
+        // Campi percentuali/statistici: evita date, quote, gare e ID.
+        if(/%|pct|percent|over|gol|gg|draw|pareggi|win|vint|presa/.test(nk) && !/quota|odds|game|gare|match|id|anno|season/.test(nk)) vals.push(v);
+      });
+      if(!vals.length) return null;
+      return vals.reduce(function(a,b){return a+b},0)/vals.length;
+    }
+
+    function formatPresa(v){
+      if(v===null||v===undefined||!Number.isFinite(Number(v))) return '—';
+      return Number(v).toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:1})+'%';
+    }
+
     function renderCard(m){
       var esito = m.esitoManuale || '';
       var cls = 'card' + (esito ? ' esito-'+esito : '') + (selectedIds.has(String(m.id)) ? ' is-selected' : '');
@@ -335,8 +371,9 @@
             '<div class="vs-mid">VS</div>'+
             '<div class="side">'+crestImg(m.trasferta,m.campionato,'lg')+'<div class="side-name">'+esc(m.trasferta)+'</div><button type="button" class="crest-edit-btn" data-role="crest" data-team="'+esc(m.trasferta)+'" data-league="'+esc(m.campionato||'')+'">Stemma</button></div>'+
           '</div>'+
-          '<div class="stats-row">'+
+          '<div class="stats-row classic-stats-row">'+
             '<div class="stat">'+ICON_TARGET+'<div class="stat-text"><span class="stat-label">Giocata</span><span class="stat-value">'+esc(m.tipoGiocata||'—')+'</span></div></div>'+
+            '<div class="stat classic-presa-stat"><div class="classic-presa-icon">%</div><div class="stat-text"><span class="stat-label">Presa</span><span class="stat-value classic-presa-value">'+esc(formatPresa(classicPresaPct(m)))+'</span></div></div>'+
             (m.quotaIngresso?'<div class="stat">'+ICON_CHART+'<div class="stat-text"><span class="stat-label">Quota</span><span class="stat-value">'+esc(m.quotaIngresso)+'</span></div></div>':'')+
           '</div>'+
           '<div class="card-foot classic-card-foot">'+
